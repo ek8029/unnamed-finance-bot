@@ -44,6 +44,94 @@ function normalizeInsightTitle(title: string): string {
     .replace(/\d+(\.\d+)?%/g, 'X%');
 }
 
+export type InsightType = InsightCandidate['insight_type'];
+
+/**
+ * How long each kind of finding stays live before the expiry sweep at the end of
+ * generateInsights dismisses it. In days, except 'tax'.
+ *
+ * Nothing wrote expires_at before this, so the sweep never matched a row (a
+ * range filter never matches NULL) and every flag lived until somebody dismissed
+ * it by hand. A probe of 1000 live rows found 0 carrying an expiry and open rows
+ * up to 169 days old.
+ *
+ * A structural finding outlives a transient one:
+ *  - market:       explains one session's move. Stale within days.
+ *  - spending:     a this-month-vs-last-month comparison. Two weeks in, the
+ *                  comparison it was drawn from has moved on.
+ *  - subscription: the charge it warns about lands inside a fortnight, and the
+ *                  price-change version is about the most recent charge.
+ *  - credit:       a card balance is a statement-cycle fact.
+ *  - portfolio:    concentration is structural. It stays while it is true, and a
+ *                  recurring run pushes the expiry back out; the 90 days only
+ *                  decide how long it survives after the engine stops seeing it.
+ *  - tax:          a harvest is valid until the last day the loss can be realized
+ *                  for this tax year. No wash-sale clock applies to a position
+ *                  that has not been sold, so year end is the honest bound and
+ *                  the only one this code can state without a sale date.
+ */
+export const INSIGHT_LIFETIMES: Record<InsightType, number | 'tax_year_end'> = {
+  market: 3,
+  spending: 14,
+  subscription: 14,
+  credit: 30,
+  portfolio: 90,
+  tax: 'tax_year_end',
+};
+
+/** The expiry stamp a freshly written insight of this type should carry. */
+export function insightExpiresAt(type: InsightType, now: Date = new Date()): string {
+  const life = INSIGHT_LIFETIMES[type];
+  if (life === 'tax_year_end') {
+    return new Date(Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999)).toISOString();
+  }
+  return new Date(now.getTime() + life * 86_400_000).toISOString();
+}
+
+/** Shape of the open rows read back for the recurrence check. */
+interface ExistingInsight {
+  id: string;
+  title: string;
+  priority: string | null;
+  description: string | null;
+  recommended_action: string | null;
+  estimated_impact_amount: number | string | null;
+}
+
+/** Money and percentages collapse the same way titles do: a concentration
+ *  sentence whose dollar figure drifts with the market overnight is the same
+ *  finding, and rewriting the row for it is what makes a flag feel new. */
+function normalizeSubstance(text: string | null | undefined): string {
+  return normalizeInsightTitle(String(text ?? ''));
+}
+
+/** True when the dollar figure moved enough to be worth re-stating: more than
+ *  10% of the previous figure, or the field appearing/disappearing. */
+function impactMoved(prev: number | string | null | undefined, next: number | undefined): boolean {
+  const a = prev == null || prev === '' ? null : Number(prev);
+  const b = next == null ? null : Number(next);
+  if (a === null && b === null) return false;
+  if (a === null || b === null) return true;
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return a !== b;
+  return Math.abs(b - a) > Math.max(1, Math.abs(a) * 0.1);
+}
+
+/**
+ * Has the substance of a recurring finding moved?
+ *
+ * Substance is the priority, the description, the recommended action and the
+ * estimated impact amount. The two prose fields are compared with money and
+ * percentages collapsed, and the amount with a 10% tolerance, so ordinary price
+ * drift does not count as news. The title is not part of it: a match here has
+ * already matched on the normalized title.
+ */
+function substanceMoved(existing: ExistingInsight, c: InsightCandidate): boolean {
+  if ((existing.priority ?? '') !== c.priority) return true;
+  if (normalizeSubstance(existing.description) !== normalizeSubstance(c.description)) return true;
+  if (normalizeSubstance(existing.recommended_action) !== normalizeSubstance(c.recommended_action)) return true;
+  return impactMoved(existing.estimated_impact_amount, c.estimated_impact_amount);
+}
+
 function groupSpending(
   transactions: { amount: number; category_name: string | null }[],
 ): Record<string, number> {
@@ -104,7 +192,7 @@ export async function generateInsights(
         // run) accumulate once they age past a time window.
         supabase
           .from('insights')
-          .select('id, title')
+          .select('id, title, priority, description, recommended_action, estimated_impact_amount')
           .eq('user_id', userId)
           .eq('is_dismissed', false)
           .eq('is_archived', false)
@@ -116,20 +204,20 @@ export async function generateInsights(
     const currentTx = currentTxRes.data || [];
     const prevTx = prevTxRes.data || [];
 
-    const existingByNorm = new Map<string, string[]>();
-    for (const i of (existingInsightsRes.data || []) as { id: string; title: string }[]) {
+    const existingByNorm = new Map<string, ExistingInsight[]>();
+    for (const i of (existingInsightsRes.data || []) as ExistingInsight[]) {
       const norm = normalizeInsightTitle(i.title);
       if (!existingByNorm.has(norm)) existingByNorm.set(norm, []);
-      existingByNorm.get(norm)!.push(i.id);
+      existingByNorm.get(norm)!.push(i);
     }
 
     // Collapse pre-existing duplicates of one normalized title (orphan pile-ups left by
     // earlier runs before this dedup was fixed): keep the newest, dismiss the rest.
     const orphanStaleIds: string[] = [];
-    for (const [norm, ids] of existingByNorm) {
-      if (ids.length > 1) {
-        orphanStaleIds.push(...ids.slice(1));
-        existingByNorm.set(norm, [ids[0]]);
+    for (const [norm, rows] of existingByNorm) {
+      if (rows.length > 1) {
+        orphanStaleIds.push(...rows.slice(1).map((r) => r.id));
+        existingByNorm.set(norm, [rows[0]]);
       }
     }
 
@@ -484,6 +572,9 @@ export async function generateInsights(
     const newInsights: InsightCandidate[] = [];
     const staleIds: string[] = [];
     const updates: { id: string; fields: InsightCandidate }[] = [];
+    // Unchanged recurrences: expiry pushed back out, nothing else touched.
+    const refreshes: { id: string; expiresAt: string }[] = [];
+    const runAt = new Date();
 
     // Titles already handled this run. The map below is emptied as each title
     // is claimed, so without this a second candidate with the same title read
@@ -494,17 +585,24 @@ export async function generateInsights(
       const norm = normalizeInsightTitle(c.title);
       if (claimed.has(norm)) continue;
       claimed.add(norm);
-      const existingIds = existingByNorm.get(norm);
-      if (!existingIds || existingIds.length === 0) {
+      const existingRows = existingByNorm.get(norm);
+      if (!existingRows || existingRows.length === 0) {
         newInsights.push(c);
         existingByNorm.set(norm, []);
       } else {
         // Refresh the existing active row in place. Preserves created_at — the true age of
         // the opportunity (e.g. a tax loss harvestable for days) — instead of the old
         // delete+reinsert, which reset the "X min ago" clock on every run. Drop any dupes.
-        const [keepId, ...dupeIds] = existingIds;
-        updates.push({ id: keepId, fields: c });
-        if (dupeIds.length > 0) staleIds.push(...dupeIds);
+        const [keep, ...dupes] = existingRows;
+        if (substanceMoved(keep, c)) {
+          updates.push({ id: keep.id, fields: c });
+        } else {
+          // Same finding, same substance: leave the row exactly as it is and only
+          // push its expiry back out, so a flag that has been true since Tuesday
+          // does not read as though it arrived this morning.
+          refreshes.push({ id: keep.id, expiresAt: insightExpiresAt(c.insight_type, runAt) });
+        }
+        if (dupes.length > 0) staleIds.push(...dupes.map((d) => d.id));
         existingByNorm.set(norm, []);
       }
     }
@@ -524,6 +622,7 @@ export async function generateInsights(
       const inserts = newInsights.map(insight => ({
         user_id: userId,
         ...insight,
+        expires_at: insightExpiresAt(insight.insight_type, runAt),
       }));
 
       const { error: insertError } = await supabase.from('insights').insert(inserts);
@@ -539,19 +638,40 @@ export async function generateInsights(
     for (const u of updates) {
       const { error: updateError } = await supabase
         .from('insights')
-        .update({ ...u.fields })
+        .update({ ...u.fields, expires_at: insightExpiresAt(u.fields.insight_type, runAt) })
         .eq('id', u.id)
         .eq('user_id', userId);
       if (updateError) console.error('[insights-engine] Error refreshing insight:', updateError);
+    }
+
+    // Unchanged recurrences: only the expiry moves, so a still-true flag neither
+    // ages out under the sweep below nor gets rewritten. Grouped by stamp so one
+    // statement covers every row of a given type.
+    const byExpiry = new Map<string, string[]>();
+    for (const r of refreshes) {
+      if (!byExpiry.has(r.expiresAt)) byExpiry.set(r.expiresAt, []);
+      byExpiry.get(r.expiresAt)!.push(r.id);
+    }
+    for (const [expiresAt, ids] of byExpiry) {
+      const { error: refreshError } = await supabase
+        .from('insights')
+        .update({ expires_at: expiresAt })
+        .in('id', ids)
+        .eq('user_id', userId);
+      if (refreshError) console.error('[insights-engine] Error extending insight expiry:', refreshError);
     }
 
     await supabase
       .from('insights')
       .update({ is_dismissed: true })
       .eq('user_id', userId)
-      .lt('expires_at', new Date().toISOString())
+      .lt('expires_at', runAt.toISOString())
       .eq('is_dismissed', false);
 
+    // Rows written this run. Unchanged recurrences are deliberately not counted:
+    // nothing was generated for them, only their expiry moved. Both callers
+    // (app/api/cron/daily/route.ts:266, app/api/insights/generate/route.ts:20)
+    // use this for a log line and a `generated` field.
     return newInsights.length + updates.length;
   } catch (error) {
     console.error(`[insights-engine] Error generating insights for ${userId}:`, error);
