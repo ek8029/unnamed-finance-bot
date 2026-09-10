@@ -15,6 +15,7 @@ import { usePreview } from '@/lib/preview-context';
 import { AgentFirstLook } from '@/components/agent-first-look';
 import { Ghost, GhostBar } from '@/components/ghost';
 import { tierAtLeast } from '@/lib/tier-shared';
+import { AgentLogCard } from '@/components/dashboard/agent-log-card';
 import { useLivePrices, isUsMarketOpen } from '@/hooks/use-live-prices';
 import { liveStatus } from '@/lib/live-status';
 import posthog from 'posthog-js';
@@ -949,82 +950,11 @@ export default function DashboardOverview() {
           )}
         </div>
 
-        {/* AI Helm Brief — tailored for Pro+, general market brief for Free */}
-        {tierAtLeast(tier, 'pro') ? (
-          <div
-            className="flex h-full flex-col rounded-lg px-[22px] py-5"
-            style={{
-              border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)',
-              background: 'color-mix(in srgb, var(--color-gold) 2.5%, transparent)',
-              boxShadow: 'var(--shadow-card)',
-            }}
-          >
-            <div className="mb-3.5 flex items-center gap-2.5">
-              <Sparkles size={15} strokeWidth={1.6} className="text-[var(--color-gold)]" />
-              <span className="text-[12px] uppercase tracking-[0.16em] text-[var(--color-gold)]" style={MONO}>
-                {isDemo ? 'Sample portfolio brief' : 'Helm Brief'}
-              </span>
-              <span className="h-px flex-1" style={{ background: 'color-mix(in srgb, var(--color-gold) 12%, transparent)' }} />
-            </div>
-
-            {isDemo ? (
-              <div className="mb-4 flex-1">
-                <p className="mb-3 text-[19px] leading-[1.4] text-[var(--color-text-primary)] text-pretty">
-                  Start with what carries the most weight.
-                </p>
-                <p className="text-[15px] leading-[1.62] text-[var(--color-text-secondary)]">
-                  {topHoldings.slice(0, 3).map((holding) => holding.ticker).join(', ')} lead this sample portfolio.
-                  {' '}Explore the brief to see how company developments, shared risks, and upcoming reports fit together.
-                </p>
-                <p className="mt-3 text-[12px] text-[var(--color-text-muted)]">Illustrative portfolio · connect or add holdings for your own perspective.</p>
-              </div>
-            ) : feedInsights.length > 0 ? (
-              <>
-                <p className="m-0 mb-3.5 text-[15px] leading-[1.62] text-[var(--color-text-primary)] text-pretty">
-                  {feedInsights[0].summary}
-                </p>
-                <div className="mb-4 flex flex-col gap-2.5">
-                  {feedInsights.slice(0, 3).map((ins) => {
-                    const glyph =
-                      ins.type === 'risk' ? '▲' : ins.type === 'opportunity' ? '＄' : '●';
-                    const color =
-                      ins.type === 'risk'
-                        ? 'var(--color-warning-text)'
-                        : ins.type === 'opportunity'
-                          ? 'var(--color-positive)'
-                          : 'var(--color-info-text)';
-                    return (
-                      <div key={ins.id} className="flex items-start gap-2.5">
-                        <span className="text-[14px] leading-[1.4]" style={{ ...MONO, color }}>
-                          {glyph}
-                        </span>
-                        <span className="text-[15px] leading-[1.5] text-[var(--color-text-secondary)]">
-                          {ins.title}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <p className="m-0 mb-4 flex-1 text-[15px] leading-[1.62] text-[var(--color-text-muted)]">
-                {insightsError
-                  ? 'Your overview feed is unavailable right now. Open the brief to check your latest report.'
-                  : 'Your brief brings portfolio developments into one place. Open it to check for your latest report.'}
-              </p>
-            )}
-
-            <Link
-              href="/dashboard/brief"
-              className="mt-auto flex items-center justify-between rounded-[5px] px-3.5 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--color-gold)]"
-              style={{ ...MONO, border: '1px solid color-mix(in srgb, var(--color-gold) 18%, transparent)', background: 'color-mix(in srgb, var(--color-gold) 8%, transparent)' }}
-            >
-              Read full brief <span>→</span>
-            </Link>
-          </div>
-        ) : (
-          <GeneralMarketBrief />
-        )}
+        {/* The agent log. This slot was titled "Helm Brief" and rendered the
+            actions inbox feed rather than the brief, so it named one thing and
+            showed another while the inbox already owns a card further down. The
+            log is the page's evidence of work: real timestamped cron rows. */}
+        <AgentLogCard isPro={tierAtLeast(tier, 'pro')} isDemo={isDemo} />
       </div>
 
       {/* ── KPI tiles ── */}

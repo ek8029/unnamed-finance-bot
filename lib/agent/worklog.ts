@@ -239,7 +239,7 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
   if (runTs) {
     steps.push({
       id: 'scan', ts: runTs, kind: 'scan',
-      label: 'Ran 7 risk scans across your book',
+      label: 'Ran the risk scans across your book',
       detail: liveIns.length > 0 ? `${plural(liveIns.length, 'item')} surfaced` : 'concentration, tax, earnings, cash flow, drift',
       href: '/dashboard/actions', emphasis: false, cadence: 'daily',
     });
