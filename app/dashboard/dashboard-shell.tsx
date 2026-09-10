@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { isThesisUser } from '@/lib/thesis-access';
 import { useTier } from '@/hooks/use-tier';
 import { useAccounts } from '@/hooks/use-financial-data';
-import { summarizeAccountBalances } from '@/lib/accounts-presentation';
 import { usePreview } from '@/lib/preview-context';
 import { CheckoutModal } from '@/components/checkout-modal';
 import { CHECKOUT_PARAM, PENDING_CHECKOUT_KEY, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
@@ -220,25 +219,7 @@ export default function DashboardShell({
   const [thesesVisited, setThesesVisited] = useState(true);
   const { isPro } = useTier();
   const { tier } = usePreview();
-  const { accounts, loading: accountsLoading, error: accountsError, refetch: retryAccounts } = useAccounts();
-  // Saved accounts do not prove live connection health. Group their signed net
-  // balances, including manual accounts, without claiming they have synced.
-  const savedAccountGroups = (() => {
-    const map = new Map<string, { balance: number; unavailable: number }>();
-    for (const account of accounts) {
-      const previous = map.get(account.institution) ?? { balance: 0, unavailable: 0 };
-      const summary = summarizeAccountBalances([account]);
-      map.set(account.institution, { balance: previous.balance + summary.net, unavailable: previous.unavailable + summary.unavailable });
-    }
-    return [...map.entries()]
-      .map(([institution, total]) => ({ institution, ...total }))
-      .sort((a, b) => b.balance - a.balance);
-  })();
-  const fmtBal = (n: number) => {
-    const a = Math.abs(n);
-    const s = a >= 1000 ? `$${Math.round(a / 1000)}k` : `$${Math.round(a)}`;
-    return n < 0 ? `-${s}` : s;
-  };
+  const { accounts, loading: accountsLoading, error: accountsError } = useAccounts();
   const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -810,39 +791,8 @@ export default function DashboardShell({
           {ACCOUNT_NAV.map((item) => <NavRow key={item.name} item={item} />)}
         </nav>
 
-        {/* ── Saved account groups and their net reported balances ── */}
-        {accountsLoading ? <div role="status" className="shrink-0 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]">Loading accounts…</div>
-          : accountsError ? <div className="shrink-0 px-3.5 py-3 text-[12px] text-[var(--color-text-muted)]"><span role="status">Accounts unavailable.</span> <button onClick={retryAccounts} className="text-[var(--color-gold)] underline">Retry</button></div>
-          : savedAccountGroups.length > 0 ? (
-          <div className="shrink-0 px-3.5 py-3" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
-            <div
-              className="flex justify-between mb-2.5 text-[10px] uppercase"
-              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.14em', color: 'var(--color-text-secondary)' }}
-            >
-              <span>Saved groups · {savedAccountGroups.length}</span>
-              <span>Net balance</span>
-            </div>
-            <div className="flex flex-col gap-[7px]">
-              {savedAccountGroups.slice(0, 4).map((acct) => (
-                <div key={acct.institution} className="flex items-center gap-2">
-                  <span
-                    className="w-4 h-4 rounded-[3px] flex items-center justify-center text-[8px] font-bold shrink-0"
-                    style={{ background: 'var(--color-gold-surface)', color: 'var(--color-gold)', fontFamily: 'var(--font-mono)' }}
-                  >
-                    {(acct.institution.trim()[0] || '?').toUpperCase()}
-                  </span>
-                  <span className="flex-1 text-[12px] text-[var(--color-text-secondary)] truncate">{acct.institution}</span>
-                  <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums" style={{ fontFamily: 'var(--font-mono)' }} title={acct.unavailable ? 'One or more account balances are unavailable' : undefined}>{acct.unavailable ? 'Incomplete' : fmtBal(acct.balance)}</span>
-                </div>
-              ))}
-              {savedAccountGroups.length > 4 && (
-                <div className="pl-6 text-[10px] text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                  +{savedAccountGroups.length - 4} more
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
+        {/* ── Connect prompt while the book is empty ── */}
+        {!accountsLoading && !accountsError && accounts.length === 0 && (
           <Link
             href="/dashboard/accounts"
             className="shrink-0 block px-3.5 py-3 text-[12px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
