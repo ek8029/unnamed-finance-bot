@@ -47,7 +47,14 @@ function normalizeInsightTitle(title: string): string {
 /** Every insight_type written to the table, not only the ones this engine emits:
  *  'concentration' comes from the cross-thesis risk monitor (lib/cross-thesis-risk.ts).
  *  One lifetime policy for the table beats a second policy per writer. */
-export type InsightType = InsightCandidate['insight_type'] | 'concentration';
+export type InsightType =
+  | InsightCandidate['insight_type']
+  | 'concentration'
+  // Written by lib/overview-actions.ts, which persists the overview's Actions
+  // inbox. Both are in migration 029's CHECK constraint and neither had ever
+  // been written before (verified with scripts/probe-overview-actions.ts).
+  | 'cash_flow'
+  | 'performance';
 
 /**
  * How long each kind of finding stays live before the expiry sweep at the end of
@@ -87,6 +94,18 @@ export const INSIGHT_LIFETIMES: Record<InsightType, number | 'tax_year_end'> = {
   portfolio: 90,
   tax: 'tax_year_end',
   concentration: 90,
+  // Written by lib/overview-actions.ts.
+  //  - cash_flow:   a large charge or a run of deposits, drawn from a 7-day
+  //                 transaction window. Once the charge leaves that window the
+  //                 generator stops emitting it, and a week later it is not
+  //                 news, so the window is the life.
+  //  - performance: best and worst performer and today's big mover. The mover
+  //                 is one session; the best-performer card is restated by the
+  //                 next run for as long as it holds, which pushes the expiry
+  //                 back out, so 3 days only decides how long it survives after
+  //                 the run stops seeing it. Same reasoning as 'market'.
+  cash_flow: 7,
+  performance: 3,
 };
 
 /** The expiry stamp a freshly written insight of this type should carry. */
@@ -96,6 +115,55 @@ export function insightExpiresAt(type: InsightType, now: Date = new Date()): str
     return new Date(Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999)).toISOString();
   }
   return new Date(now.getTime() + life * 86_400_000).toISOString();
+}
+
+/**
+ * The findings this person has already dealt with, as normalized titles.
+ *
+ * Every writer of this table decided "is this finding already on the books?" from
+ * OPEN rows only (the select below filters is_dismissed false), so dismissing a
+ * card removed it until the next run and then a fresh row was inserted for the
+ * same finding with a new created_at. It came back the next morning, at the top,
+ * announced. That is the mechanism behind "I don't want the same thing flagged
+ * over and over again", and no amount of read-side tiering fixes it: the row the
+ * reader tiers is a new row.
+ *
+ * A dismissal holds for the life of the finding, which is the expiry every writer
+ * now stamps from INSIGHT_LIFETIMES: 3 days for a market move, 90 for structural
+ * concentration, year end for a harvest. Once that passes the finding may be
+ * raised again, which is also exactly when the sweep at the end of this function
+ * would have retired it anyway.
+ *
+ * `.gt('expires_at', ...)` cannot match NULL, so rows dismissed before anything
+ * stamped an expiry (nothing did until 2026-09-10) suppress nothing. Deliberate:
+ * treating "no known life" as "gone for good" would bury every finding people
+ * dismissed in the months before, and a production sample found hundreds of those.
+ *
+ * Re-exported by lib/insight-recurrence.ts, which is the import point for the
+ * writers that do not live in this file. It is defined here to keep the direction
+ * of the dependency between the two modules one-way.
+ */
+export async function readDismissedFindings(
+  supabase: AnyClient,
+  userId: string,
+  now: Date = new Date(),
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('insights')
+    .select('title, expires_at')
+    .eq('user_id', userId)
+    .eq('is_dismissed', true)
+    .gt('expires_at', now.toISOString())
+    .limit(500);
+  if (error) {
+    // Failing open re-raises a dismissed finding, which is the bug this closes,
+    // so it is logged rather than only returning an empty set.
+    console.error('[insights-engine] Error reading dismissed findings:', error);
+    return new Set<string>();
+  }
+  return new Set<string>(
+    ((data ?? []) as { title: string | null }[]).map((r) => normalizeInsightTitle(String(r.title ?? ''))),
+  );
 }
 
 /** Shape of the open rows read back for the recurrence check. */
@@ -172,7 +240,7 @@ export async function generateInsights(
   userId: string,
 ): Promise<number> {
   try {
-    const [accountsRes, holdingsRes, currentTxRes, prevTxRes, existingInsightsRes] =
+    const [accountsRes, holdingsRes, currentTxRes, prevTxRes, existingInsightsRes, suppressed] =
       await Promise.all([
         supabase
           .from('linked_accounts')
@@ -207,6 +275,9 @@ export async function generateInsights(
           .eq('is_dismissed', false)
           .eq('is_archived', false)
           .order('created_at', { ascending: false }),
+        // Findings already dismissed and still inside their life. Checked in the
+        // candidate loop below so a dismissal is not undone by the next run.
+        readDismissedFindings(supabase, userId),
       ]);
 
     const accounts = accountsRes.data || [];
@@ -595,6 +666,10 @@ export async function generateInsights(
       const norm = normalizeInsightTitle(c.title);
       if (claimed.has(norm)) continue;
       claimed.add(norm);
+      // Dismissed, archived or marked not useful, and still inside the life of
+      // the finding: gone means gone. Without this the run below inserted a new
+      // row for it, because a dismissed row is not in existingByNorm.
+      if (suppressed.has(norm)) continue;
       const existingRows = existingByNorm.get(norm);
       if (!existingRows || existingRows.length === 0) {
         newInsights.push(c);

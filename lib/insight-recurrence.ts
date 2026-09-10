@@ -25,9 +25,9 @@
 // single match (portfolio "Trim X?" becoming tax "Harvest the loss in X"). Substance
 // here is therefore the engine's four fields plus title, insight_type and explanation.
 
-import { insightExpiresAt, type InsightType } from '@/lib/insights-engine';
+import { insightExpiresAt, readDismissedFindings, type InsightType } from '@/lib/insights-engine';
 
-export { insightExpiresAt };
+export { insightExpiresAt, readDismissedFindings };
 export type { InsightType };
 
 /** The open row read back for the recurrence check. */

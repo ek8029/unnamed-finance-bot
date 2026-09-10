@@ -10,7 +10,25 @@ export interface InsightReadOptions {
   priority?: string | null;
   status?: string | null;
   archived?: string | null;
+  /** Which insight_type values this surface reads. Defaults to
+   *  INSIGHT_SURFACE_TYPES; the overview panel adds 'cash_flow' to it. */
+  types?: readonly string[];
 }
+
+/**
+ * The insight_type values the Actions page and its refresh endpoint surface.
+ *
+ * Helm is an intelligence layer, not a budgeting app (2026-07-24): recurring
+ * charge, spending and credit detections are written but never reach this
+ * surface. Concentration is also emitted by the shared thesis-risk pipeline.
+ *
+ * The overview's Actions inbox reads this list plus 'cash_flow', because its
+ * generator has a lane for large charges and deposits that free accounts see as
+ * their basic alerts, and dropping it would have taken content off a surface
+ * people already use. That lane stays off the Actions page, which is where the
+ * 2026-07-24 decision applies.
+ */
+export const INSIGHT_SURFACE_TYPES = ['portfolio', 'market', 'tax', 'concentration', 'performance'] as const;
 
 /** Strip volatile dollar amounts and percentages for stable dedup */
 function normalizeTitle(title: string): string {
@@ -27,7 +45,7 @@ export async function readInsights(
   options: InsightReadOptions = {},
   isPro = false,
 ) {
-  const { type, priority, status, archived } = options;
+  const { type, priority, status, archived, types } = options;
   // Set inside the matching branch below (single source for "default open view",
   // reused by the standing-item check further down instead of being recomputed).
   let isDefaultOpenView = false;
@@ -35,10 +53,9 @@ export async function readInsights(
     .from('insights')
     .select('id, insight_type, priority, title, description, recommended_action, estimated_impact_amount, source_type, created_at, expires_at, snoozed_until, is_archived, is_dismissed, is_useful, related_entity_type, related_entity_ids')
     .eq('user_id', user.id)
-    // Helm is an intelligence layer, not a budgeting app (2026-07-24):
-    // recurring-charge / spending / credit detections never reach a surface.
-    // Concentration is also emitted by the shared thesis-risk pipeline.
-    .in('insight_type', ['portfolio', 'market', 'tax', 'concentration', 'performance']);
+    // See INSIGHT_SURFACE_TYPES for why this list is what it is, and why the
+    // overview passes a wider one.
+    .in('insight_type', [...(types ?? INSIGHT_SURFACE_TYPES)]);
 
   if (status === 'snoozed') {
     // Currently snoozed items

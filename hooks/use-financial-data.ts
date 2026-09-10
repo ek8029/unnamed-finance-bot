@@ -823,21 +823,30 @@ export function useTaxOpportunities() {
 
 // ── Intelligence Feed ──
 
-export interface IntelligenceMetric {
-  label: string;
-  value: string;
-}
-
+/**
+ * One row of the overview's Actions inbox, as /api/dashboard/intelligence now
+ * serves it: a persisted `insights` row rather than a value recomputed for this
+ * request. So `id` is a real row id that can be dismissed, `createdAt` is when
+ * the finding was FIRST raised, and `prominence` says whether it has already
+ * been seen (lib/insight-prominence.ts).
+ *
+ * `type` is the row's insight_type, the same vocabulary the Actions page uses.
+ * The generator's own risk/opportunity/info/action label had no equivalent in
+ * the table, and the panel renders this as a category chip.
+ *
+ * detail, metrics and suggestedFollowUp are gone: the route no longer sends them
+ * and nothing rendered them. lib/intelligence-feed.ts still produces them, and
+ * the unmounted components/dashboard/intelligence-feed.tsx still declares its own
+ * type for them.
+ */
 export interface IntelligenceInsight {
   id: string;
-  type: 'risk' | 'opportunity' | 'info' | 'action';
-  priority: 'high' | 'medium' | 'low';
+  type: string;
+  priority: 'critical' | 'high' | 'medium' | 'low';
   title: string;
   summary: string;
-  detail: string;
-  metrics: IntelligenceMetric[];
-  suggestedFollowUp: string;
   createdAt: string;
+  prominence?: 'announced' | 'standing';
 }
 
 export function useIntelligence() {

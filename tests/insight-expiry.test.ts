@@ -31,6 +31,7 @@ function makeClient(tables: Record<string, Row[]>) {
         case 'eq': return v === val;
         case 'neq': return v !== val;
         case 'in': return Array.isArray(val) && (val as unknown[]).includes(v);
+        case 'gt': return v != null && String(v) > String(val);
         case 'lt': return v != null && String(v) < String(val);
         case 'lte': return v != null && String(v) <= String(val);
         case 'gte': return v != null && String(v) >= String(val);
@@ -93,6 +94,7 @@ function makeClient(tables: Record<string, Row[]>) {
       delete: () => { op = 'delete'; return b; },
       eq: (c: string, v: unknown) => { filters.push(['eq', c, v]); return b; },
       neq: (c: string, v: unknown) => { filters.push(['neq', c, v]); return b; },
+      gt: (c: string, v: unknown) => { filters.push(['gt', c, v]); return b; },
       lt: (c: string, v: unknown) => { filters.push(['lt', c, v]); return b; },
       lte: (c: string, v: unknown) => { filters.push(['lte', c, v]); return b; },
       gte: (c: string, v: unknown) => { filters.push(['gte', c, v]); return b; },
@@ -138,9 +140,10 @@ const taxYearEnd = () => new Date().getUTCFullYear() + '-12-31T23:59:59.999Z';
 describe('insight lifetimes', () => {
   it('states one lifetime per insight_type written to the table', () => {
     // 'concentration' is written by lib/cross-thesis-risk.ts, not by this engine;
-    // it lives in the same table so it takes its lifetime from the same policy.
+    // 'cash_flow' and 'performance' by lib/overview-actions.ts. They live in the
+    // same table so they take their lifetimes from the same policy.
     expect(Object.keys(INSIGHT_LIFETIMES).sort()).toEqual(
-      ['concentration', 'credit', 'market', 'portfolio', 'spending', 'subscription', 'tax'],
+      ['cash_flow', 'concentration', 'credit', 'market', 'performance', 'portfolio', 'spending', 'subscription', 'tax'],
     );
   });
 
@@ -152,6 +155,8 @@ describe('insight lifetimes', () => {
     expect(insightExpiresAt('credit', now)).toBe(new Date('2026-10-10T14:00:00Z').toISOString());
     expect(insightExpiresAt('portfolio', now)).toBe(new Date('2026-12-09T14:00:00Z').toISOString());
     expect(insightExpiresAt('tax', now)).toBe('2026-12-31T23:59:59.999Z');
+    expect(insightExpiresAt('cash_flow', now)).toBe(new Date('2026-09-17T14:00:00Z').toISOString());
+    expect(insightExpiresAt('performance', now)).toBe(new Date('2026-09-13T14:00:00Z').toISOString());
   });
 
   it('stamps expires_at on every freshly inserted insight', async () => {
@@ -228,6 +233,52 @@ describe('recurrence', () => {
     expect(after!.description).not.toBe('You have $1 in unrealized losses across LULU.');
     expect(Number(after!.estimated_impact_amount)).toBeGreaterThan(1);
     expect(after!.expires_at).toBe(taxYearEnd());
+  });
+
+  /* Evan, 2026-09-10: "if a user dismisses or acts on it get rid of it."
+     The recurrence check reads OPEN rows only, so a dismissed row was invisible
+     to it and the next run inserted a fresh one for the same finding, with a new
+     created_at, which the reader then announced. Dismissing changed nothing for
+     more than a day. readDismissedFindings closes that. */
+  it('does not raise a finding again after it was dismissed', async () => {
+    const first = makeClient(fixtureTables());
+    await generateInsights(first.client, USER);
+    const seeded = first.tables.insights.map((r) => ({ ...r }));
+    const dismissedId = seeded.find((r) => r.insight_type === 'portfolio')!.id;
+    const dismissedTitle = seeded.find((r) => r.id === dismissedId)!.title;
+    for (const r of seeded) {
+      if (r.id === dismissedId) r.is_dismissed = true;
+    }
+
+    const second = makeClient(fixtureTables(seeded));
+    await generateInsights(second.client, USER);
+
+    const sameFinding = second.tables.insights.filter((r) => r.title === dismissedTitle);
+    expect(sameFinding).toHaveLength(1);
+    expect(sameFinding[0].id).toBe(dismissedId);
+    expect(sameFinding[0].is_dismissed).toBe(true);
+    // Nothing was inserted for it, so there is no new created_at to announce.
+    const inserted = second.writes.filter((w) => w.op === 'insert' && w.table === 'insights');
+    expect(inserted).toEqual([]);
+  });
+
+  it('lets a dismissed finding come back once its expiry has passed', async () => {
+    const first = makeClient(fixtureTables());
+    await generateInsights(first.client, USER);
+    const seeded = first.tables.insights.map((r) => ({ ...r }));
+    const target = seeded.find((r) => r.insight_type === 'portfolio')!;
+    target.is_dismissed = true;
+    // Past its life: the sweep would have retired it anyway, so the finding is
+    // allowed to be raised as news again.
+    target.expires_at = new Date(Date.now() - 86400000).toISOString();
+    const title = target.title;
+
+    const second = makeClient(fixtureTables(seeded));
+    await generateInsights(second.client, USER);
+
+    const rows = second.tables.insights.filter((r) => r.title === title);
+    expect(rows).toHaveLength(2);
+    expect(rows.some((r) => r.is_dismissed === false)).toBe(true);
   });
 });
 

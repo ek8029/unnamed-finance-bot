@@ -23,6 +23,7 @@ import { DemoConnectCta } from '@/components/demo/demo-connect-cta';
 import { AgentHeartbeat } from '@/components/thesis/agent-activity';
 import { TodaysDelta } from '@/components/dashboard/todays-delta';
 import { cachedGet } from '@/lib/api-cache';
+import { STANDING_COPY, standingLine } from '@/lib/insight-prominence';
 
 // ── Sovereign Architect tokens (local to this screen) ──────────────────────
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
@@ -31,6 +32,14 @@ const SCREEN: React.CSSProperties = { maxWidth: 1600 };
 const SCREEN_PAD = 'px-4 pt-6 pb-16 sm:px-7 sm:pt-[26px]';
 const CARD =
   'rounded-lg border border-[var(--color-border-base)] bg-[var(--color-bg-surface)] shadow-[var(--shadow-card)]';
+
+// Actions inbox ordering. The panel's meta line has always promised "ranked by
+// impact", and the reader now returns the open view newest first, so the ranking
+// is applied here.
+const ACTION_PRIORITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+function byActionPriority(a: { priority: string }, b: { priority: string }) {
+  return (ACTION_PRIORITY_RANK[a.priority] ?? 3) - (ACTION_PRIORITY_RANK[b.priority] ?? 3);
+}
 
 // Sector → chart color (matches the README chart palette, in order).
 const CHART_COLORS = ['var(--color-gold)', 'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
@@ -402,6 +411,28 @@ export default function DashboardOverview() {
 
   const { insights: feedInsights, loading: insightsLoading, error: insightsError } = useIntelligence();
 
+  /* ── Actions inbox ──
+     Served from the persisted `insights` table now (see the route), so each row
+     has an id that can be dismissed and a created_at that says when the finding
+     was first raised. Announced items are the ones raised since this person last
+     read their updates and keep today's prominence; everything else is standing,
+     and collapses into one quiet line. Evan, 2026-09-10: "if not just keep a note
+     that it's there and don't perpetually scream it into a user's face."
+     Dismissals are held locally so the card settles without refetching the page. */
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const inboxItems = useMemo(
+    () => feedInsights.filter(i => !dismissedIds.includes(i.id)),
+    [feedInsights, dismissedIds],
+  );
+  const announcedActions = useMemo(
+    () => inboxItems.filter(i => i.prominence !== 'standing').slice().sort(byActionPriority),
+    [inboxItems],
+  );
+  const standingActions = useMemo(
+    () => inboxItems.filter(i => i.prominence === 'standing').slice().sort(byActionPriority),
+    [inboxItems],
+  );
+
   // Live portfolio value: useHoldings polls /api/market/quotes every 30s and
   // recomputes totalValue client-side. Overrides the static DB aggregate.
   const { holdings, totalValue: liveHoldingsValue, loading: holdingsLoading, lastQuoteAt } = useHoldings();
@@ -420,6 +451,26 @@ export default function DashboardOverview() {
   const { tier, dataState } = usePreview();
   const router = useRouter();
   const toast = useToast();
+
+  /** Dismiss one action for good. The row is a real `insights` row, so the PATCH
+   *  is what makes "if a user dismisses it, get rid of it" true: the writers no
+   *  longer re-raise a dismissed finding while it is still inside its life
+   *  (readDismissedFindings in lib/insights-engine.ts). Optimistic, and put back
+   *  if the write fails, because a row that reappears silently is the complaint. */
+  async function dismissAction(id: string) {
+    setDismissedIds(prev => [...prev, id]);
+    try {
+      const res = await fetch('/api/insights', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'dismiss' }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+    } catch {
+      setDismissedIds(prev => prev.filter(x => x !== id));
+      toast.error('Could not dismiss', 'That action is still in your inbox.');
+    }
+  }
   const [plaidError, setPlaidError] = useState<string | null>(null);
   // Set on a successful Link exchange. Holdings are not in yet at that moment,
   // so the dashboard would render its empty state over a book that is arriving;
@@ -1008,7 +1059,7 @@ export default function DashboardOverview() {
           <div className="mb-1.5 flex items-center justify-between">
             <Eyebrow className="!text-[10px] !tracking-[0.14em]">Actions inbox</Eyebrow>
             <span className="text-[10px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
-              {isDemo ? 'Sample experience' : insightsError ? 'Unavailable' : `${feedInsights.length} items · ranked by impact`}
+              {isDemo ? 'Sample experience' : insightsError ? 'Unavailable' : `${inboxItems.length} items · ranked by impact`}
             </span>
           </div>
           <div className="flex flex-col">
@@ -1019,7 +1070,7 @@ export default function DashboardOverview() {
                 <span className="mt-4 block text-[13px] font-medium text-[var(--color-gold)]">Explore sample actions →</span>
               </Link>
             )}
-            {!isDemo && insightsLoading && feedInsights.length === 0 && (
+            {!isDemo && insightsLoading && inboxItems.length === 0 && (
               <div className="border-t border-[var(--color-border-subtle)] py-5">
                 <Ghost label="Loading what the agent found">
                   <GhostBar w="64%" h={14} />
@@ -1027,23 +1078,22 @@ export default function DashboardOverview() {
                 </Ghost>
               </div>
             )}
-            {!isDemo && !insightsLoading && feedInsights.length === 0 && (
+            {!isDemo && !insightsLoading && inboxItems.length === 0 && (
               <div className="border-t border-[var(--color-border-subtle)] py-5 text-[15px] text-[var(--color-text-muted)]">
                 {insightsError ? 'We couldn’t load your actions. Try refreshing the page.' : 'No actions to display yet. Return after the next portfolio update.'}
               </div>
             )}
-            {!isDemo && feedInsights.slice(0, 4).map((ins) => {
+            {!isDemo && announcedActions.slice(0, 4).map((ins) => {
               const pr =
-                ins.priority === 'high'
+                ins.priority === 'high' || ins.priority === 'critical'
                   ? { label: 'HIGH', color: 'var(--color-negative-text)' }
                   : ins.priority === 'medium'
                     ? { label: 'MED', color: 'var(--color-warning-text)' }
                     : { label: 'LOW', color: 'var(--color-text-muted)' };
               return (
-                <Link
+                <div
                   key={ins.id}
-                  href="/dashboard/actions"
-                  className="flex cursor-pointer items-start gap-3 border-t border-[var(--color-border-subtle)] py-3.5 text-left"
+                  className="flex items-start gap-3 border-t border-[var(--color-border-subtle)] py-3.5 text-left"
                 >
                   <span
                     className="mt-0.5 min-w-[34px] text-[9px] font-bold uppercase tracking-[0.12em]"
@@ -1051,21 +1101,72 @@ export default function DashboardOverview() {
                   >
                     {pr.label}
                   </span>
-                  <div className="flex-1">
+                  <Link href="/dashboard/actions" className="flex-1 cursor-pointer">
                     <div className="mb-[3px] text-[15px] font-semibold text-[var(--color-text-primary)]">
                       {ins.title}
                     </div>
                     <div className="text-[14px] leading-[1.5] text-[var(--color-text-muted)]">{ins.summary}</div>
-                  </div>
+                  </Link>
                   <span
                     className="whitespace-nowrap rounded-sm border border-[var(--color-border-base)] bg-white/[0.03] px-[7px] py-[3px] text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)]"
                     style={MONO}
                   >
                     {ins.type}
                   </span>
-                </Link>
+                  <button
+                    type="button"
+                    onClick={() => dismissAction(ins.id)}
+                    aria-label={`Dismiss: ${ins.title}`}
+                    className="-mr-1 rounded-sm px-1.5 py-[3px] text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                    style={MONO}
+                  >
+                    Dismiss
+                  </button>
+                </div>
               );
             })}
+            {/* Standing: open, already seen, kept as a note. One line and a
+                native disclosure, the same copy the Actions page uses, so there
+                is one policy and one copy block rather than a second loud list. */}
+            {!isDemo && standingActions.length > 0 && (
+              <details className="group border-t border-[var(--color-border-subtle)]">
+                <summary className="flex cursor-pointer items-baseline gap-2.5 py-3 [&::-webkit-details-marker]:hidden">
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+                    {STANDING_COPY.label}
+                  </span>
+                  <span className="text-[10px] tracking-[0.06em] text-[var(--color-text-secondary)]" style={MONO}>
+                    {standingLine(standingActions.length)}
+                  </span>
+                  <span className="flex-1 truncate text-[13px] text-[var(--color-text-muted)]">
+                    {announcedActions.length === 0 ? STANDING_COPY.nothingNew : STANDING_COPY.seen}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] group-open:hidden" style={MONO}>
+                    {STANDING_COPY.show}
+                  </span>
+                </summary>
+                <p className="pb-2 text-[12px] leading-[1.5] text-[var(--color-text-muted)]">
+                  {STANDING_COPY.listNote}
+                </p>
+                <div className="flex flex-col">
+                  {standingActions.map((ins) => (
+                    <div key={ins.id} className="flex items-baseline gap-3 border-t border-[var(--color-border-subtle)] py-2.5">
+                      <Link href="/dashboard/actions" className="flex-1 text-[14px] text-[var(--color-text-secondary)]">
+                        {ins.title}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => dismissAction(ins.id)}
+                        aria-label={`Dismiss: ${ins.title}`}
+                        className="rounded-sm px-1.5 py-[3px] text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                        style={MONO}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
         </div>
 
