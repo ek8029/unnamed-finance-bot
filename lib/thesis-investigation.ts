@@ -43,7 +43,7 @@ export interface Investigation {
   trigger: { kind: TriggerKind; headline: string; date: string | null };
   finding: string;
   affectedPillars: { claim: string; status: PillarStatus; excerpt: string }[];
-  priority: 'critical' | 'high' | 'watch';
+  priority: 'critical' | 'high' | 'medium';
 }
 
 const PRIMARY_SOURCES = new Set(['filing', 'form4', 'xbrl', 'price_move']);
@@ -201,7 +201,9 @@ export function buildReassessment(
     trigger: { kind: 'pressure', headline, date: lead?.published_at ?? null },
     finding,
     affectedPillars,
-    priority: hasBroken ? 'high' : 'watch',
+    // 'watch' is not one of the four the insights priority CHECK allows
+    // (migration 009:15), so it failed the insert and took the batch with it.
+    priority: hasBroken ? 'high' : 'medium',
   };
 }
 
