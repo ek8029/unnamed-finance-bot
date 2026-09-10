@@ -4,108 +4,28 @@
 // components/thesis/theses-earnings and reads as no estimate until it does:
 // its dates are one SEC HTTP call per ticker, measured at 341 to 666ms for 21
 // tickers on a cold process, and no column here is worth holding the page for.
+//
+// The row bodies are the second exception, for the same reason at ten times the
+// size: 21 tickers shipped 1.19MB of HTML, nearly all of it 170 mechanism lines
+// behind closed disclosures. They now arrive per ticker from /api/thesis/board
+// when a row is opened (components/thesis/thesis-row-receipts). Every summary
+// line, every number and the row order are still rendered here.
 
-import type { ScoredPillar, ScoringThesisData } from '@/lib/content/scoring-thesis';
+import type { ScoringThesisData } from '@/lib/content/scoring-thesis';
 import {
   EarningsCell, EarningsProvider, NextEarningsDate, NextEarningsTicker, type EarningsByTicker,
 } from '@/components/thesis/theses-earnings';
-import { topCeiling } from '@/components/testing/thesis-v2-blocks';
+import { PillarLine } from '@/components/thesis/thesis-receipts';
+import { ThesisRowReceipts } from '@/components/thesis/thesis-row-receipts';
 import { type LadderStatus } from '@/lib/content/mechanism-cluster';
 import {
-  RANK, STATUS_TONE, STATUS_WORD, headline, isFresh, pillarStateLine, tally, thesisCeiling,
+  RANK, STATUS_TONE, STATUS_WORD, headline, isFresh, pillarReceipts, pillarsInOrder, tally, thesisCeiling,
 } from '@/lib/content/thesis-board';
 
 const MONO = { fontFamily: 'var(--font-mono)' } as const;
 
 const money = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n).toLocaleString('en-US')}`;
-
-/** One mechanism as one line: the story, how corroborated, receipts a click away. */
-function StoryLine({ m }: { m: ScoredPillar['mechanisms'][number] }) {
-  const adverse = m.maxStatus !== 'watch';
-  const tone = STATUS_TONE[m.maxStatus];
-  const fresh = m.lastSeen && isFresh(m.lastSeen);
-  const corroboration =
-    m.sourceClasses.length >= 2 ? `${m.sourceClasses.length} independent source types` : 'single source';
-
-  return (
-    <details className="group/story">
-      <summary className="list-none cursor-pointer flex items-baseline gap-2 py-1 hover:bg-white/[0.02] rounded px-1 -mx-1">
-        <span className="mt-[1px] w-1 h-1 rounded-full shrink-0" style={{ background: adverse ? tone : '#3F3F3F' }} />
-        <span className={`text-[13.5px] leading-[1.45] min-w-0 truncate ${adverse ? 'text-[#C8C8C8]' : 'text-[var(--color-text-secondary)]'}`}>
-          {m.label}
-        </span>
-        {fresh && (
-          <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.14em] px-1 py-[1px] rounded bg-[rgba(230,185,77,0.15)] text-[#E6B94D]" style={MONO}>
-            new
-          </span>
-        )}
-        <span className="ml-auto shrink-0 text-[11.5px] text-[var(--color-text-secondary)]" style={MONO}>
-          {m.mentions} {m.mentions === 1 ? 'report' : 'reports'} · {corroboration}
-        </span>
-      </summary>
-      <div className="ml-3 pb-1.5 space-y-1">
-        {m.items.slice(0, 2).map((c) => (
-          <div key={c.id} className="text-[12.5px] leading-[1.5] text-[var(--color-text-secondary)]">
-            <span style={MONO} className="text-[11px] text-[var(--color-text-secondary)]">{c.dateISO} · </span>
-            {c.url ? (
-              <a href={c.url} target="_blank" rel="noopener noreferrer" className="hover:text-[#E6B94D] transition-colors">
-                {c.title}
-              </a>
-            ) : (
-              c.title
-            )}
-            {c.excerpt && (
-              <span className="block text-[12px] text-[var(--color-text-secondary)] italic mt-0.5">&ldquo;{c.excerpt.slice(0, 160)}&rdquo;</span>
-            )}
-          </div>
-        ))}
-        {m.items.length > 2 && (
-          <div className="text-[11.5px] text-[var(--color-text-secondary)]" style={MONO}>+{m.items.length - 2} more reports</div>
-        )}
-      </div>
-    </details>
-  );
-}
-
-function PillarLine({ p }: { p: ScoredPillar }) {
-  const { status, line } = pillarStateLine(p);
-  const adverse = p.mechanisms.filter((m) => m.maxStatus !== 'watch');
-  const corroboratedQuiet = p.mechanisms.filter((m) => m.maxStatus === 'watch' && m.mentions > 1);
-  const singles = p.mechanisms.length - adverse.length - corroboratedQuiet.length;
-  const shown = [...adverse, ...corroboratedQuiet].slice(0, 4);
-
-  return (
-    <div className="py-2.5 border-t border-white/[0.04] first:border-t-0">
-      <div className="flex items-baseline gap-2.5">
-        <span className="mt-[1px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_TONE[status] }} />
-        <span className="text-[14.5px] leading-[1.45] text-[var(--color-text-primary)] min-w-0">{p.claim}</span>
-      </div>
-      <div className="ml-4 mt-0.5 text-[12.5px] text-[var(--color-text-secondary)]">{line}</div>
-      {p.breaksIf && (
-        <div className="ml-4 mt-1 text-[12.5px] leading-[1.5] text-[var(--color-text-secondary)]">
-          <span className="text-[#E6B94D] uppercase tracking-[0.08em] text-[10.5px] font-semibold" style={MONO}>
-            Breaks if{' '}
-          </span>
-          {p.breaksIf}
-        </div>
-      )}
-
-      {shown.length > 0 && (
-        <div className="ml-4 mt-1.5">
-          {shown.map((m, i) => (
-            <StoryLine key={`${m.label}-${i}`} m={m} />
-          ))}
-          {singles > 0 && (
-            <div className="text-[11.5px] text-[var(--color-text-secondary)] py-1" style={MONO}>
-              +{singles} single mentions nothing has confirmed
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export interface ThesisTablePosition {
   value: number;
@@ -121,6 +41,7 @@ export interface ThesisTableCluster {
 
 export function ThesesTableView({
   data, positions, bookTotal, earnings, notesByTicker, clusters = [], accountEmail, labTags = false,
+  inlineReceipts = false,
 }: {
   data: ScoringThesisData[];
   positions: ReadonlyMap<string, ThesisTablePosition>;
@@ -129,6 +50,10 @@ export function ThesesTableView({
    *  its dates on the first paint. The app leaves it unset and the column fetches
    *  after mount instead. */
   earnings?: EarningsByTicker;
+  /** Same reason as `earnings`: the capture fixtures have no session to read
+   *  /api/thesis/board with, so they render every row body up front. The app
+   *  leaves this false and each row loads its own receipts when opened. */
+  inlineReceipts?: boolean;
   notesByTicker: ReadonlyMap<string, string | null>;
   clusters?: ThesisTableCluster[] | null;
   accountEmail?: string;
@@ -315,10 +240,11 @@ export function ThesesTableView({
                       No evidence filed yet. Helm scans this thesis daily and the first receipts land here.
                     </p>
                   )}
-                  {[...d.pillars]
-                    .sort((a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)])
-                    .map((p) => (
-                      <PillarLine key={p.key} p={p} />
+                  {d.pillars.length > 0 &&
+                    (inlineReceipts ? (
+                      pillarsInOrder(d).map((p) => <PillarLine key={p.key} p={pillarReceipts(p)} />)
+                    ) : (
+                      <ThesisRowReceipts ticker={d.ticker} pillarCount={d.pillars.length} />
                     ))}
                   <div className="pt-2.5 border-t border-white/[0.04] flex items-center gap-4">
                     <a href="/dashboard/theses/classic" className="text-[12px] text-[#E6B94D] hover:brightness-110" style={MONO}>

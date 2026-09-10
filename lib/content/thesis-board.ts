@@ -87,3 +87,73 @@ export function pillarStateLine(p: ScoredPillar): { status: LadderStatus; line: 
   const corroboration = classes >= 2 ? `${classes} independent source types` : 'a single source so far';
   return { status, line: `${mover?.label ?? 'multiple reports'} · ${corroboration} · ${sides}` };
 }
+
+/* ── one row's receipts ─────────────────────────────────────────────────────
+   The expansion body of a table row used to be derived inside the component
+   that rendered it, which meant the derivation only existed on the server that
+   rendered the whole page. The table now loads a row's receipts when the row is
+   opened, so the same derivation has to survive a trip through JSON: this is
+   that trip's shape, and the only place the shaping happens. ── */
+
+/** Mirrors the mechanism cap the row body has always rendered. */
+const MAX_MECHANISMS = 4;
+/** Receipts carried per mechanism; the rest stay a count. */
+const MAX_ITEMS = 2;
+
+export interface MechanismReceipts {
+  label: string;
+  mentions: number;
+  sourceClasses: string[];
+  maxStatus: LadderStatus;
+  lastSeen: string | null;
+  /** Every receipt behind this mechanism; `items` carries only the first few. */
+  itemsTotal: number;
+  items: { id: string; dateISO: string; title: string; excerpt: string | null; url: string | null }[];
+}
+
+export interface PillarReceipts {
+  key: string;
+  claim: string;
+  breaksIf: string | null;
+  status: LadderStatus;
+  line: string;
+  /** Single mentions nothing has confirmed: counted, never listed. */
+  singles: number;
+  mechanisms: MechanismReceipts[];
+}
+
+/** One pillar as the row body renders it: state line, kill criterion, the
+ *  adverse and corroborated mechanisms, and the receipts under each. */
+export function pillarReceipts(p: ScoredPillar): PillarReceipts {
+  const { status, line } = pillarStateLine(p);
+  const adverse = p.mechanisms.filter((m) => m.maxStatus !== 'watch');
+  const corroboratedQuiet = p.mechanisms.filter((m) => m.maxStatus === 'watch' && m.mentions > 1);
+  return {
+    key: p.key,
+    claim: p.claim,
+    breaksIf: p.breaksIf,
+    status,
+    line,
+    singles: p.mechanisms.length - adverse.length - corroboratedQuiet.length,
+    mechanisms: [...adverse, ...corroboratedQuiet].slice(0, MAX_MECHANISMS).map((m) => ({
+      label: m.label,
+      mentions: m.mentions,
+      sourceClasses: [...m.sourceClasses],
+      maxStatus: m.maxStatus,
+      lastSeen: m.lastSeen,
+      itemsTotal: m.items.length,
+      items: m.items.slice(0, MAX_ITEMS).map((c) => ({
+        id: c.id,
+        dateISO: c.dateISO,
+        title: c.title,
+        excerpt: c.excerpt,
+        url: c.url,
+      })),
+    })),
+  };
+}
+
+/** Trouble-first pillar order, the order the row body has always used. */
+export function pillarsInOrder(d: ScoringThesisData): ScoredPillar[] {
+  return [...d.pillars].sort((a, b) => RANK[topCeiling(a.mechanisms)] - RANK[topCeiling(b.mechanisms)]);
+}

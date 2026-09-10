@@ -1,4 +1,6 @@
 // GET /api/thesis/board — the theses board the web table renders, as JSON.
+// GET /api/thesis/board?ticker=NVDA — one row's pillar detail and nothing else,
+// which is what the web table asks for when a row is opened.
 //
 // The phone reads this. Every number here comes from lib/content/thesis-board,
 // the same module /dashboard/theses renders from, so the two surfaces cannot
@@ -17,9 +19,11 @@ import { getScoringThesisData, type ScoredPillar } from '@/lib/content/scoring-t
 import { topCeiling } from '@/components/testing/thesis-v2-blocks';
 import type { LadderStatus } from '@/lib/content/mechanism-cluster';
 import {
-  RANK, STATUS_TONE, STATUS_WORD, headline, isFresh, pillarStateLine, tally, thesisCeiling,
+  RANK, STATUS_TONE, STATUS_WORD, headline, isFresh, pillarReceipts, pillarStateLine, pillarsInOrder,
+  tally, thesisCeiling,
 } from '@/lib/content/thesis-board';
 import { getEdgarEarnings } from '@/lib/earnings-edgar';
+import { parseResearchTicker } from '@/lib/research-ticker';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +69,7 @@ function pillarPayload(p: ScoredPillar) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -74,6 +78,34 @@ export async function GET() {
     }
     if (!(await hasThesisAccess(user.id, user.email))) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    // ?ticker= is the web table opening one row: only that thesis, and only
+    // the pillar detail the row body renders. The full board response below is
+    // unchanged, so the phone reading this route sees exactly what it always
+    // did. Same user boundary either way: the ticker is checked against the
+    // caller's own theses through the authenticated (RLS) client before
+    // getScoringThesisData, which runs on the service client, ever sees it.
+    const one = new URL(request.url).searchParams.get('ticker');
+    if (one) {
+      const parsed = parseResearchTicker(one);
+      if (!parsed.ok) {
+        return NextResponse.json({ error: 'Invalid ticker' }, { status: 400 });
+      }
+      const { data: owned } = await supabase
+        .from('theses')
+        .select('ticker')
+        .eq('user_id', user.id)
+        .eq('ticker', parsed.ticker)
+        .maybeSingle();
+      if (!owned) {
+        return NextResponse.json({ error: 'Thesis not found' }, { status: 404 });
+      }
+      const d = await getScoringThesisData(parsed.ticker, user.id);
+      return NextResponse.json({
+        ticker: d.ticker,
+        pillars: pillarsInOrder(d).map(pillarReceipts),
+      });
     }
 
     // Read through the authenticated client: RLS is the boundary, not a filter
