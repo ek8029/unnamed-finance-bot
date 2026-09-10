@@ -1055,11 +1055,26 @@ export default function DashboardOverview() {
           the actions column into a one-word-per-line strip at 1024-1440. */}
       <div className="mb-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.92fr)]">
         {/* actions inbox */}
-        <div className={`${CARD} px-5 py-[18px]`}>
+        {/* self-start so the card takes its own height. Stretching to the row
+            left ~900px of empty card under the one collapsed line on a book
+            where every finding is standing, which reads as broken rather than
+            as quiet. When the panel is the tallest cell, as it is whenever
+            anything is announced, this changes nothing. */}
+        <div className={`${CARD} self-start px-5 py-[18px]`}>
           <div className="mb-1.5 flex items-center justify-between">
             <Eyebrow className="!text-[10px] !tracking-[0.14em]">Actions inbox</Eyebrow>
             <span className="text-[10px] tracking-[0.06em] text-[var(--color-text-muted)]" style={MONO}>
-              {isDemo ? 'Sample experience' : insightsError ? 'Unavailable' : `${inboxItems.length} items · ranked by impact`}
+              {isDemo
+                ? 'Sample experience'
+                : insightsError
+                  ? 'Unavailable'
+                  // Counting inboxItems here read "20 items, ranked by impact"
+                  // above a panel showing one collapsed line, because standing
+                  // rows are in that total and are deliberately not listed. The
+                  // count now matches what is on screen.
+                  : standingActions.length > 0
+                    ? `${announcedActions.length} new · ${standingActions.length} standing`
+                    : `${announcedActions.length} items · ranked by impact`}
             </span>
           </div>
           <div className="flex flex-col">
@@ -1130,18 +1145,22 @@ export default function DashboardOverview() {
                 is one policy and one copy block rather than a second loud list. */}
             {!isDemo && standingActions.length > 0 && (
               <details className="group border-t border-[var(--color-border-subtle)]">
-                <summary className="flex cursor-pointer items-baseline gap-2.5 py-3 [&::-webkit-details-marker]:hidden">
-                  <span className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
-                    {STANDING_COPY.label}
+                <summary className="block cursor-pointer list-none py-3 [&::-webkit-details-marker]:hidden [&::marker]:hidden">
+                  <span className="flex items-baseline gap-2.5">
+                    <span className="text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]" style={MONO}>
+                      {STANDING_COPY.label}
+                    </span>
+                    <span className="flex-1 text-[10px] tracking-[0.06em] text-[var(--color-text-secondary)]" style={MONO}>
+                      {standingLine(standingActions.length)}
+                    </span>
+                    <span className="text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] group-open:hidden" style={MONO}>
+                      {STANDING_COPY.show}
+                    </span>
                   </span>
-                  <span className="text-[10px] tracking-[0.06em] text-[var(--color-text-secondary)]" style={MONO}>
-                    {standingLine(standingActions.length)}
-                  </span>
-                  <span className="flex-1 truncate text-[13px] text-[var(--color-text-muted)]">
+                  {/* Its own line. Beside the count and the control it had about
+                      200px in this column and truncated mid-word. */}
+                  <span className="mt-1 block text-[13px] leading-[1.45] text-[var(--color-text-muted)]">
                     {announcedActions.length === 0 ? STANDING_COPY.nothingNew : STANDING_COPY.seen}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] group-open:hidden" style={MONO}>
-                    {STANDING_COPY.show}
                   </span>
                 </summary>
                 <p className="pb-2 text-[12px] leading-[1.5] text-[var(--color-text-muted)]">
