@@ -9,11 +9,11 @@
 // Free accounts see their own log too, because the crons run on every book.
 // What Pro adds is the thesis work, which is what the CTA names.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import type { WorklogResponse, WorklogStep } from '@/lib/agent/worklog';
-import { AGENT_LOG_COPY, AGENT_LOG_LINES, cadenceLabel, clockET, topSteps } from '@/lib/agent/worklog-display';
+import { AGENT_LOG_COPY, AGENT_LOG_LINES, cadenceLabel, clockET, updatesView } from '@/lib/agent/worklog-display';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -100,6 +100,7 @@ function GhostLines() {
 export function AgentLogCard({ isPro, isDemo }: { isPro: boolean; isDemo?: boolean }) {
   const [log, setLog] = useState<WorklogResponse | null>(null);
   const [failed, setFailed] = useState(false);
+  const marked = useRef(false);
 
   useEffect(() => {
     if (isDemo) return;
@@ -110,6 +111,20 @@ export function AgentLogCard({ isPro, isDemo }: { isPro: boolean; isDemo?: boole
       .catch(() => { if (active) setFailed(true); });
     return () => { active = false; };
   }, [isDemo]);
+
+  // Advance the mark once the card has rendered, so the next visit compares
+  // against this one. Fire and forget: the card never waits on it and never
+  // fails on it, and while migration 078 is unapplied the write is refused by
+  // PostgREST and quietly ignored here, leaving every visit on the fallback.
+  useEffect(() => {
+    if (isDemo || !log || marked.current) return;
+    marked.current = true;
+    fetch('/api/user/preferences', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates_seen_at: new Date().toISOString() }),
+    }).catch(() => {});
+  }, [isDemo, log]);
 
   const footer = isPro ? (
     <Link
@@ -144,7 +159,8 @@ export function AgentLogCard({ isPro, isDemo }: { isPro: boolean; isDemo?: boole
     );
   }
 
-  const steps = log ? topSteps(log.steps) : [];
+  const view = log ? updatesView(log.steps, log.seenAt) : null;
+  const steps = view?.lines ?? [];
 
   return (
     <Shell>
@@ -161,11 +177,18 @@ export function AgentLogCard({ isPro, isDemo }: { isPro: boolean; isDemo?: boole
           {AGENT_LOG_COPY.empty}
         </p>
       ) : (
-        <ul className="m-0 mb-4 flex-1 list-none p-0" aria-label="Updates">
-          {steps.map((s, i) => (
-            <Line key={s.id} step={s} index={i} />
-          ))}
-        </ul>
+        <div className="mb-4 flex-1">
+          {view && view.note && (
+            <p className="m-0 mb-2 text-[11.5px] leading-[1.5] text-[var(--color-text-muted)]">
+              {view.note}
+            </p>
+          )}
+          <ul className="m-0 list-none p-0" aria-label="Updates">
+            {steps.map((s, i) => (
+              <Line key={s.id} step={s} index={i} />
+            ))}
+          </ul>
+        </div>
       )}
       {footer}
     </Shell>

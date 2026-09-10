@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { WRITABLE_PREFERENCE_FIELDS } from '@/lib/preference-fields';
 import { parseFirstLook } from '@/lib/onboarding/first-look';
+import { parseUpdatesSeenAt } from '@/lib/agent/updates-seen';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -85,6 +86,15 @@ export async function PATCH(request: Request) {
     const sanitized: Record<string, unknown> = {};
     for (const field of WRITABLE_PREFERENCE_FIELDS) {
       if (!(field in updates)) continue;
+      // The Updates card stamps this itself after it renders, so the value is
+      // client-supplied and is never written as sent: it must be a parsable
+      // timestamp string, and a future one is clamped to the server clock.
+      if (field === 'updates_seen_at') {
+        const at = parseUpdatesSeenAt(updates[field]);
+        if (at === null) return NextResponse.json({ error: 'updates_seen_at must be a parsable ISO timestamp' }, { status: 400 });
+        sanitized[field] = at;
+        continue;
+      }
       if (field === 'first_look') {
         const parsed = parseFirstLook(updates[field]);
         if (parsed === null) return NextResponse.json({ error: 'first_look must be a list of known codes' }, { status: 400 });

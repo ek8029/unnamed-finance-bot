@@ -18,6 +18,9 @@ export const AGENT_LOG_COPY = {
   brief: 'Read full brief',
   unlock: 'Unlock the agent',
   unlockWhy: 'Thesis investigations and the hourly read are Pro.',
+  /** Rendered as "3 new since your last visit". */
+  newSuffix: 'new since your last visit',
+  nothingNew: 'Nothing new since your last visit. These are the most recent lines.',
 } as const;
 
 /** Newest first, one line per id, capped. The builder already returns real
@@ -41,6 +44,46 @@ export function topSteps(steps: readonly WorklogStep[], n: number = AGENT_LOG_LI
       return bt - at;
     })
     .slice(0, Math.max(0, n));
+}
+
+export interface UpdatesView {
+  /** What the card renders, newest first. */
+  lines: WorklogStep[];
+  /** How many lines arrived after the watermark, which can exceed what fits.
+   *  Zero means the card is showing the fallback, not new work. */
+  newCount: number;
+  /** One quiet line above the list. Empty when there is no watermark to
+   *  compare against, so the card reads as it did before this existed. */
+  note: string;
+}
+
+/** Split the log against this person's watermark.
+ *
+ *  With new lines the card shows only those, because the overview is the page
+ *  people land on and mixing new work into older lines without a boundary
+ *  would blur the two. With nothing new it falls back to the most recent lines
+ *  rather than leaving the best slot on the page empty, and says so. No
+ *  watermark, or one that will not parse, is the old behaviour exactly. */
+export function updatesView(
+  steps: readonly WorklogStep[],
+  seenAt: string | null | undefined,
+  n: number = AGENT_LOG_LINES,
+): UpdatesView {
+  const ordered = topSteps(steps, steps.length);
+  const at = seenAt ? Date.parse(seenAt) : NaN;
+  if (Number.isNaN(at)) return { lines: ordered.slice(0, Math.max(0, n)), newCount: 0, note: '' };
+  const fresh = ordered.filter((s) => {
+    const t = s.ts ? Date.parse(s.ts) : NaN;
+    return !Number.isNaN(t) && t > at;
+  });
+  if (fresh.length === 0) {
+    return { lines: ordered.slice(0, Math.max(0, n)), newCount: 0, note: AGENT_LOG_COPY.nothingNew };
+  }
+  return {
+    lines: fresh.slice(0, Math.max(0, n)),
+    newCount: fresh.length,
+    note: `${fresh.length} ${AGENT_LOG_COPY.newSuffix}`,
+  };
 }
 
 /** "every 5 min" reads better than "5 min" next to a past-tense line, but

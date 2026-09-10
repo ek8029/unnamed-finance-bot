@@ -12,6 +12,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { readHeartbeats } from '@/lib/agent/heartbeat';
+import { readUpdatesSeenAt } from '@/lib/agent/updates-seen';
 
 export type WorklogKind = 'sync' | 'price' | 'read' | 'scan' | 'flag' | 'brief';
 export type WorklogCadence = '1 min' | '5 min' | 'hourly' | 'daily' | 'on event';
@@ -39,6 +40,10 @@ export interface WorklogWatch {
 
 export interface WorklogResponse {
   ranAt: string | null;
+  /** When this caller last read the Updates card, so the card can split the
+   *  steps into new versus recent without a second request. Null until
+   *  migration 078 is applied, and on a first visit. */
+  seenAt: string | null;
   steps: WorklogStep[];
   summary: { theses: number; accounts: number; sources: number; flags: number };
   watch: WorklogWatch;
@@ -46,6 +51,7 @@ export interface WorklogResponse {
 
 export const EMPTY_WORKLOG: WorklogResponse = {
   ranAt: null,
+  seenAt: null,
   steps: [],
   summary: { theses: 0, accounts: 0, sources: 0, flags: 0 },
   watch: { checkedAt: null, newsCheckedAt: null, filingsSeen: 0, jobsDone: 0, queued: 0 },
@@ -84,10 +90,15 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
   const since = new Date(Date.now() - WORKLOG_WINDOW_MS).toISOString();
   const steps: WorklogStep[] = [];
 
-  // ── Tracked-thesis count (heartbeat denominator) ──
-  const { count: thesesCount } = await supabase
-    .from('theses').select('id', { count: 'exact', head: true })
-    .eq('user_id', uid).eq('tracked', true);
+  // ── Tracked-thesis count (heartbeat denominator) + the Updates watermark ──
+  // The watermark rides along with the log so the card needs one fetch, not
+  // two. It is null while migration 078 is unapplied, which the card renders
+  // as it did before the column existed.
+  const [{ count: thesesCount }, seenAt] = await Promise.all([
+    supabase.from('theses').select('id', { count: 'exact', head: true })
+      .eq('user_id', uid).eq('tracked', true),
+    readUpdatesSeenAt(supabase, uid),
+  ]);
 
   // ── Synced accounts ──
   const { data: accts } = await supabase
@@ -284,6 +295,7 @@ export async function buildWorklog(supabase: SupabaseClient<any, any, any>, uid:
 
   return {
     ranAt: steps[0]?.ts ?? null,
+    seenAt,
     steps,
     summary: {
       theses: thesesCount ?? 0,

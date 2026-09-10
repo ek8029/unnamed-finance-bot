@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AGENT_LOG_COPY, AGENT_LOG_LINES, cadenceLabel, clockET, topSteps } from '@/lib/agent/worklog-display';
+import { AGENT_LOG_COPY, AGENT_LOG_LINES, cadenceLabel, clockET, topSteps, updatesView } from '@/lib/agent/worklog-display';
 import { hasAdviceLanguage } from '@/lib/investigation-memo';
 import type { WorklogStep } from '@/lib/agent/worklog';
 
@@ -36,6 +36,63 @@ describe('topSteps', () => {
     const out = topSteps([step('none', null), step('real', '2026-09-09T14:00:00Z'), step('junk', 'not a date')]);
     expect(out.map((s) => s.id)[0]).toBe('real');
     expect(out).toHaveLength(3);
+  });
+});
+
+describe('updatesView', () => {
+  const steps = [
+    step('a', '2026-09-09T14:00:00Z'),
+    step('b', '2026-09-09T18:00:00Z'),
+    step('c', '2026-09-09T16:00:00Z'),
+  ];
+
+  it('shows only the lines that arrived after the watermark, newest first', () => {
+    const view = updatesView(steps, '2026-09-09T15:00:00Z');
+    expect(view.lines.map((s) => s.id)).toEqual(['b', 'c']);
+    expect(view.newCount).toBe(2);
+    expect(view.note).toBe(`2 ${AGENT_LOG_COPY.newSuffix}`);
+  });
+
+  it('counts every new line even when more arrived than the card shows', () => {
+    const many = Array.from({ length: 8 }, (_, i) => step(`s${i}`, `2026-09-09T1${i}:00:00Z`));
+    const view = updatesView(many, '2026-09-09T09:00:00Z');
+    expect(view.lines).toHaveLength(AGENT_LOG_LINES);
+    expect(view.newCount).toBe(8);
+    expect(view.note).toBe(`8 ${AGENT_LOG_COPY.newSuffix}`);
+  });
+
+  it('falls back to the most recent lines when nothing is new, and marks it', () => {
+    const view = updatesView(steps, '2026-09-09T19:00:00Z');
+    expect(view.lines.map((s) => s.id)).toEqual(['b', 'c', 'a']);
+    expect(view.newCount).toBe(0);
+    expect(view.note).toBe(AGENT_LOG_COPY.nothingNew);
+  });
+
+  // Before migration 078 is applied, and on a first visit, there is no mark.
+  it('reads exactly as it did without a watermark when there is none', () => {
+    const view = updatesView(steps, null);
+    expect(view.lines).toEqual(topSteps(steps));
+    expect(view.newCount).toBe(0);
+    expect(view.note).toBe('');
+  });
+
+  it('treats an unparsable watermark as none rather than throwing', () => {
+    expect(() => updatesView(steps, 'not a date')).not.toThrow();
+    const view = updatesView(steps, 'not a date');
+    expect(view.lines).toEqual(topSteps(steps));
+    expect(view.newCount).toBe(0);
+    expect(view.note).toBe('');
+  });
+
+  it('never calls a line new when its own time is missing or unparsable', () => {
+    const view = updatesView([step('none', null), step('junk', 'not a date'), step('b', '2026-09-09T18:00:00Z')], '2026-09-09T15:00:00Z');
+    expect(view.lines.map((s) => s.id)).toEqual(['b']);
+    expect(view.newCount).toBe(1);
+  });
+
+  it('says nothing about novelty in the fallback line', () => {
+    expect(AGENT_LOG_COPY.nothingNew.toLowerCase()).toContain('nothing new');
+    expect(AGENT_LOG_COPY.nothingNew.toLowerCase()).not.toContain('just');
   });
 });
 
