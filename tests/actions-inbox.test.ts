@@ -27,7 +27,7 @@ const NOW = '2026-09-08T12:00:00.000Z';
 const CURRENT_USER = { id: USER, email: 'actions-fixture@example.invalid' };
 type Row = Record<string, unknown>;
 type QueryLog = { table: string; filters: [string, string, unknown][] };
-let rows: Row[], holdings: Row[], linkedAccounts: Row[], user: typeof CURRENT_USER | null;
+let rows: Row[], holdings: Row[], linkedAccounts: Row[], preferences: Row[], user: typeof CURRENT_USER | null;
 let readError: boolean, authError: boolean;
 let log: QueryLog[];
 
@@ -78,7 +78,7 @@ function validateInsights() {
 }
 
 function query(table: string) {
-  if (table !== 'insights' && table !== 'holdings' && table !== 'linked_accounts') throw new Error(`Unexpected table read: ${table}`);
+  if (table !== 'insights' && table !== 'holdings' && table !== 'linked_accounts' && table !== 'user_preferences') throw new Error(`Unexpected table read: ${table}`);
   const entry: QueryLog = { table, filters: [] }; log.push(entry);
   const predicates: ((row: Row) => boolean)[] = [];
   const orders: { key: string; ascending: boolean }[] = [];
@@ -92,17 +92,45 @@ function query(table: string) {
     in: (key: string, value: unknown[]) => filter('in', key, value, row => value.includes(row[key])),
     gt: (key: string, value: string) => filter('gt', key, value, row => row[key] !== null && String(row[key]) > value),
     or: (expression: string) => {
-      const prefix = 'snoozed_until.is.null,snoozed_until.lte.';
-      if (!expression.startsWith(prefix)) throw new Error(`Unsupported OR: ${expression}`);
-      const until = expression.slice(prefix.length);
-      return filter('or', 'snoozed_until', until, row => row.snoozed_until === null || String(row.snoozed_until) <= until);
+      const snooze = 'snoozed_until.is.null,snoozed_until.lte.';
+      if (expression.startsWith(snooze)) {
+        const until = expression.slice(snooze.length);
+        return filter('or', 'snoozed_until', until, row => row.snoozed_until === null || String(row.snoozed_until) <= until);
+      }
+      // "Gone" includes a lapsed expiry. NULL never satisfies a range compare,
+      // which is why the reader has to spell the IS NULL arm out.
+      const expiry = 'expires_at.is.null,expires_at.gt.';
+      if (expression.startsWith(expiry)) {
+        const after = expression.slice(expiry.length);
+        return filter('or', 'expires_at', after, row => row.expires_at === null || String(row.expires_at) > after);
+      }
+      throw new Error(`Unsupported OR: ${expression}`);
+    },
+    // is_useful is a nullable boolean (009), so `not.is.true` has to keep both
+    // null and false. A fake that dropped nulls here would hide the whole queue.
+    not: (key: string, op: string, value: unknown) => {
+      if (op !== 'is') throw new Error(`Unsupported NOT operator: ${op}`);
+      return filter('not', key, value, row => row[key] !== value);
     },
     order: (key: string, options: { ascending: boolean }) => { orders.push({ key, ...options }); return builder; },
     limit: (value: number) => { max = value; return builder; },
+    maybeSingle: () => {
+      if (table !== 'user_preferences') throw new Error(`Unexpected maybeSingle on ${table}`);
+      const match = preferences.filter(row => row.user_id === user?.id && predicates.every(fn => fn(row)));
+      if (match.length > 1) throw new Error('user_preferences.user_id is unique per user');
+      const one = match[0];
+      return Promise.resolve({
+        data: one ? Object.fromEntries(columns.map(key => {
+          if (!(key in one)) throw new Error(`Unknown selected user_preferences column: ${key}`);
+          return [key, one[key]];
+        })) : null,
+        error: null,
+      });
+    },
     then: (resolve: (value: unknown) => unknown) => {
       if (table === 'insights') validateInsights();
       if (readError && table === 'insights') return Promise.resolve(resolve({ data: null, error: { code: '57014', message: 'Fixture read failed' } }));
-      const input = table === 'insights' ? rows : table === 'holdings' ? holdings : linkedAccounts;
+      const input = table === 'insights' ? rows : table === 'holdings' ? holdings : table === 'user_preferences' ? preferences : linkedAccounts;
       let data = input.filter(row => row.user_id === user?.id && predicates.every(fn => fn(row)));
       data = [...data].sort((a, b) => {
         for (const order of orders) {
@@ -144,6 +172,9 @@ beforeEach(() => {
     { id: uuid(90), user_id: USER, is_active: true, plaid_item_ref: uuid(80), institution_id: uuid(70), source: 'plaid' },
     { id: uuid(91), user_id: USER, is_active: true, plaid_item_ref: uuid(81), institution_id: uuid(71), source: 'plaid' },
   ];
+  // updates_seen_at null is "never read the overview", true of all but one
+  // account in production on 2026-09-10, so the grace window is the default path.
+  preferences = [{ user_id: USER, updates_seen_at: null }];
   log = []; user = CURRENT_USER; readError = false; authError = false;
   mocks.previewTier = 'pro'; mocks.getUserTier.mockResolvedValue('pro'); mocks.access.mockResolvedValue(false);
   mocks.conviction.mockResolvedValue(new Map()); mocks.thesisContext.mockResolvedValue(new Map());
@@ -230,6 +261,55 @@ describe('saved Actions inbox: real server page, API and shared reader', () => {
       expect(response.status).toBe(200); expect(body.insights.map((a: { id: string }) => a.id)).toEqual([uuid(expected)]);
     }
     expect((await api('?type=subscription')).body.insights).toEqual([]);
+  });
+
+  it('announces only what arrived since the watermark and keeps the rest standing and quiet', async () => {
+    rows = [
+      insight(10, { title: 'Raised this morning', created_at: '2026-09-08T11:00:00.000Z' }),
+      insight(11, { title: 'Raised three weeks ago', created_at: '2026-08-18T11:00:00.000Z' }),
+    ];
+    preferences = [{ user_id: USER, updates_seen_at: '2026-09-08T09:00:00.000Z' }];
+    const page = await ActionsPage(), refreshed = await api();
+    expect(serializable(page.props.initialActions)).toEqual(refreshed.body.insights);
+    const byId = new Map(refreshed.body.insights.map((a: { id: string; prominence: string }) => [a.id, a.prominence]));
+    expect(byId.get(uuid(10))).toBe('announced');
+    expect(byId.get(uuid(11))).toBe('standing');
+    // Both are still on the page and still dismissable: standing is quieter, not hidden.
+    const html = renderToStaticMarkup(page);
+    expect(html).toContain('Raised this morning');
+    expect(html).toContain('Raised three weeks ago');
+    expect(html).toContain('1 still open');
+    // The announced count next to the All chip must match the announced list.
+    expect(html).not.toContain('2 still open');
+  });
+
+  it('with no watermark, only the last 72 hours are announced, so an old backlog stays quiet without a backfill', async () => {
+    rows = [
+      insight(10, { title: 'Inside the window', created_at: '2026-09-06T12:00:00.001Z' }),
+      insight(11, { title: 'Outside the window', created_at: '2026-09-05T11:59:00.000Z' }),
+      insight(12, { title: 'Months old', created_at: '2026-04-22T09:00:00.000Z' }),
+    ];
+    const { body } = await api();
+    const byId = new Map(body.insights.map((a: { id: string; prominence: string }) => [a.id, a.prominence]));
+    expect(byId.get(uuid(10))).toBe('announced');
+    expect(byId.get(uuid(11))).toBe('standing');
+    expect(byId.get(uuid(12))).toBe('standing');
+  });
+
+  it('drops an acted-on or expired row from the open queue instead of flagging it again', async () => {
+    rows = [
+      insight(10, { title: 'Still open' }),
+      insight(11, { title: 'Marked done', is_useful: true }),
+      insight(12, { title: 'Said no to', is_useful: false }),
+      insight(13, { title: 'Expiry lapsed', expires_at: '2026-09-08T11:59:00.000Z' }),
+      insight(14, { title: 'Expiry ahead', expires_at: '2026-09-09T12:00:00.000Z' }),
+    ];
+    const page = await ActionsPage(), refreshed = await api();
+    expect(refreshed.body.insights.map((a: { id: string }) => a.id).sort()).toEqual([uuid(10), uuid(12), uuid(14)]);
+    const html = renderToStaticMarkup(page);
+    expect(html).not.toContain('Marked done');
+    expect(html).not.toContain('Expiry lapsed');
+    expect(html).toContain('Still open');
   });
 
   it('presents a read failure as an error on the first render and a failed API response, not a successful empty inbox', async () => {

@@ -2,10 +2,11 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, RefreshCw, CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, ArrowRight, AlertCircle, ChevronDown } from 'lucide-react';
 import { useFormat } from '@/hooks/use-format';
 import { usePreview } from '@/lib/preview-context';
 import { tierAtLeast } from '@/lib/tier-shared';
+import { STANDING_COPY, standingLine, type InsightProminence } from '@/lib/insight-prominence';
 
 /* ──────────────────────────────────────────────────
    Types
@@ -26,6 +27,11 @@ export interface ActionItem {
   is_archived?: boolean;
   is_dismissed?: boolean;
   is_useful?: boolean;
+  /** Set by lib/insights-reader.ts. 'standing' means this person has already been
+   *  shown it: it keeps its place in the queue's quiet tier and is never
+   *  announced again. Absent (demo data, an older payload) reads as announced,
+   *  which is exactly the behaviour before this existed. */
+  prominence?: InsightProminence;
   ticker?: string;
   thesisStatus?: 'intact' | 'weakening' | 'broken';
   thesisCite?: { excerpt: string; sourceTitle: string; sourceUrl: string | null; publishedAt: string | null; whatItMeans: string | null };
@@ -165,18 +171,23 @@ export function ActionsClient({ initialActions, isPro, initialError = null }: { 
   }, [initialActions, initialError, isDemo]);
 
   // Filtered + ordered: Pro-only intelligence cards float to the top, then basics by priority.
-  const filtered = useMemo(() => {
-    return actions
-      .filter(a => matchesChip(a, chip))
-      .sort((a, b) => {
-        const am = isProItem(a) ? 0 : 1;
-        const bm = isProItem(b) ? 0 : 1;
-        if (am !== bm) return am - bm;
-        return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
-      });
-  }, [actions, chip]);
+  const rank = useCallback((list: ActionItem[]) => list
+    .filter(a => matchesChip(a, chip))
+    .sort((a, b) => {
+      const am = isProItem(a) ? 0 : 1;
+      const bm = isProItem(b) ? 0 : 1;
+      if (am !== bm) return am - bm;
+      return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
+    }), [chip]);
 
-  const openCount = useMemo(() => actions.filter(a => matchesChip(a, 'all')).length, [actions]);
+  // Two tiers, one queue. Announced items are what this page has always shown.
+  // Standing items are open and already seen, so they get one line and a
+  // disclosure and never take an announced slot.
+  const filtered = useMemo(() => rank(actions.filter(a => a.prominence !== 'standing')), [actions, rank]);
+  const standingItems = useMemo(() => rank(actions.filter(a => a.prominence === 'standing')), [actions, rank]);
+
+  // The chip count has to match the list under it, so it counts announced only.
+  const openCount = useMemo(() => actions.filter(a => a.prominence !== 'standing').length, [actions]);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
@@ -224,6 +235,19 @@ export function ActionsClient({ initialActions, isPro, initialError = null }: { 
     }
   }, []);
 
+  const renderCard = (action: ActionItem) =>
+    isProItem(action) ? (
+      entitled ? <ProCard key={action.id} action={action} /> : <ProTeaser key={action.id} action={action} />
+    ) : (
+      <BasicCard
+        key={action.id}
+        action={action}
+        loading={actionLoading.has(action.id)}
+        onDismiss={() => handleAction(action.id, 'dismiss')}
+        formatCurrency={formatCurrency}
+      />
+    );
+
   if (error && actions.length === 0) {
     return (
       <div className="helm-detail-page helm-actions">
@@ -244,8 +268,8 @@ export function ActionsClient({ initialActions, isPro, initialError = null }: { 
 
   const errorNotice = error ? <p role="alert" className="mb-5 rounded-lg border border-[var(--color-warning-text)]/30 p-4 text-sm text-[var(--color-warning-text)]">{error}</p> : null;
 
-  /* ── All-clear empty state ────────────────────── */
-  if (filtered.length === 0) {
+  /* ── All-clear empty state: nothing announced AND nothing standing ── */
+  if (filtered.length === 0 && standingItems.length === 0) {
     return (
       <div className="helm-detail-page helm-actions">
         <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
@@ -280,26 +304,52 @@ export function ActionsClient({ initialActions, isPro, initialError = null }: { 
       <Header openCount={openCount} chip={chip} setChip={setChip} generating={generating} onGenerate={handleGenerate} />
       {errorNotice}
 
-      <div className="helm-action-queue" aria-label="Portfolio review queue">
-        {filtered.map(action =>
-          isProItem(action) ? (
-            entitled ? (
-              <ProCard key={action.id} action={action} />
-            ) : (
-              <ProTeaser key={action.id} action={action} />
-            )
-          ) : (
-            <BasicCard
-              key={action.id}
-              action={action}
-              loading={actionLoading.has(action.id)}
-              onDismiss={() => handleAction(action.id, 'dismiss')}
-              formatCurrency={formatCurrency}
-            />
-          )
-        )}
-      </div>
+      {filtered.length > 0 && (
+        <div className="helm-action-queue" aria-label="Portfolio review queue">
+          {filtered.map(renderCard)}
+        </div>
+      )}
+
+      <StandingShelf items={standingItems} nothingNew={filtered.length === 0} renderCard={renderCard} />
     </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────
+   Standing shelf: open, already seen, kept quiet
+   ──────────────────────────────────────────────────
+   Evan, 2026-09-10: "if not just keep a note that it is there and don't
+   perpetually scream it into a user's face." So one line, and the items behind a
+   native disclosure on the same page rather than a second loud list or a second
+   route. No state and no animation: <details> is the whole mechanism, and a
+   dismiss inside it still removes the row for good. */
+
+function StandingShelf({
+  items,
+  nothingNew,
+  renderCard,
+}: {
+  items: ActionItem[];
+  nothingNew: boolean;
+  renderCard: (a: ActionItem) => React.ReactNode;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <details className="helm-action-standing">
+      <summary>
+        <span className="helm-action-standing-label" style={MONO}>{STANDING_COPY.label}</span>
+        <span className="helm-action-standing-count" style={MONO}>{standingLine(items.length)}</span>
+        <span className="helm-action-standing-note">
+          {nothingNew ? STANDING_COPY.nothingNew : STANDING_COPY.seen}
+        </span>
+        <span className="helm-action-standing-toggle" style={MONO}>{STANDING_COPY.show}</span>
+        <ChevronDown size={14} className="helm-action-standing-chevron" aria-hidden />
+      </summary>
+      <p className="helm-action-standing-hint">{STANDING_COPY.listNote}</p>
+      <div className="helm-action-queue" aria-label="Standing items">
+        {items.map(renderCard)}
+      </div>
+    </details>
   );
 }
 

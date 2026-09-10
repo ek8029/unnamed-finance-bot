@@ -77,6 +77,7 @@ function fakeSupabase(insightsRows: InsightRow[], activeAccounts: AccountRow[], 
           in: () => query,
           or: () => query,
           gt: () => query,
+          not: () => query,
           order: () => query,
           limit: () => Promise.resolve({ data: insightsRows, error: null }),
         });
@@ -98,6 +99,20 @@ function fakeSupabase(insightsRows: InsightRow[], activeAccounts: AccountRow[], 
               data: sawActiveFilter && sawUserFilter ? activeAccounts : [],
               error: null,
             }),
+        });
+        return query;
+      }
+      if (table === 'user_preferences') {
+        // The prominence watermark (migration 078). Null here is "never read",
+        // which puts these fixtures' created_at values past the grace window and
+        // therefore in the standing tier. This suite asserts ids and counts, not
+        // tiers; lib/insight-prominence.ts and tests/insights-reader-prominence
+        // own that.
+        const query: Record<string, unknown> = {};
+        Object.assign(query, {
+          select: () => query,
+          eq: () => query,
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
         });
         return query;
       }

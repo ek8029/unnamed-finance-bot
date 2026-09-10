@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { getThesisContextForActions, getConvictionByTicker, type ActionThesisContext, type Conviction } from '@/lib/thesis-conviction';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
+import { readUpdatesSeenAt } from '@/lib/agent/updates-seen';
+import { insightProminence, type InsightProminence } from '@/lib/insight-prominence';
 
 export interface InsightReadOptions {
   type?: string | null;
@@ -53,12 +55,26 @@ export async function readInsights(
     // Archived items
     query = query.eq('is_archived', true);
   } else {
-    // Default "open" view: non-dismissed, non-archived, and not currently snoozed
+    // Default "open" view. "Gone" is everything a person is done with, and until
+    // 2026-09-10 two kinds of done row stayed in this queue for good:
+    //   - acted on. The PATCH the "Mark done" control sends (components/thesis/
+    //     thesis-actions.tsx -> /api/insights, action 'useful') writes is_useful
+    //     true and nothing else, so the row kept being read here. It is still
+    //     reachable through status=done, which is the view built for it.
+    //   - expired. Every writer now stamps expires_at (INSIGHT_LIFETIMES via
+    //     lib/insight-recurrence.ts), and a lapsed expiry was never filtered.
+    // Chained .or() calls are ANDed by PostgREST: verified against production
+    // with scripts/probe-insight-prominence.ts, 144 open rows narrowing to 18
+    // when a second .or() is added.
     isDefaultOpenView = true;
+    const nowIso = new Date().toISOString();
     query = query
       .eq('is_dismissed', false)
       .eq('is_archived', false)
-      .or('snoozed_until.is.null,snoozed_until.lte.' + new Date().toISOString());
+      .or('snoozed_until.is.null,snoozed_until.lte.' + nowIso)
+      .or('expires_at.is.null,expires_at.gt.' + nowIso)
+      // is_useful is a nullable boolean: `not.is.true` keeps null and false.
+      .not('is_useful', 'is', true);
   }
 
   if (type) {
@@ -69,10 +85,22 @@ export async function readInsights(
     query = query.eq('priority', priority);
   }
 
-  const { data: insights, error } = await query
-    .order('priority', { ascending: true }) // Existing API order; the client ranks priorities for display.
-    .order('created_at', { ascending: false })
-    .limit(20);
+  // The default open view orders newest first. Both consumers of this function
+  // re-sort before rendering (app/dashboard/actions/actions-client.tsx sorts by
+  // priority, and /api/insights feeds that same client), so the server order only
+  // decides WHICH 20 rows the cap keeps. Priority first meant a person carrying
+  // twenty older high-priority rows never received this morning's medium one, and
+  // an announced row that is not fetched cannot be announced. The other views are
+  // history and keep the order the API has always returned.
+  const ordered = isDefaultOpenView
+    ? query.order('created_at', { ascending: false }).order('priority', { ascending: true })
+    : query.order('priority', { ascending: true }).order('created_at', { ascending: false });
+
+  const [{ data: insights, error }, seenAt] = await Promise.all([
+    ordered.limit(20),
+    // Only the open view has anything to announce; a history view does not.
+    isDefaultOpenView ? readUpdatesSeenAt(supabase, user.id) : Promise.resolve(null),
+  ]);
 
   if (error) {
     console.error('Error fetching insights:', error);
@@ -136,6 +164,9 @@ export async function readInsights(
 
   // Transform and deduplicate by normalized title (keep the newest)
   const seenNormalized = new Set<string>();
+  // One clock for the whole page, so two rows a millisecond apart cannot land in
+  // different tiers of the same render.
+  const now = Date.now();
   const transformedInsights = (insights || [])
     .map(insight => {
       const tc = ctx.get(insight.id);
@@ -156,6 +187,10 @@ export async function readInsights(
         is_archived: insight.is_archived,
         is_dismissed: insight.is_dismissed,
         is_useful: insight.is_useful,
+        // announced or standing. History views have nothing to announce.
+        prominence: (isDefaultOpenView
+          ? insightProminence(insight.created_at, seenAt, now)
+          : 'standing') as InsightProminence,
         ...(tc
           ? { ticker: tc.ticker, thesisStatus: tc.status, thesisCite: tc.cite }
           : rc
@@ -200,6 +235,10 @@ export async function readInsights(
         recommended_action: undefined, estimated_impact: null,
         source: 'standing', related_entity_type: null, created_at: new Date(0).toISOString(), expires_at: null,
         snoozed_until: null, is_archived: false, is_dismissed: false, is_useful: null,
+        // Announced deliberately. Its created_at is a sentinel, not a time it was
+        // raised, so deriving a tier from it would be an accident. Onboarding copy
+        // and its prominence are owned elsewhere; this change leaves both alone.
+        prominence: 'announced' as InsightProminence,
       });
     }
   }
