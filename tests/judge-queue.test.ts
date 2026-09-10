@@ -20,15 +20,13 @@ vi.mock('@/lib/push/send', () => ({ checkPushReceipts: workerBoundary.receipts }
 
 // An in-memory Redis behind withRedis, so the wake flag and the heartbeat are
 // observable per test. Values are JSON round-tripped the way the real client
-// serializes them. beat() writes through multi().exec(); `execThrows` fails
-// that as a unit so beat() falls back to Postgres.
+// serializes them. beat() writes through a single SET; `setThrows` fails that
+// so beat() falls back to Postgres.
 // `getCalls` and `readKeysCalls` record the reads, so a test can pin that the
 // minute tick asks for its two keys in one call instead of two.
 const redisMock = vi.hoisted(() => ({
   store: new Map<string, unknown>(),
-  lists: new Map<string, unknown[]>(),
-  ttl: new Map<string, number>(),
-  execThrows: false,
+  setThrows: false,
   nullClient: false,
   getCalls: [] as string[],
   readKeysCalls: [] as string[][],
@@ -37,33 +35,7 @@ vi.mock('@/lib/redis', () => {
   const wire = (v: unknown) => JSON.parse(JSON.stringify(v));
   const r = {
     get: async (k: string) => { redisMock.getCalls.push(k); return redisMock.store.get(k) ?? null; },
-    set: async (k: string, v: unknown) => { redisMock.store.set(k, wire(v)); return 'OK'; },
-    lpush: async (k: string, ...vals: unknown[]) => {
-      const l = redisMock.lists.get(k) ?? [];
-      l.unshift(...vals.map(wire).reverse());
-      redisMock.lists.set(k, l);
-      return l.length; // the real LPUSH answers with the list's new length
-    },
-    ltrim: async (k: string, start: number, stop: number) => {
-      const l = redisMock.lists.get(k) ?? [];
-      redisMock.lists.set(k, l.slice(start, stop + 1));
-      return 'OK';
-    },
-    expire: async (k: string, s: number) => { redisMock.ttl.set(k, s); return 1; },
-    multi: () => {
-      const queued: (() => Promise<unknown>)[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p: any = {
-        set: (k: string, v: unknown) => { queued.push(() => r.set(k, v)); return p; },
-        lpush: (k: string, ...vals: unknown[]) => { queued.push(() => r.lpush(k, ...vals)); return p; },
-        ltrim: (k: string, a: number, b: number) => { queued.push(() => r.ltrim(k, a, b)); return p; },
-        expire: (k: string, s: number) => { queued.push(() => r.expire(k, s)); return p; },
-        // One entry per queued command, in order, the way the real exec
-        // answers: a mock returning [] would hide the length beat() reads.
-        exec: async () => { if (redisMock.execThrows) throw new Error('redis down'); const out: unknown[] = []; for (const q of queued) out.push(await q()); return out; },
-      };
-      return p;
-    },
+    set: async (k: string, v: unknown) => { if (redisMock.setThrows) throw new Error('redis down'); redisMock.store.set(k, wire(v)); return 'OK'; },
   };
   return {
     withRedis: async <T,>(fn: (r: unknown) => Promise<T>, fallback: T) => { if (redisMock.nullClient) return fallback; try { return await fn(r); } catch { return fallback; } },
@@ -80,9 +52,7 @@ vi.mock('@/lib/redis', () => {
 const WAKE = `helm:${JUDGE_WAKE_KEY}`;
 beforeEach(() => {
   redisMock.store.clear();
-  redisMock.lists.clear();
-  redisMock.ttl.clear();
-  redisMock.execThrows = false;
+  redisMock.setThrows = false;
   redisMock.nullClient = false;
   redisMock.getCalls.length = 0;
   redisMock.readKeysCalls.length = 0;
@@ -237,9 +207,9 @@ describe('judge wake flag', () => {
     expect(log[0]).toContain('2026-09-09T14:30:00.000Z');
   });
 
-  it('an idle tick falls back to the watch_heartbeats upsert when the Redis MULTI throws', async () => {
+  it('an idle tick falls back to the watch_heartbeats upsert when the Redis SET throws', async () => {
     redisMock.store.set(WAKE, '2026-09-09T14:30:00.000Z');
-    redisMock.execThrows = true;
+    redisMock.setThrows = true;
     const tables: string[] = [];
     const db = chain({ data: null, error: null }, tables);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -280,12 +250,9 @@ describe('judge wake flag', () => {
     const s = await runJudgeWorker(db as any, CFG, async () => { throw new Error('a job ran while idle'); }, [], clock);
     expect(s.idle).toBe(true);
     expect(redisMock.getCalls).toEqual([WAKE]);
-    // The beat rode the same tick: one log entry, and the log key armed with
-    // a TTL off the length the exec reply carried. If exec answered with a
-    // shape the real client never sends, the length would be unreadable and
-    // this TTL would be missing.
-    expect(redisMock.lists.get('helm:hb:judge-worker:log')).toHaveLength(1);
-    expect(redisMock.ttl.get('helm:hb:judge-worker:log')).toBe(48 * 3600);
+    // The beat rode the same tick: the latest-tick key carries this idle run,
+    // so Redis took it and the Postgres row was never written.
+    expect(redisMock.store.get('helm:hb:judge-worker')).toMatchObject({ detail: { idle: true } });
   });
 
   it('a handed-in future flag is used and the key is never read', async () => {
