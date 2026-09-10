@@ -16,6 +16,7 @@ import {
   RECURRENCE_COLUMNS,
   insightExpiresAt,
   insightSubstanceMoved,
+  readDismissedFindings,
   type OpenInsightRow,
 } from '@/lib/insight-recurrence';
 
@@ -336,13 +337,21 @@ export async function generateInvestigations(
 
   // Recurrence, not re-raise. An investigation whose finding has not moved keeps
   // its row and its created_at; only its expiry moves. See lib/insight-recurrence.ts.
-  const { data: existing } = await db
-    .from('insights')
-    .select(RECURRENCE_COLUMNS)
-    .eq('user_id', userId)
-    .eq('related_entity_type', 'thesis_investigation')
-    .eq('is_dismissed', false)
-    .eq('is_archived', false);
+  // The open rows decide "is this already on the books?", and a row the person
+  // dealt with is not open, so without the second read below a dismissed
+  // investigation was invisible here and the next run inserted a fresh one for it
+  // with a new created_at. Keyed by normalized title, which is this writer's own
+  // match key, so the two agree on what counts as the same finding.
+  const [{ data: existing }, dealtWith] = await Promise.all([
+    db
+      .from('insights')
+      .select(RECURRENCE_COLUMNS)
+      .eq('user_id', userId)
+      .eq('related_entity_type', 'thesis_investigation')
+      .eq('is_dismissed', false)
+      .eq('is_archived', false),
+    readDismissedFindings(db, userId),
+  ]);
   const existingByNorm = new Map<string, OpenInsightRow[]>();
   for (const row of (existing ?? []) as OpenInsightRow[]) {
     const norm = normalizeTitle(String(row.title ?? ''));
@@ -381,6 +390,8 @@ export async function generateInvestigations(
   const staleIds: string[] = [];
   for (const inv of investigations) {
     const norm = normalizeTitle(titleFor(inv));
+    // Gone means gone, for the life of the finding.
+    if (dealtWith.has(norm)) continue;
     const rows = existingByNorm.get(norm);
     if (!rows || rows.length === 0) {
       fresh.push(inv);

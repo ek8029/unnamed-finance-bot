@@ -62,13 +62,26 @@ function makeClient(tables: Record<string, Row[]>) {
   let seq = 0;
   const writes: { op: string; table: string; payload: unknown }[] = [];
 
-  const matches = (row: Row, filters: [string, string, unknown][]) =>
+  // PostgREST's or-string, e.g. 'is_dismissed.eq.true,is_archived.eq.true'.
+  // Parsed rather than stubbed true, because a permissive mock here would
+  // certify the belief that a dealt-with finding is held back without testing it.
+  const parseOr = (spec: string): [string, string, unknown][] =>
+    spec.split(',').map((clause) => {
+      const [col, op, ...rest] = clause.split('.');
+      const raw = rest.join('.');
+      const val = raw === 'true' ? true : raw === 'false' ? false : raw === 'null' ? null : raw;
+      return [op, col, val] as [string, string, unknown];
+    });
+
+  const matches = (row: Row, filters: [string, string, unknown][]): boolean =>
     filters.every(([op, col, val]) => {
       const v = row[col];
       switch (op) {
+        case 'or': return (val as [string, string, unknown][]).some((f) => matches(row, [f]));
         case 'eq': return v === val;
         case 'neq': return v !== val;
         case 'in': return Array.isArray(val) && (val as unknown[]).includes(v);
+        case 'gt': return v != null && String(v) > String(val);
         case 'lt': return v != null && String(v) < String(val);
         case 'lte': return v != null && String(v) <= String(val);
         case 'gte': return v != null && String(v) >= String(val);
@@ -157,10 +170,12 @@ function makeClient(tables: Record<string, Row[]>) {
       delete: () => { op = 'delete'; return b; },
       eq: (c: string, v: unknown) => { filters.push(['eq', c, v]); return b; },
       neq: (c: string, v: unknown) => { filters.push(['neq', c, v]); return b; },
+      gt: (c: string, v: unknown) => { filters.push(['gt', c, v]); return b; },
       lt: (c: string, v: unknown) => { filters.push(['lt', c, v]); return b; },
       lte: (c: string, v: unknown) => { filters.push(['lte', c, v]); return b; },
       gte: (c: string, v: unknown) => { filters.push(['gte', c, v]); return b; },
       in: (c: string, v: unknown) => { filters.push(['in', c, v]); return b; },
+      or: (spec: string) => { filters.push(['or', '', parseOr(spec)]); return b; },
       maybeSingle: () => {
         const single = { ...b, then: (res: (x: unknown) => unknown, rej?: (e: unknown) => unknown) => {
           const out = run() as { data: Row[] | null; error: unknown };
@@ -434,6 +449,170 @@ describe('cross-thesis risk recurrence', () => {
     expect(after[0].created_at).toBe(OLD_CREATED);
     expect(after[0].priority).toBe('high');
     expect(after[0].expires_at).not.toBeNull();
+  });
+});
+
+/* Before this, all three thesis writers decided "is this already on the books?"
+   from OPEN rows only. A dismissed row is not open, so it was invisible to that
+   check and the next run inserted a fresh one for the same finding with a new
+   created_at, which the reader then announced. Dismissing a thesis flag bought
+   one day of quiet. lib/thesis-actions.ts is keyed by thesis id and
+   lib/thesis-investigation.ts by normalized title, so each reads the dismissal
+   set the same way it reads its own match, and the two cannot disagree about
+   what counts as the same finding. */
+describe('a dealt-with thesis finding is not raised again', () => {
+  /** Mark every row for this entity as dealt with, the way the UI does. The
+   *  expiry the writer stamped is left in place, so the finding is still live. */
+  const dealtWith = (tables: Record<string, Row[]>, entity: string, field: string) => {
+    const hit = tables.insights.filter((r) => r.related_entity_type === entity);
+    expect(hit.length).toBeGreaterThan(0);
+    for (const r of hit) {
+      r[field] = true;
+      expect(daysOut(String(r.expires_at))).toBeGreaterThan(0);
+    }
+    return hit.map((r) => String(r.id));
+  };
+
+  it('thesis actions: a dismissed action is not re-inserted while it is still live', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateThesisActions(first.client, USER);
+    const dismissedIds = dealtWith(tables, 'thesis', 'is_dismissed');
+    age(tables);
+
+    const second = makeClient(tables);
+    const { generated } = await generateThesisActions(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+    expect(openRows(tables, 'thesis')).toEqual([]);
+    // The dismissed rows are untouched, not rewritten and not re-opened.
+    for (const id of dismissedIds) {
+      const row = tables.insights.filter((r) => r.id === id)[0];
+      expect(row.is_dismissed).toBe(true);
+      expect(row.created_at).toBe(OLD_CREATED);
+    }
+  });
+
+  it('thesis actions: the hold is keyed by thesis, so it survives the title moving', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateThesisActions(first.client, USER);
+    dealtWith(tables, 'thesis', 'is_dismissed');
+    // Under one thesis match both the title and the insight_type can move (a
+    // portfolio "Trim X?" becoming a tax "Harvest the loss in X"). A title-keyed
+    // dismissal would leak here; an entity-keyed one does not.
+    for (const r of tables.insights) r.title = 'Something this writer would never say';
+
+    const second = makeClient(tables);
+    const { generated } = await generateThesisActions(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+  });
+
+  it('thesis actions: acting on an action holds it too, not only dismissing it', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateThesisActions(first.client, USER);
+    // Acting on a card sets is_archived or is_useful, never is_dismissed, so a
+    // filter on is_dismissed alone let an acted finding come straight back.
+    dealtWith(tables, 'thesis', 'is_archived');
+
+    const second = makeClient(tables);
+    const { generated } = await generateThesisActions(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+  });
+
+  it('thesis actions: the hold lasts the life of the finding and then lets go', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateThesisActions(first.client, USER);
+    dealtWith(tables, 'thesis', 'is_dismissed');
+    // Past its life. The finding may be raised again, which is also when the
+    // expiry sweep would have retired the row anyway.
+    for (const r of tables.insights) r.expires_at = '2026-09-02T00:00:00.000Z';
+
+    const second = makeClient(tables);
+    const { generated } = await generateThesisActions(second.client, USER);
+
+    expect(generated).toBeGreaterThan(0);
+    expect(insertsTo(second.writes)).toBeGreaterThan(0);
+  });
+
+  it('thesis investigation: a dismissed investigation is not re-inserted while it is still live', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateInvestigations(first.client, USER);
+    dealtWith(tables, 'thesis_investigation', 'is_dismissed');
+    age(tables);
+
+    const second = makeClient(tables);
+    const { generated } = await generateInvestigations(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+    expect(openRows(tables, 'thesis_investigation')).toEqual([]);
+  });
+
+  it('thesis investigation: marking it useful holds it too, not only dismissing it', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateInvestigations(first.client, USER);
+    // A row marked useful is still is_dismissed false and is_archived false, so
+    // it stays in the open select and a run with no hold would find it there and
+    // refresh its expiry. The untouched expires_at is what proves the guard, not
+    // the zero, which both paths produce.
+    const expiries = dealtWith(tables, 'thesis_investigation', 'is_useful').map(
+      (id) => String(tables.insights.filter((r) => r.id === id)[0].expires_at),
+    );
+
+    const second = makeClient(tables);
+    const { generated } = await generateInvestigations(second.client, USER);
+
+    expect(generated).toBe(0);
+    expect(insertsTo(second.writes)).toBe(0);
+    const after = tables.insights
+      .filter((r) => r.related_entity_type === 'thesis_investigation')
+      .map((r) => String(r.expires_at));
+    expect(after).toEqual(expiries);
+  });
+
+  it('thesis investigation: the hold lasts the life of the finding and then lets go', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateInvestigations(first.client, USER);
+    dealtWith(tables, 'thesis_investigation', 'is_dismissed');
+    for (const r of tables.insights) r.expires_at = '2026-09-02T00:00:00.000Z';
+
+    const second = makeClient(tables);
+    const { generated } = await generateInvestigations(second.client, USER);
+
+    expect(generated).toBeGreaterThan(0);
+    expect(insertsTo(second.writes)).toBeGreaterThan(0);
+  });
+
+  /* A NULL expiry suppresses nothing, deliberately: no row written before
+     2026-09-10 carries one, and treating "no known life" as "gone for good"
+     would bury every finding people dismissed in the months before. The
+     consequence is that the hold only starts working for rows that carry an
+     expiry, which is why the backfill matters. */
+  it('a dismissal with no expiry holds nothing, so old rows are not buried', async () => {
+    const tables = fixture();
+    const first = makeClient(tables);
+    await generateThesisActions(first.client, USER);
+    for (const r of tables.insights) {
+      r.is_dismissed = true;
+      r.expires_at = null;
+    }
+
+    const second = makeClient(tables);
+    const { generated } = await generateThesisActions(second.client, USER);
+
+    expect(generated).toBeGreaterThan(0);
+    expect(insertsTo(second.writes)).toBeGreaterThan(0);
   });
 });
 

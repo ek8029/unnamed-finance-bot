@@ -15,6 +15,13 @@
 //     true since Tuesday read as though it arrived this morning and jumped back to
 //     the top of a newest-first list.
 //
+//  3. A finding the person already dealt with, dismissed or acted on, is not
+//     raised again while it is still inside its life. All three read OPEN rows to
+//     decide "already on the books?", so a dismissed row was invisible and the
+//     next run inserted a fresh one with a new created_at. The hold lives in
+//     readDismissedFindings (title-keyed) and readDismissedEntityFindings (keyed
+//     by related entity, for the writer that matches by thesis rather than title).
+//
 // The engine's substance rule is priority + description + recommended_action +
 // estimated_impact_amount, with money and percentages normalized and the amount
 // compared with a 10% tolerance, and with the title deliberately excluded because
@@ -25,9 +32,14 @@
 // single match (portfolio "Trim X?" becoming tax "Harvest the loss in X"). Substance
 // here is therefore the engine's four fields plus title, insight_type and explanation.
 
-import { insightExpiresAt, readDismissedFindings, type InsightType } from '@/lib/insights-engine';
+import {
+  insightExpiresAt,
+  readDismissedEntityFindings,
+  readDismissedFindings,
+  type InsightType,
+} from '@/lib/insights-engine';
 
-export { insightExpiresAt, readDismissedFindings };
+export { insightExpiresAt, readDismissedEntityFindings, readDismissedFindings };
 export type { InsightType };
 
 /** The open row read back for the recurrence check. */

@@ -24,10 +24,22 @@ function makeClient(tables: Record<string, Row[]>) {
   let seq = 0;
   const writes: { op: string; table: string; payload: unknown }[] = [];
 
-  const matches = (row: Row, filters: [string, string, unknown][]) =>
+  // PostgREST's or-string, e.g. 'is_dismissed.eq.true,is_archived.eq.true'.
+  // Parsed rather than stubbed true, because a permissive mock here would
+  // certify the belief that a dealt-with finding is held back without testing it.
+  const parseOr = (spec: string): [string, string, unknown][] =>
+    spec.split(',').map((clause) => {
+      const [col, op, ...rest] = clause.split('.');
+      const raw = rest.join('.');
+      const val = raw === 'true' ? true : raw === 'false' ? false : raw === 'null' ? null : raw;
+      return [op, col, val] as [string, string, unknown];
+    });
+
+  const matches = (row: Row, filters: [string, string, unknown][]): boolean =>
     filters.every(([op, col, val]) => {
       const v = row[col];
       switch (op) {
+        case 'or': return (val as [string, string, unknown][]).some((f) => matches(row, [f]));
         case 'eq': return v === val;
         case 'neq': return v !== val;
         case 'in': return Array.isArray(val) && (val as unknown[]).includes(v);
@@ -99,6 +111,7 @@ function makeClient(tables: Record<string, Row[]>) {
       lte: (c: string, v: unknown) => { filters.push(['lte', c, v]); return b; },
       gte: (c: string, v: unknown) => { filters.push(['gte', c, v]); return b; },
       in: (c: string, v: unknown) => { filters.push(['in', c, v]); return b; },
+      or: (spec: string) => { filters.push(['or', '', parseOr(spec)]); return b; },
       maybeSingle: () => b,
       then: (res: (x: unknown) => unknown, rej?: (e: unknown) => unknown) =>
         Promise.resolve(run()).then(res, rej),

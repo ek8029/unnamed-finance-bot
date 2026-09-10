@@ -110,6 +110,23 @@ function fakeSupabase(rows: Row[], rec: Recorded) {
           kept = kept.filter(r => vs.includes((r as unknown as Record<string, unknown>)[col]));
           return query;
         },
+        or: (spec: string) => {
+          // PostgREST's or-string, e.g. 'is_dismissed.eq.true,is_archived.eq.true'.
+          // Parsed rather than stubbed true, so this mock cannot certify a
+          // suppression it never actually applied. A column that is absent reads
+          // as undefined and does not match true, which is what NULL does in
+          // Postgres.
+          const clauses = spec.split(',').map(c => {
+            const [col, op, ...rest] = c.split('.');
+            const raw = rest.join('.');
+            return { col, op, val: raw === 'true' ? true : raw === 'false' ? false : raw as unknown };
+          });
+          kept = kept.filter(r => clauses.some(({ col, op, val }) => {
+            const v = (r as unknown as Record<string, unknown>)[col];
+            return op === 'eq' ? v === val : false;
+          }));
+          return query;
+        },
         gt: (col: string, v: string) => {
           // A range filter never matches NULL, which is what lets a row dismissed
           // before expiries existed stay out of the suppression set.

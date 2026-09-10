@@ -23,6 +23,7 @@ import {
   RECURRENCE_COLUMNS,
   insightExpiresAt,
   insightSubstanceMoved,
+  readDismissedEntityFindings,
   type OpenInsightRow,
 } from '@/lib/insight-recurrence';
 
@@ -411,13 +412,23 @@ export async function generateThesisActions(
   // "Trim LULU?" arrived as new every morning for as long as the pillar stayed broken.
   // related_entity_ids = [thesisId, pillarId]; keying on thesisId also clears stale
   // duplicates left by prior per-pillar runs.
-  const { data: existing } = await db
-    .from('insights')
-    .select(`${RECURRENCE_COLUMNS}, related_entity_ids`)
-    .eq('user_id', userId)
-    .eq('related_entity_type', 'thesis')
-    .eq('is_dismissed', false)
-    .eq('is_archived', false);
+  //
+  // The select below reads OPEN rows only, so a row the person dealt with is not
+  // in it and the next run inserted a fresh one for the same thesis with a new
+  // created_at. That is why "Trim LULU?" came back the morning after it was
+  // dismissed. The second read holds it, keyed by thesis id because that is this
+  // writer's match key: keying it by title instead would leak the case the
+  // comment above describes, where the title moves under one match.
+  const [{ data: existing }, dealtWith] = await Promise.all([
+    db
+      .from('insights')
+      .select(`${RECURRENCE_COLUMNS}, related_entity_ids`)
+      .eq('user_id', userId)
+      .eq('related_entity_type', 'thesis')
+      .eq('is_dismissed', false)
+      .eq('is_archived', false),
+    readDismissedEntityFindings(db, userId, 'thesis'),
+  ]);
   const existingByThesis = new Map<string, OpenInsightRow[]>();
   for (const row of (existing ?? []) as (OpenInsightRow & { related_entity_ids: string[] | null })[]) {
     const tid = Array.isArray(row.related_entity_ids) ? row.related_entity_ids[0] : undefined;
@@ -448,6 +459,8 @@ export async function generateThesisActions(
   const refreshes: { id: string; expiresAt: string }[] = [];
   const staleIds: string[] = [];
   for (const a of actions) {
+    // Gone means gone, for the life of the finding.
+    if (dealtWith.has(a.thesisId)) continue;
     const rows = existingByThesis.get(a.thesisId);
     if (!rows || rows.length === 0) {
       fresh.push(a);

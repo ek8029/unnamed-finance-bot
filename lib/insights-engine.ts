@@ -120,6 +120,11 @@ export function insightExpiresAt(type: InsightType, now: Date = new Date()): str
 /**
  * The findings this person has already dealt with, as normalized titles.
  *
+ * Dealt with means dismissed OR acted on. Acting on a card sets is_archived or
+ * is_useful, never is_dismissed, so a filter on is_dismissed alone let an acted
+ * finding come straight back. All three flags are read here rather than in each
+ * caller, so the four writers of this table cannot drift on what "gone" means.
+ *
  * Every writer of this table decided "is this finding already on the books?" from
  * OPEN rows only (the select below filters is_dismissed false), so dismissing a
  * card removed it until the next run and then a fresh row was inserted for the
@@ -152,7 +157,7 @@ export async function readDismissedFindings(
     .from('insights')
     .select('title, expires_at')
     .eq('user_id', userId)
-    .eq('is_dismissed', true)
+    .or('is_dismissed.eq.true,is_archived.eq.true,is_useful.eq.true')
     .gt('expires_at', now.toISOString())
     .limit(500);
   if (error) {
@@ -164,6 +169,46 @@ export async function readDismissedFindings(
   return new Set<string>(
     ((data ?? []) as { title: string | null }[]).map((r) => normalizeInsightTitle(String(r.title ?? ''))),
   );
+}
+
+/**
+ * The same hold as readDismissedFindings, for a writer that matches its
+ * candidates by related entity rather than by title.
+ *
+ * lib/thesis-actions.ts emits at most one row per thesis and matches on
+ * related_entity_ids[0], and its own header explains why: under a single thesis
+ * match both the title and the insight_type can move, a portfolio "Trim X?"
+ * becoming a tax "Harvest the loss in X". A title-keyed set would therefore leak
+ * exactly the case that writer cares about, so the dismissal has to be keyed the
+ * way the writer keys the match.
+ *
+ * Same expiry semantics as above: a NULL expires_at suppresses nothing.
+ */
+export async function readDismissedEntityFindings(
+  supabase: AnyClient,
+  userId: string,
+  entityType: string,
+  now: Date = new Date(),
+): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('insights')
+    .select('related_entity_ids, expires_at')
+    .eq('user_id', userId)
+    .eq('related_entity_type', entityType)
+    .or('is_dismissed.eq.true,is_archived.eq.true,is_useful.eq.true')
+    .gt('expires_at', now.toISOString())
+    .limit(500);
+  if (error) {
+    // Failing open re-raises a dismissed finding, which is the bug this closes.
+    console.error('[insights-engine] Error reading dismissed entity findings:', error);
+    return new Set<string>();
+  }
+  const out = new Set<string>();
+  for (const r of (data ?? []) as { related_entity_ids: string[] | null }[]) {
+    const id = Array.isArray(r.related_entity_ids) ? r.related_entity_ids[0] : undefined;
+    if (id) out.add(String(id));
+  }
+  return out;
 }
 
 /** Shape of the open rows read back for the recurrence check. */
