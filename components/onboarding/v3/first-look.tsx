@@ -321,7 +321,7 @@ function BriefPreview({ names }: { names: number }) {
       </svg>
       <span className="mt-1 block text-[13px] text-[var(--color-text-primary)]">{copy.firstBrief}</span>
       <span className="mt-2 flex flex-wrap items-center gap-1.5">
-        {copy.sourceTags.map((tag) => (
+        {copy.briefTags.map((tag) => (
           <span key={tag} className="rounded border border-[var(--color-border-base)] px-1.5 py-0.5 text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{tag}</span>
         ))}
         {names > 0 && <span className="text-[12px] text-[var(--color-text-muted)]">{copy.watching(names)}</span>}

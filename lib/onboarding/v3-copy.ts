@@ -80,7 +80,7 @@ export const V3_COPY = {
       exposure: 'Your book by sector, with a fund counted as a fund.',
       receipts: 'The filings and news behind your largest position, quoted.',
       changes: 'The session\'s biggest moves among the names you hold.',
-      brief: 'One read on your own names before the open, 9:15 ET on trading days.',
+      brief: 'Market moves on your own names and the sources behind them, before the open.',
       overlap: 'The names sitting in more than one of your accounts.',
     },
     pending: 'Your positions fill in here when the first import lands.',
@@ -104,6 +104,9 @@ export const V3_COPY = {
     noShared: 'Nothing is in more than one account yet.',
     heldIn: (t: string, n: number) => `${t} is held in ${n} of these accounts`,
     sourceTags: ['10-K', '10-Q', '8-K', 'news'],
+    // The brief is not only documents: it leads with what moved, which is why
+    // this list is its own rather than the filing forms the receipts card names.
+    briefTags: ['Market moves', 'Filings', 'News'],
     skip: 'Skip',
     save: 'Continue',
   },
