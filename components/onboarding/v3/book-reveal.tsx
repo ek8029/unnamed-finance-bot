@@ -3,7 +3,7 @@
 // split direct versus inside funds, the one sentence, the receipt on the
 // largest name (or the honest fallback), an optional changes card. Never a
 // fabricated verdict: the receipt is whatever /api/scan/ticker cites.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BookHolding } from './use-book';
 import { ReceiptCard, fetchReceipt, type Receipt } from './receipt-card';
 import { bookExposure, exposureSentence, overlapSentence, type BookExposure } from '@/lib/onboarding/v3-exposure';
@@ -17,14 +17,12 @@ const STRIPE = { backgroundImage: 'repeating-linear-gradient(45deg, var(--color-
 type Mover = { ticker: string; changePct: number };
 type ReceiptState = { ticker: string; state: 'loading' | 'error' } | { ticker: string; state: 'ready'; data: Receipt | null };
 
-export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSlot, onOpenTerminal, onViewed }: {
+export function BookReveal({ holdings, accounts, syncing, firstLook, onOpenTerminal, onViewed }: {
   holdings: BookHolding[];
   accounts: number;
   syncing: string | null;
-  /** null = not answered yet. */
+  /** null = not answered yet, which orders the cards the default way. */
   firstLook: FirstLook[] | null;
-  /** Plaid path: the question renders here while loading, and above the cards until answered. */
-  firstLookSlot?: ReactNode;
   onOpenTerminal: () => void;
   /** Fires exactly once, after the receipt fetch settles on Ready. */
   onViewed: (p: { top_ticker_covered: boolean; synced: boolean }) => void;
@@ -81,7 +79,6 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSl
         <div className="mt-4 grid gap-3" aria-hidden="true">
           {[0, 1, 2].map((i) => <div key={i} className="h-3 animate-pulse rounded bg-[var(--color-surface-tint)]" style={{ width: `${80 - i * 15}%` }} />)}
         </div>
-        {firstLookSlot}
       </section>
     );
   }
@@ -113,7 +110,6 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, firstLookSl
   return (
     <section>
       {syncing && <p role="status" className="mb-4 text-[13px] text-[var(--color-text-secondary)]">{copy.stillSyncing(syncing)}</p>}
-      {firstLook === null && firstLookSlot}
       <div className="grid grid-cols-1 gap-4 min-[860px]:grid-cols-2">
         {cards.map((c) => {
           if (c === 'exposure') return <ExposureCard key={c} book={book} sentence={sentence} />;

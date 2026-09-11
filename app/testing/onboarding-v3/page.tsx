@@ -12,6 +12,7 @@ import { OnboardingFlowV3 } from '@/components/onboarding/v3/onboarding-flow-v3'
 const PHASES = [
   ['ask', 'Ask'],
   ['loop', 'Loop'],
+  ['first-look', 'First look'],
   ['reveal', 'Reveal'],
 ] as const;
 

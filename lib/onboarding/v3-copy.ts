@@ -6,7 +6,7 @@ function plural(n: number, one: string, many: string): string {
 
 export const V3_COPY = {
   later: 'Do this later',
-  step: (n: number) => `Step ${n} of 3`,
+  step: (n: number) => `Step ${n} of 4`,
   ask: {
     title: 'Start with what you own.',
     loadError: 'Could not load your accounts.',
@@ -32,9 +32,12 @@ export const V3_COPY = {
   },
   loop: {
     title: 'Is that all of it?',
-    lede: 'Helm reads across accounts. Add the others now or later from Accounts.',
-    one: 'Most people who pay for Helm hold accounts at two or more brokerages. Add the others and the exposure view shows the overlap between them.',
+    lede: 'Helm reads across accounts, so it works best when it can see all of them. Add the others now, or later from Accounts.',
+    one: 'One account is enough to start. Exposure, overlap and the tax view only ever see what the book holds, so anything held somewhere else stays invisible to them.',
     many: (n: number, positions: number, value: string) => `${n} ${plural(n, 'account', 'accounts')}, ${positions} ${plural(positions, 'position', 'positions')}, ${value}. Add another, or continue.`,
+    yourEntry: 'What you typed in',
+    andMore: (n: number) => `and ${n} more`,
+    shares: (n: string) => `${n} ${plural(Number(n), 'share', 'shares')}`,
     syncing: (institution: string) => `Syncing ${institution}`,
     positions: (n: number) => `${n} ${plural(n, 'position', 'positions')}`,
     imported: 'imported',
@@ -61,13 +64,28 @@ export const V3_COPY = {
     promise: 'The brief on these positions lands at 9:15 ET tomorrow.',
   },
   firstLook: {
-    heading: 'What do you want to see first?',
+    title: 'What do you want to see first?',
+    lede: 'Pick as many as you want. Helm leads with them on the next screen and in your brief.',
     options: {
       exposure: 'How much of everything I actually own',
       receipts: 'Whether the reasons I hold these still hold',
       changes: 'What changed in these positions today',
       overlap: 'Overlap between my accounts',
     },
+    hints: {
+      exposure: 'Every name in your book, counting the ones held inside your funds.',
+      receipts: 'The filings and news behind your largest position, quoted.',
+      changes: 'Today in the names you hold, against their normal range.',
+      overlap: 'The names sitting in more than one of your accounts.',
+    },
+    pending: 'Your positions fill in here when the first import lands.',
+    empty: 'Your book has no priced positions yet.',
+    sharedNames: (n: number) => `${n} ${plural(n, 'name', 'names')} in more than one account, funds included`,
+    noShared: 'Nothing is in more than one account yet.',
+    sourceTags: ['10-K', '10-Q', '8-K', 'news'],
+    moverUp: (t: string, pct: string) => `${t} is up ${pct} today`,
+    moverDown: (t: string, pct: string) => `${t} is down ${pct} today`,
+    moverNone: 'Nothing in these positions moved outside its normal range today.',
     skip: 'Skip',
     save: 'Continue',
   },

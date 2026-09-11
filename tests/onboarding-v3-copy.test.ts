@@ -37,6 +37,13 @@ describe('onboarding v3 copy', () => {
     lint('loop.positions', V3_COPY.loop.positions(1));
     lint('loop.positions', V3_COPY.loop.positions(3));
     lint('loop.already', V3_COPY.loop.already('Schwab'));
+    lint('loop.andMore', V3_COPY.loop.andMore(3));
+    lint('loop.shares', V3_COPY.loop.shares('1'));
+    lint('loop.shares', V3_COPY.loop.shares('0.5'));
+    lint('firstLook.sharedNames', V3_COPY.firstLook.sharedNames(1));
+    lint('firstLook.sharedNames', V3_COPY.firstLook.sharedNames(4));
+    lint('firstLook.moverUp', V3_COPY.firstLook.moverUp('NVDA', '2.10%'));
+    lint('firstLook.moverDown', V3_COPY.firstLook.moverDown('NVDA', '2.10%'));
     lint('reveal.stillSyncing', V3_COPY.reveal.stillSyncing('Fidelity'));
     lint('reveal.receiptHeading', V3_COPY.reveal.receiptHeading('NVDA'));
     lint('reveal.receiptFallback', V3_COPY.reveal.receiptFallback('NVDA'));
@@ -48,6 +55,11 @@ describe('onboarding v3 copy', () => {
       'V3_COPY.loop.syncing',
       'V3_COPY.loop.already',
       'V3_COPY.loop.positions',
+      'V3_COPY.loop.andMore',
+      'V3_COPY.loop.shares',
+      'V3_COPY.firstLook.sharedNames',
+      'V3_COPY.firstLook.moverUp',
+      'V3_COPY.firstLook.moverDown',
       'V3_COPY.reveal.stillSyncing',
       'V3_COPY.reveal.receiptHeading',
       'V3_COPY.reveal.receiptFallback',

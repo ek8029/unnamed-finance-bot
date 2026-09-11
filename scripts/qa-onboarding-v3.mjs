@@ -17,7 +17,7 @@ const VIEWPORTS = [
   [3840, 1600, 'ultrawide'],
 ];
 
-const SCREENS = ['Ask', 'Loop', 'Reveal'];
+const SCREENS = ['Ask', 'Loop', 'First look', 'Reveal'];
 
 const failures = [];
 const browser = await chromium.launch();
@@ -38,7 +38,7 @@ for (const [w, h, name] of VIEWPORTS) {
 
   for (const screen of SCREENS) {
     await page.getByRole('button', { name: screen, exact: true }).click({ force: true });
-    await page.waitForTimeout(screen === 'Confirm theses' || screen === 'Synced' ? 2600 : screen === 'Intelligence card' ? 3400 : 900);
+    await page.waitForTimeout(screen === 'First look' ? 1800 : screen === 'Confirm theses' || screen === 'Synced' ? 2600 : screen === 'Intelligence card' ? 3400 : 900);
     await page.evaluate(() => document.querySelectorAll('div.fixed').forEach((e) => {
       if (e.textContent && e.textContent.includes('PREVIEW · DEV')) e.remove();
     }));

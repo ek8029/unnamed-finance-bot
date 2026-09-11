@@ -4,10 +4,10 @@
 // terminal. No demo path, no tour. Spec: docs/superpowers/specs/
 // 2026-09-08-onboarding-book-first-design.md sections 3, 3.4, 7, 9.
 //
-//   ask -> loop -> reveal -> /dashboard/portfolio
+//   ask -> loop -> first look -> reveal -> /dashboard/portfolio
 //
-// The screens live in ./book-ask, ./account-loop, ./book-reveal and
-// ./first-look. This file owns the state machine, the gate, the events and
+// The screens live in ./book-ask, ./account-loop, ./first-look and
+// ./book-reveal. This file owns the state machine, the gate, the events and
 // "Do this later". Events carry counts and codes only.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,15 +15,16 @@ import posthog from 'posthog-js';
 import { BookAsk } from './book-ask';
 import { AccountLoop } from './account-loop';
 import { BookReveal } from './book-reveal';
-import { FirstLookQuestion } from './first-look';
+import { FirstLookScreen } from './first-look';
 import { useBook } from './use-book';
 import type { FirstLook } from '@/lib/onboarding/first-look';
 import { afterSynced, nextSyncing, pickNewPlaidAccounts } from '@/lib/onboarding/v3-sync-state';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
 import { decideV3Gate, deferredKey, type GateOutcome } from '@/lib/onboarding/v3-gate';
 
-type Phase = 'ask' | 'loop' | 'reveal';
-const STEP: Record<Phase, number> = { ask: 1, loop: 2, reveal: 3 };
+type Phase = 'ask' | 'loop' | 'first-look' | 'reveal';
+const STEP: Record<Phase, number> = { ask: 1, loop: 2, 'first-look': 3, reveal: 4 };
+const STEPS = 4;
 const SYNC_POLL_MS = 10_000;
 
 function track(event: string, props?: Record<string, unknown>) {
@@ -69,11 +70,6 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   const [duplicate, setDuplicate] = useState<string | null>(null);
   // null = not answered yet.
   const [firstLook, setFirstLook] = useState<FirstLook[] | null>(null);
-  const asked = useRef(false);
-  // Where the first-look question renders is decided once, by the first way
-  // the user handed Helm a book: the loop screen on the manual path, the sync
-  // wait on the reveal on the Plaid path. It never moves mid-flow.
-  const questionPath = useRef<'manual' | 'plaid' | null>(null);
   // Every account id seen in any refetch. A Plaid account outside this set is
   // a fresh connection whose institution is still importing.
   const knownIds = useRef<Set<string>>(new Set());
@@ -154,7 +150,6 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   const onPlaidSuccess = useCallback(() => {
     track('onb3_account_added', { flow: 'v3', via: 'plaid', accounts: accountsRef.current.length + 1 });
-    if (questionPath.current === null) questionPath.current = 'plaid';
     setPendingConnects((n) => n + 1);
     void book.refetch();
     setPhase('loop');
@@ -168,7 +163,6 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   const onManualComplete = useCallback(() => {
     track('onb3_account_added', { flow: 'v3', via: 'manual', accounts: accountsRef.current.length + 1 });
-    if (questionPath.current === null) questionPath.current = 'manual';
     void book.refetch();
     setPhase('loop');
   }, [book.refetch]);
@@ -195,6 +189,13 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   const onContinue = useCallback(() => {
     const accounts = accountsRef.current;
     track('onb3_loop_continue', { flow: 'v3', accounts: accounts.length, positions: accounts.reduce((n, a) => n + a.positions, 0) });
+    setPhase('first-look');
+  }, []);
+
+  // The answer is stored by the screen; the flow only orders the reveal with it.
+  const onFirstLook = useCallback((codes: FirstLook[]) => {
+    setFirstLook(codes);
+    track('onb3_first_look', { flow: 'v3', count: codes.length, skipped: codes.length === 0 });
     setPhase('reveal');
   }, []);
 
@@ -214,21 +215,9 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   if (!show) return null;
 
-  const manual = questionPath.current === 'manual';
-  const question = firstLook === null && !asked.current ? (
-    <FirstLookQuestion
-      accounts={book.accounts.length}
-      onDone={(codes) => {
-        asked.current = true;
-        setFirstLook(codes);
-        track('onb3_first_look', { flow: 'v3', count: codes.length, skipped: codes.length === 0 });
-      }}
-    />
-  ) : null;
-
-  const copy = phase === 'ask' ? V3_COPY.ask : phase === 'loop' ? V3_COPY.loop : V3_COPY.reveal;
-  // BookAsk renders the ask lede itself; the loop lede belongs to the frame.
-  const lede = phase === 'loop' ? V3_COPY.loop.lede : null;
+  const copy = phase === 'ask' ? V3_COPY.ask : phase === 'loop' ? V3_COPY.loop : phase === 'first-look' ? V3_COPY.firstLook : V3_COPY.reveal;
+  // BookAsk renders the ask lede itself; the other ledes belong to the frame.
+  const lede = phase === 'loop' ? V3_COPY.loop.lede : phase === 'first-look' ? V3_COPY.firstLook.lede : null;
   const step = STEP[phase];
   // The screens take one institution; the oldest import is the one they name.
   const syncingFirst = syncing[0] ?? null;
@@ -241,8 +230,8 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
       <div className="fixed inset-0 z-[100] bg-[#050505] overflow-y-auto overscroll-contain">
         <div className="min-h-[100dvh] flex flex-col">
           <div className="mx-auto w-full max-w-5xl px-4 py-10">
-            <div role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} className="flex gap-1.5">
-              {[1, 2, 3].map((n) => (
+            <div role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={STEPS} className="flex gap-1.5">
+              {Array.from({ length: STEPS }, (_, i) => i + 1).map((n) => (
                 <span key={n} aria-hidden="true" className={`h-1 w-10 rounded-full ${n <= step ? 'bg-[var(--color-gold)]' : 'bg-[var(--color-surface-tint)]'}`} />
               ))}
               <span className="sr-only">{V3_COPY.step(step)}</span>
@@ -280,8 +269,16 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   onChoice={onChoice}
                   onPlaidExit={onPlaidExit}
                   onContinue={onContinue}
-                  firstLookSlot={manual ? question : undefined}
                   readOnly={readOnly}
+                />
+              )}
+              {phase === 'first-look' && (
+                <FirstLookScreen
+                  holdings={bookFailed ? [] : book.holdings}
+                  accounts={book.accounts.length}
+                  syncing={syncingFirst}
+                  readOnly={readOnly}
+                  onDone={onFirstLook}
                 />
               )}
               {phase === 'reveal' && bookFailed && (
@@ -299,7 +296,6 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   accounts={book.accounts.length}
                   syncing={syncingFirst}
                   firstLook={firstLook}
-                  firstLookSlot={manual ? undefined : question}
                   onOpenTerminal={onOpenTerminal}
                   onViewed={onViewed}
                 />
