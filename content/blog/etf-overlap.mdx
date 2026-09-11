@@ -1,0 +1,100 @@
+---
+title: "ETF Overlap: Why Two Funds Own the Same Companies"
+description: "Two funds with different names and different tickers can hold the same handful of companies at the top. Here is why that happens, how to check it, and what it means for concentration."
+date: "2026-09-11"
+author: "Evan Kim"
+tags: ["etf overlap", "etf", "concentration risk", "portfolio analysis", "index funds"]
+published: true
+faq:
+  - q: "What is ETF overlap?"
+    a: "ETF overlap is the portion of two funds made up of the same companies. Funds are baskets, and two baskets built on the same market draw from the same pool of large companies. Holding both does not produce two independent sets of exposure to that pool, it produces one set weighted by whatever each fund assigns to the shared names."
+  - q: "How do you check overlap between two ETFs?"
+    a: "Compare the holdings lists and look for companies appearing in both, then read the weight each fund assigns to each shared name. The free ETF overlap tool at helmterminal.dev/tools/etf-overlap does this for 35 funds using each fund's ten largest holdings. Full-basket comparison requires each fund's complete holdings file, published by the issuer."
+  - q: "Do S&P 500 and Nasdaq 100 funds overlap?"
+    a: "Heavily at the top. As of Q2 2026 data, nine of the ten largest holdings in QQQ also sit in the ten largest holdings of VOO. Those nine names account for 47.7 percent of QQQ and 37.4 percent of VOO. Both figures count only the top ten of each fund, so both understate the full overlap."
+  - q: "Why do the two overlap percentages differ?"
+    a: "Because a shared company rarely carries the same weight in both funds. The same chipmaker can be 17 percent of a concentrated technology fund and 8 percent of a broad index fund. A single blended overlap number hides that. Two numbers, one per fund, say what share of each specific fund sits in the shared names."
+  - q: "Is overlap between funds a problem?"
+    a: "It is not automatically one. It is a measurement problem before it is anything else. Two fund tickers in two accounts read as diversification on a statement while the underlying exposure is concentrated in a dozen companies. Whether that concentration is acceptable depends on the reasoning behind the holdings, which is a separate question from knowing it exists."
+---
+
+Two funds, two tickers, two different issuers, two different names. On a brokerage statement that looks like diversification. Underneath, they can be close to the same basket.
+
+This is the most common reason a portfolio is more concentrated than its owner thinks. Not a single oversized position, which is easy to spot, but the same dozen companies arriving through four different funds held in three different accounts.
+
+## Why two funds end up owning the same companies
+
+Most widely held equity funds are weighted by market capitalization. The bigger the company, the more of the fund it is. That single rule means any fund built on the large end of the US market lands on the same names at the top, in roughly the same order, no matter what the fund is called.
+
+An S&P 500 fund tracks 500 companies. A Nasdaq 100 fund tracks 100. The overlap is not a flaw in either one, it is arithmetic: the largest US companies are both in the S&P 500 and listed on the Nasdaq, so they sit near the top of both baskets.
+
+Here is what that looks like in practice, using Q2 2026 holdings data and each fund's ten largest holdings:
+
+| Pair | Shared names in both top tens | Share of fund A | Share of fund B |
+|---|---|---|---|
+| QQQ and VOO | 9 of 10 | 47.7% of QQQ | 37.4% of VOO |
+| XLK and SMH | 3 of 10 | 27.4% of XLK | 33.6% of SMH |
+
+Three things in that table are worth sitting with.
+
+**QQQ and VOO are marketed as different products.** One is a technology-heavy index of 100 companies, the other is the broad US market. Nine of QQQ's ten largest holdings are also among VOO's ten largest. The only names not shared in the top ten are one company on each side.
+
+**Two funds can track the same index.** SPY and VOO both follow the S&P 500, so their largest holdings are the same companies in nearly the same order. Holding both is not a diversification decision, it is two wrappers on one exposure. That happens more often than you would expect, usually because one arrived through an employer retirement account and the other through a personal brokerage account.
+
+**XLK and SMH share only three names, but concentrate harder in them.** A sector fund and an industry fund can share few names and still put a larger share of each fund into those names than a broad index fund does. Overlap is not only about how many companies are shared. It is about how much weight rides on them.
+
+## The two percentages, and why one number will not do
+
+Notice that the QQQ and VOO row reports two figures, not one. That is deliberate, and any overlap tool reporting a single blended percentage is throwing away the more useful half of the answer.
+
+A shared company rarely carries the same weight in both funds. Take the three names XLK and SMH share. In XLK, the largest of them is roughly 17.8 percent of the fund. In SMH, the same company is roughly 20.2 percent. Same company, different exposure per dollar held.
+
+So the honest form of the answer is two statements:
+
+- Of every dollar in fund A, this much sits in companies fund B also holds.
+- Of every dollar in fund B, this much sits in those same companies.
+
+Which figure matters depends on how much of each fund you hold. That is your arithmetic, not the fund's.
+
+## The hard limit on every overlap check, including ours
+
+The [free ETF overlap tool](/tools/etf-overlap) compares two funds from a list of 35 and reports exactly the figures above. It works from each fund's **ten largest holdings**, not the full basket.
+
+That limit is not a detail to skip past. A total US market fund holds thousands of companies. Two funds can share nothing in their top tens and still hold hundreds of the same names further down. Every percentage the tool reports is therefore a floor on the real overlap, never the total.
+
+We say so on the page for the same reason it belongs here: a number presented as total overlap when it measures the top ten is worse than no number, because it invites a conclusion the data cannot support. If you need full-basket overlap, the source is each issuer's complete holdings file, published on the fund's own page and updated on the issuer's schedule.
+
+What the top ten does tell you is real, and it is usually the part that drives a fund's day-to-day movement. In a cap-weighted fund, the largest handful of holdings account for a large share of the fund and most of its reaction to news.
+
+## What concentration through overlap actually looks like
+
+The single-fund version of this question is answerable in a minute. The portfolio version is the one that goes unanswered for years, because the information is scattered across statements that never get added together.
+
+A common shape:
+
+- A 401(k) holding a total market index fund.
+- A Roth IRA holding an S&P 500 fund.
+- A taxable brokerage account holding a technology sector fund and a semiconductor fund.
+- A few hundred shares of one large technology company, bought directly years ago.
+
+Five line items, five tickers, in three accounts. No statement adds them up, and none of them is flagged as a concentrated position. Yet the same three or four companies can account for a substantial share of the combined book, reached through five separate routes.
+
+The number that matters is the look-through weight: for each company, the sum of what you hold directly plus what every fund holds of it, multiplied by how much of each fund you own. Without that, concentration is invisible on exactly the portfolios where it is largest.
+
+## How to check your own, and what to do with the answer
+
+Three steps, in order.
+
+**Compare the funds you hold, pair by pair.** Start with the pairs most likely to double up: two broad index funds, a broad fund against a growth fund, a sector fund against a broad fund. The [overlap tool](/tools/etf-overlap) covers the widely held ones.
+
+**Add the shares you hold directly.** A direct position in a large company is also present inside every broad fund you hold. Counting it once, as a direct holding, understates it.
+
+**Write down what you were relying on.** This is the step people skip, and it is the one that makes the number mean something. Overlap tells you a concentration exists. It does not tell you whether that concentration is a problem, because that depends on the reasoning behind each holding. If four funds all lean on the same handful of companies, then one reason, held once, is carrying far more of the portfolio than the ticker count suggests. Knowing that is the useful part. What you then choose to do is yours, and worth discussing with a tax or financial professional who can see your whole situation.
+
+## Where Helm fits
+
+Helm reads the positions in the accounts you connect through Plaid, read-only, and maps fund holdings back to the underlying companies so the same name arriving through three routes counts once. Concentration is reported on the look-through weight rather than the ticker list.
+
+It runs on the same look-through data as the page above, which means the same limit applies: the ten largest holdings of each fund, not the full basket. Overlap further down a basket is not visible to us either, and we would rather say that than print a number that implies otherwise.
+
+The free ETF overlap tool needs no account. The [connected portfolio view](/signup) is where the same question gets asked across everything you own at once.

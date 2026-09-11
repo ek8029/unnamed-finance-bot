@@ -267,16 +267,16 @@ export default function RSUCalculatorPage() {
           }),
         }}
       />
-      <title>RSU Vesting Calculator | Helm Terminal</title>
+      <title>RSU Tax Calculator: Vesting and Take-Home | Helm Terminal</title>
       <meta name="description" content="Free RSU vesting calculator. Estimate your RSU tax liability across vesting schedules, model concentration risk, and see your post-tax take-home at each vest date." />
       <link rel="canonical" href="https://helmterminal.dev/tools/rsu-calculator" />
-      <meta property="og:title" content="RSU Vesting Calculator | Helm Terminal" />
+      <meta property="og:title" content="RSU Tax Calculator: Vesting and Take-Home | Helm Terminal" />
       <meta property="og:description" content="Estimate RSU taxes, vesting schedules, and concentration risk. Free calculator for engineers and founders." />
       <meta property="og:url" content="https://helmterminal.dev/tools/rsu-calculator" />
       <meta property="og:site_name" content="Helm Terminal" />
       <meta property="og:type" content="website" />
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content="RSU Vesting Calculator | Helm Terminal" />
+      <meta name="twitter:title" content="RSU Tax Calculator: Vesting and Take-Home | Helm Terminal" />
       <meta name="twitter:description" content="Estimate RSU taxes, vesting schedules, and concentration risk. Free, no signup required." />
 
       <script
@@ -285,7 +285,7 @@ export default function RSUCalculatorPage() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'WebApplication',
-            name: 'RSU Vesting Calculator',
+            name: 'RSU Tax Calculator',
             description: 'Free calculator to estimate RSU tax liability, vesting timeline, and concentration risk.',
             url: 'https://helmterminal.dev/tools/rsu-calculator',
             applicationCategory: 'FinanceApplication',

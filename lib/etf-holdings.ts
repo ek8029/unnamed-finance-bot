@@ -224,6 +224,12 @@ export const LEVERAGED_ETF_MAP: Record<string, LeveragedProduct> = {
 
 // ── Broad & Sector ETF Top Holdings ──
 // Weights as of Q2 2026. Top 10 constituents per fund.
+//
+// KNOWN DATA DEFECT: the SPY and VOO arrays below are byte-identical. Both do
+// track the S&P 500, so their top tens really are nearly the same, but matching
+// to the decimal is a copy-paste rather than a reading of two holdings files.
+// Anything that prints SPY against VOO is quoting one array twice. Fix by
+// re-reading both issuer files; do not present the current figures as measured.
 
 export interface ETFConstituent {
   ticker: string;
