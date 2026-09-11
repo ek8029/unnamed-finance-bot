@@ -195,15 +195,42 @@ function SectorPreview({ sectors, pending }: { sectors: SectorSlice[]; pending: 
           const opacity = 0.22 + 0.7 * Math.min(1, slice.pct / topPct);
           const short = shortSector(slice.label);
           const name = short.length > 13 ? `${short.slice(0, 12)}.` : short;
+          // 9px type runs about 5.2 units a character here, plus the inset. A
+          // tall narrow tile cannot take the name across, so it takes it up the
+          // side instead: at 9% of the book Healthcare was drawing bare.
+          const pct = `${Math.round(slice.pct)}%`;
+          // Measured against the rendered SVG: 9px Geist runs about 4.9 units a
+          // character in this viewBox, plus the 4-unit inset at each end.
+          const run = (chars: number) => chars * 4.9 + 8;
+          const across = t.w > run(name.length) && t.h > 16;
+          // Up the side, and only as much as the height can actually hold: the
+          // percentage came off the top of the Healthcare tile when the fit was
+          // measured against the name alone.
+          const upward = !across && t.w > 15 && t.h > run(name.length);
+          const upwardPct = upward && t.h > run(name.length + pct.length + 1);
           return (
             <g key={slice.label}>
               <rect x={t.x} y={t.y} width={t.w} height={t.h} fill="var(--color-gold)" fillOpacity={opacity} stroke="var(--color-bg-base)" strokeWidth={0.9} />
-              {/* 9px type runs about 5.2 units a character here, plus the inset. */}
-              {t.w > name.length * 5.2 + 8 && t.h > 16 && (
+              {across && (
                 <text x={t.x + 4} y={t.y + 12} fontSize={9} fontWeight={600} fill="#0A0A0A">{name}</text>
               )}
-              {t.h > 30 && (
-                <text x={t.x + 4} y={t.y + 24} fontSize={9} fill="#0A0A0A" fillOpacity={0.72}>{Math.round(slice.pct)}%</text>
+              {across && t.h > 30 && (
+                <text x={t.x + 4} y={t.y + 24} fontSize={9} fill="#0A0A0A" fillOpacity={0.72}>{pct}</text>
+              )}
+              {upward && (
+                <text
+                  x={t.x + 12}
+                  y={t.y + t.h - 5}
+                  fontSize={9}
+                  fontWeight={600}
+                  fill="#0A0A0A"
+                  transform={`rotate(-90 ${t.x + 12} ${t.y + t.h - 5})`}
+                >
+                  {upwardPct ? `${name} ${pct}` : name}
+                </text>
+              )}
+              {!across && !upward && t.h > 16 && t.w > 22 && (
+                <text x={t.x + 4} y={t.y + 12} fontSize={9} fill="#0A0A0A" fillOpacity={0.72}>{pct}</text>
               )}
             </g>
           );

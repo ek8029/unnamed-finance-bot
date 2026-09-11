@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { manualPositions, overlapColumns, sectorSplit, shareLabel } from '@/lib/onboarding/v3-book-view';
 
-const accounts = [
-  { id: 'm1', source: 'manual' as const },
-  { id: 'p1', source: 'plaid' as const },
-];
-
 const holding = (ticker: string, value: number, account_id: string | null, shares = 1) => ({
   ticker,
   total_value: value,
@@ -14,8 +9,8 @@ const holding = (ticker: string, value: number, account_id: string | null, share
 });
 
 describe('manualPositions', () => {
-  it('returns only the hand-typed rows, largest first', () => {
-    const { rows } = manualPositions(accounts, [
+  it('returns only that account rows, largest first', () => {
+    const { rows } = manualPositions('m1', [
       holding('AAPL', 100, 'm1', 2),
       holding('NVDA', 900, 'p1', 3),
       holding('MSFT', 400, 'm1', 1),
@@ -23,26 +18,33 @@ describe('manualPositions', () => {
     expect(rows.map((r) => r.ticker)).toEqual(['MSFT', 'AAPL']);
   });
 
+  it('never pools another account, which is what the demo book exposed', () => {
+    // Every one of the demo's 23 accounts carries source='manual'. Pooling them
+    // repeated one list under all of them.
+    const holdings = [holding('AAPL', 100, 'm1'), holding('MSFT', 400, 'm2')];
+    expect(manualPositions('m1', holdings).rows.map((r) => r.ticker)).toEqual(['AAPL']);
+    expect(manualPositions('m2', holdings).rows.map((r) => r.ticker)).toEqual(['MSFT']);
+  });
+
   it('uppercases the ticker and keeps shares and value', () => {
-    const { rows } = manualPositions(accounts, [holding('aapl', 250.5, 'm1', 1.5)]);
+    const { rows } = manualPositions('m1', [holding('aapl', 250.5, 'm1', 1.5)]);
     expect(rows[0]).toEqual({ ticker: 'AAPL', shares: 1.5, value: 250.5 });
   });
 
-  it('caps the rows and reports how many were cut, with the total over all of them', () => {
+  it('caps the rows and reports how many were cut', () => {
     const many = Array.from({ length: 9 }, (_, i) => holding(`T${i}`, (i + 1) * 10, 'm1'));
-    const { rows, more, total } = manualPositions(accounts, many, 6);
+    const { rows, more } = manualPositions('m1', many, 6);
     expect(rows).toHaveLength(6);
     expect(more).toBe(3);
-    expect(total).toBe(450);
   });
 
-  it('is empty with no manual account, and with a manual account holding nothing', () => {
-    expect(manualPositions([{ id: 'p1', source: 'plaid' }], [holding('NVDA', 900, 'p1')]).rows).toEqual([]);
-    expect(manualPositions(accounts, [holding('NVDA', 900, 'p1')])).toEqual({ rows: [], more: 0, total: 0 });
+  it('is empty for an account holding nothing', () => {
+    expect(manualPositions('m1', [holding('NVDA', 900, 'p1')])).toEqual({ rows: [], more: 0 });
+    expect(manualPositions('m1', [])).toEqual({ rows: [], more: 0 });
   });
 
   it('ignores a holding with no account, which can never be a typed one', () => {
-    expect(manualPositions(accounts, [holding('AAPL', 100, null)]).rows).toEqual([]);
+    expect(manualPositions('m1', [holding('AAPL', 100, null)]).rows).toEqual([]);
   });
 });
 

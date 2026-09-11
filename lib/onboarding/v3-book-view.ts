@@ -6,27 +6,28 @@
 // single line with its position count.
 
 export type ManualPosition = { ticker: string; shares: number; value: number };
-export type ManualBook = { rows: ManualPosition[]; more: number; total: number };
+export type ManualBook = { rows: ManualPosition[]; more: number };
 
-type Account = { id: string; source: 'plaid' | 'manual' };
 type Holding = { ticker: string; total_value: number; account_id: string | null; shares: number };
 
-const EMPTY: ManualBook = { rows: [], more: 0, total: 0 };
+const EMPTY: ManualBook = { rows: [], more: 0 };
 
-/** Largest first. `more` is how many were cut by `cap`; `total` is every row's value, not just the shown ones. */
-export function manualPositions(accounts: Account[], holdings: Holding[], cap = 6): ManualBook {
-  const manual = new Set(accounts.filter((a) => a.source === 'manual').map((a) => a.id));
-  if (manual.size === 0) return EMPTY;
-  const mine = holdings.filter((h) => h.account_id != null && manual.has(h.account_id));
+/**
+ * One account's typed positions, largest first. `more` is how many were cut by
+ * `cap`.
+ *
+ * Scoped to a single account on purpose. Pooling every manual account's
+ * holdings looked right on a book with one hand-entered account and wrong on
+ * the demo, whose 23 accounts all carry source='manual': the same six rows
+ * rendered under every one of them.
+ */
+export function manualPositions(accountId: string, holdings: Holding[], cap = 6): ManualBook {
+  const mine = holdings.filter((h) => h.account_id === accountId);
   if (mine.length === 0) return EMPTY;
   const rows = mine
     .map((h) => ({ ticker: h.ticker.toUpperCase(), shares: Number(h.shares) || 0, value: Number(h.total_value) || 0 }))
     .sort((a, b) => b.value - a.value);
-  return {
-    rows: rows.slice(0, cap),
-    more: Math.max(0, rows.length - cap),
-    total: rows.reduce((n, r) => n + r.value, 0),
-  };
+  return { rows: rows.slice(0, cap), more: Math.max(0, rows.length - cap) };
 }
 
 /** 4 renders "4", 0.5 renders "0.5": a fractional share is real and must not round to zero. */

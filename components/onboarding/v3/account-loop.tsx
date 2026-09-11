@@ -31,8 +31,6 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
   const positions = accounts.reduce((n, a) => n + a.positions, 0);
   const total = holdings.reduce((n, h) => n + (Number(h.total_value) || 0), 0);
   const heading = accounts.length <= 1 ? copy.one : copy.many(accounts.length, positions, formatCurrency(total));
-  const typed = manualPositions(accounts, holdings);
-  const manualIds = new Set(accounts.filter((a) => a.source === 'manual').map((a) => a.id));
 
   return (
     <section aria-label={copy.title}>
@@ -41,9 +39,10 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
       <ul className="mt-4 divide-y divide-[var(--color-border-base)] rounded-xl border border-[var(--color-border-base)] bg-[var(--color-surface-tint)]">
         {accounts.map((a) => {
           const isSyncing = syncing != null && a.institution === syncing;
-          // Only a hand-typed account expands. An imported book can run to
-          // hundreds of rows and is usually still syncing while this is up.
-          const showTyped = manualIds.has(a.id) && typed.rows.length > 0;
+          // Only a hand-typed account expands, and only its OWN positions. An
+          // imported book can run to hundreds of rows and is usually still
+          // syncing while this is up.
+          const typed = a.source === 'manual' ? manualPositions(a.id, holdings) : null;
           return (
             <li key={a.id} className="px-4 py-3">
               <div className="flex items-center justify-between gap-4">
@@ -66,7 +65,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
                 )}
               </div>
 
-              {showTyped && (
+              {typed && typed.rows.length > 0 && (
                 <div className="mt-3 border-t border-[var(--color-border-base)] pt-3">
                   <p className="text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{copy.yourEntry}</p>
                   <ul className="mt-2 grid gap-1.5">
