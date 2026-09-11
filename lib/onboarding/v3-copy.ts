@@ -44,6 +44,7 @@ export const V3_COPY = {
     statPositions: (n: number) => plural(n, 'position', 'positions'),
     statValue: 'tracked',
     showAll: 'All accounts and positions',
+    hideAll: 'Hide the detail',
     yourEntry: 'What you typed in',
     andMore: (n: number) => `and ${n} more`,
     shares: (n: string) => `${n} ${plural(Number(n), 'share', 'shares')}`,

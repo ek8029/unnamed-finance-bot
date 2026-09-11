@@ -67,7 +67,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
         onToggle={(e) => setOpen(e.currentTarget.open)}
         className="mt-4 overflow-hidden rounded-xl border border-[var(--color-border-base)] bg-[var(--color-surface-tint)]"
       >
-        <summary className="flex min-h-[56px] cursor-pointer list-none flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 [&::marker]:hidden [&::-webkit-details-marker]:hidden">
+        <summary className="group flex min-h-[56px] cursor-pointer list-none flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 [&::marker]:hidden [&::-webkit-details-marker]:hidden">
           <span className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
             <span className="text-[17px] tabular-nums text-[var(--color-text-primary)]">
               {accounts.length}
@@ -82,9 +82,11 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
               <span className="ml-1.5 text-[13px] text-[var(--color-text-muted)]">{copy.statValue}</span>
             </span>
           </span>
-          <span className="flex shrink-0 items-center gap-1.5 text-[13px] text-[var(--color-text-muted)]">
-            {copy.showAll}
-            <ChevronDown size={16} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          {/* Reads as a control rather than a caption: the label was too quiet to
+              find on a screen this dense. */}
+          <span className="flex shrink-0 items-center gap-2 rounded-md border border-[var(--color-border-base)] px-3 py-1.5 text-[14px] text-[var(--color-text-secondary)] transition-colors group-hover:border-[var(--color-border-strong)] group-hover:text-[var(--color-text-primary)]">
+            {open ? copy.hideAll : copy.showAll}
+            <ChevronDown size={18} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
           </span>
         </summary>
 
@@ -121,7 +123,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
 
               {typed && typed.rows.length > 0 && (
                 <div className="mt-3 border-t border-[var(--color-border-base)] pt-3">
-                  <p className="text-[12px] uppercase tracking-[0.12em] text-[var(--color-text-muted)]">{copy.yourEntry}</p>
+                  <p className="text-[12px] text-[var(--color-text-muted)]">{copy.yourEntry}</p>
                   <ul className="mt-2 grid gap-1.5">
                     {typed.rows.map((r) => (
                       <li key={r.ticker} className="flex items-baseline justify-between gap-4 text-[13px]">

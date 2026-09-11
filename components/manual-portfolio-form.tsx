@@ -28,6 +28,11 @@ const FIELD_CLASS =
 
 const FIELD_LABEL_CLASS =
   'block text-[9px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] mb-2';
+// The compact form sits inside onboarding and the portfolio empty state,
+// which are prose in Geist at 14-17px. Space Grotesk on the LABELS and the
+// BUTTONS there put a third typeface on the screen; mono belongs on the data
+// the reader types, not on the chrome around it.
+const FIELD_LABEL_COMPACT = 'block text-[12px] text-[var(--color-text-muted)] mb-2';
 
 function createEmptyRow(): HoldingRow {
   return { id: crypto.randomUUID(), ticker: '', shares: '', costBasis: '' };
@@ -51,6 +56,9 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
   const [success, setSuccess] = useState(false);
   const [needsRetry, setNeedsRetry] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
+  // Mono stays on the inputs either way: a ticker and a share count are data.
+  const chrome = compact ? undefined : MONO;
+  const labelClass = compact ? FIELD_LABEL_COMPACT : FIELD_LABEL_CLASS;
   const [identityReady, setIdentityReady] = useState(readOnly);
   const [recoveryError, setRecoveryError] = useState(false);
   const [conflicts, setConflicts] = useState<string[]>([]);
@@ -264,9 +272,9 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
         <div className="space-y-3">
           {/* Header row */}
           <div className="helm-manual-columns helm-manual-labels" aria-hidden="true">
-            <span className={FIELD_LABEL_CLASS} style={MONO}>Symbol / asset</span>
-            <span className={FIELD_LABEL_CLASS} style={MONO}>Shares</span>
-            <span className={FIELD_LABEL_CLASS} style={MONO}>
+            <span className={labelClass} style={chrome}>Symbol / asset</span>
+            <span className={labelClass} style={chrome}>Shares</span>
+            <span className={labelClass} style={chrome}>
               Cost / share
               <span className="opacity-50 ml-1">opt</span>
             </span>
@@ -336,8 +344,8 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
             type="button"
             onClick={addRow}
             disabled={editingLocked}
-            className="flex items-center gap-1.5 mt-4 py-2 text-[12px] uppercase tracking-[0.1em] text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            style={MONO}
+            className={`flex items-center gap-1.5 mt-4 py-2 text-[var(--color-text-muted)] hover:text-[var(--color-gold)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${compact ? 'min-h-[44px] text-[14px]' : 'text-[12px] uppercase tracking-[0.1em]'}`}
+            style={chrome}
           >
             <Plus className="w-3.5 h-3.5" />
             Add position
@@ -346,7 +354,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
 
         {/* Error */}
         {error && (
-          <p role="alert" className="mt-4 text-[14px] text-[var(--color-negative)]" style={MONO}>
+          <p role="alert" className="mt-4 text-[14px] text-[var(--color-negative)]" style={chrome}>
             {error}
           </p>
         )}
@@ -364,16 +372,16 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
             type="button"
             onClick={clearRows}
             disabled={editingLocked}
-            className="h-9 px-4 inline-flex items-center bg-transparent border border-[var(--color-border-base)] rounded-md text-[10px] uppercase tracking-[0.1em] text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer disabled:opacity-50"
-            style={MONO}
+            className={`inline-flex items-center bg-transparent border border-[var(--color-border-base)] rounded-md text-[var(--color-text-secondary)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer disabled:opacity-50 ${compact ? 'min-h-[44px] px-4 text-[14px]' : 'h-9 px-4 text-[10px] uppercase tracking-[0.1em]'}`}
+            style={chrome}
           >
             Clear
           </button>
           <button
             type="submit"
             disabled={saving || !identityReady || needsAuth || recoveryError}
-            className="h-9 px-[18px] inline-flex items-center gap-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[#0A0A0A] font-bold text-[10px] uppercase tracking-[0.12em] rounded-md cursor-pointer transition-all disabled:opacity-50"
-            style={MONO}
+            className={`inline-flex items-center gap-2 bg-[var(--color-gold)] hover:brightness-[1.08] text-[#0A0A0A] rounded-md cursor-pointer transition-all disabled:opacity-50 ${compact ? 'min-h-[44px] px-5 text-[15px] font-semibold' : 'h-9 px-[18px] font-bold text-[10px] uppercase tracking-[0.12em]'}`}
+            style={chrome}
           >
             {saving ? (
               <>
@@ -387,7 +395,7 @@ export function ManualPortfolioForm({ onComplete, compact = false, readOnly = fa
         </div>
       </div>
 
-      <p className="mt-3 text-[12px] text-[var(--color-text-muted)] text-center" style={MONO}>
+      <p className={`mt-3 text-[12px] text-[var(--color-text-muted)] ${compact ? '' : 'text-center'}`} style={chrome}>
         Average cost per share is optional. Add it for tax-loss harvesting insights.
       </p>
     </form>
