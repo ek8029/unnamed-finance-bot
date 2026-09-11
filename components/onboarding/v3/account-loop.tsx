@@ -3,6 +3,8 @@
 // typed in by hand read back under their account, a syncing row for a fresh
 // Plaid item, the ask again (compact) for the next account, and the door to
 // the reveal. The parent owns the book; this renders it.
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { BookAsk } from './book-ask';
 import type { BookAccount, BookHolding } from './use-book';
 import { useSettings } from '@/contexts/settings-context';
@@ -30,13 +32,65 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
   const { formatCurrency } = useSettings();
   const positions = accounts.reduce((n, a) => n + a.positions, 0);
   const total = holdings.reduce((n, h) => n + (Number(h.total_value) || 0), 0);
-  const heading = accounts.length <= 1 ? copy.one : copy.many(accounts.length, positions, formatCurrency(total));
+  const heading = accounts.length <= 1 ? copy.one : copy.several;
+  // Shut until the book arrives, then open only if it is short enough to be
+  // worth showing whole. Deriving this from accounts.length on every render
+  // latched it open: the first render has an empty book, <details> opened, the
+  // browser fired toggle at that, and the echo pinned it open for a 23-account
+  // account list. Decided once, then the reader owns it.
+  const [open, setOpen] = useState(false);
+  const decided = useRef(false);
+  useEffect(() => {
+    if (decided.current || accounts.length === 0) return;
+    decided.current = true;
+    setOpen(accounts.length <= 3);
+  }, [accounts.length]);
 
   return (
     <section aria-label={copy.title}>
       <h3 className="text-[15px] leading-relaxed text-[var(--color-text-primary)]">{heading}</h3>
 
-      <ul className="mt-4 divide-y divide-[var(--color-border-base)] rounded-xl border border-[var(--color-border-base)] bg-[var(--color-surface-tint)]">
+      {/* A syncing import reports outside the disclosure: it is the only thing
+          here that changes on its own, and collapsing it would hide the one
+          signal that a connect worked. */}
+      {syncing && (
+        <p role="status" className="mt-4 flex items-center gap-2 text-[14px] text-[var(--color-text-secondary)]">
+          <svg className="h-5 w-5 animate-pulse text-[var(--color-positive)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          {copy.syncing(syncing)}
+        </p>
+      )}
+
+      <details
+        open={open}
+        onToggle={(e) => setOpen(e.currentTarget.open)}
+        className="mt-4 overflow-hidden rounded-xl border border-[var(--color-border-base)] bg-[var(--color-surface-tint)]"
+      >
+        <summary className="flex min-h-[56px] cursor-pointer list-none flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 [&::marker]:hidden [&::-webkit-details-marker]:hidden">
+          <span className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+            <span className="text-[17px] tabular-nums text-[var(--color-text-primary)]">
+              {accounts.length}
+              <span className="ml-1.5 text-[13px] text-[var(--color-text-muted)]">{copy.statAccounts(accounts.length)}</span>
+            </span>
+            <span className="text-[17px] tabular-nums text-[var(--color-text-primary)]">
+              {positions}
+              <span className="ml-1.5 text-[13px] text-[var(--color-text-muted)]">{copy.statPositions(positions)}</span>
+            </span>
+            <span className="text-[17px] tabular-nums text-[var(--color-text-primary)]">
+              {formatCurrency(total)}
+              <span className="ml-1.5 text-[13px] text-[var(--color-text-muted)]">{copy.statValue}</span>
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 text-[13px] text-[var(--color-text-muted)]">
+            {copy.showAll}
+            <ChevronDown size={16} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          </span>
+        </summary>
+
+        {/* Long books scroll inside the panel instead of pushing the ask and the
+            continue button off the screen. */}
+        <ul className="max-h-[320px] divide-y divide-[var(--color-border-base)] overflow-y-auto border-t border-[var(--color-border-base)]">
         {accounts.map((a) => {
           const isSyncing = syncing != null && a.institution === syncing;
           // Only a hand-typed account expands, and only its OWN positions. An
@@ -85,7 +139,8 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
             </li>
           );
         })}
-      </ul>
+        </ul>
+      </details>
 
       {duplicate && (
         <p role="status" className="mt-3 rounded-md border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] px-3 py-2 text-[13px] text-[var(--color-text-primary)]">

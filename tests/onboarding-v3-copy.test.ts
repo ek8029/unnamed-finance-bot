@@ -31,8 +31,10 @@ describe('onboarding v3 copy', () => {
   }
   it('templated lines pass the copy rules with sample values', () => {
     lint('step', V3_COPY.step(2));
-    lint('loop.many', V3_COPY.loop.many(2, 14, '$120,400'));
-    lint('loop.many', V3_COPY.loop.many(1, 1, '$500'));
+    lint('loop.statAccounts', V3_COPY.loop.statAccounts(1));
+    lint('loop.statAccounts', V3_COPY.loop.statAccounts(23));
+    lint('loop.statPositions', V3_COPY.loop.statPositions(1));
+    lint('loop.statPositions', V3_COPY.loop.statPositions(82));
     lint('loop.syncing', V3_COPY.loop.syncing('Fidelity'));
     lint('loop.positions', V3_COPY.loop.positions(1));
     lint('loop.positions', V3_COPY.loop.positions(3));
@@ -54,7 +56,8 @@ describe('onboarding v3 copy', () => {
   it('every function leaf in V3_COPY is exercised by the templated-lines test', () => {
     const covered = [
       'V3_COPY.step',
-      'V3_COPY.loop.many',
+      'V3_COPY.loop.statAccounts',
+      'V3_COPY.loop.statPositions',
       'V3_COPY.loop.syncing',
       'V3_COPY.loop.already',
       'V3_COPY.loop.positions',

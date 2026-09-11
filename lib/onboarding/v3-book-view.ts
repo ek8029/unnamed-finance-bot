@@ -30,11 +30,20 @@ export function manualPositions(accountId: string, holdings: Holding[], cap = 6)
   return { rows: rows.slice(0, cap), more: Math.max(0, rows.length - cap) };
 }
 
-/** 4 renders "4", 0.5 renders "0.5": a fractional share is real and must not round to zero. */
+/**
+ * 4 renders "4", 0.5 renders "0.5": a fractional share is real and must not
+ * round to zero. Two decimals above one share, the way a brokerage prints it
+ * ("51.1503 shares" read as noise on screen), and six below one, because a
+ * coin position is small and every digit of it counts.
+ */
 export function shareLabel(shares: number): string {
   if (!Number.isFinite(shares)) return '0';
   if (Number.isInteger(shares)) return String(shares);
-  return String(Number(shares.toFixed(4)));
+  const rounded = Number(shares.toFixed(Math.abs(shares) >= 1 ? 2 : 6));
+  if (rounded !== 0) return String(rounded);
+  // Dust. Printing "0 shares" beside a dollar value would be a lie, and the
+  // column carries eight decimals, so show what it actually holds.
+  return String(Number(shares.toFixed(8)));
 }
 
 /**

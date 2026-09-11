@@ -36,7 +36,14 @@ export const V3_COPY = {
     title: 'Is that all of it?',
     lede: 'Helm reads across accounts, so it works best when it can see all of them. Add the others now, or later from Accounts.',
     one: 'One account is enough to start. Exposure, overlap and the tax view only ever see what the book holds, so anything held somewhere else stays invisible to them.',
-    many: (n: number, positions: number, value: string) => `${n} ${plural(n, 'account', 'accounts')}, ${positions} ${plural(positions, 'position', 'positions')}, ${value}. Add another, or continue.`,
+    // The figures live in the summary strip now, so the heading does not
+    // repeat them: a 23-account book made the same three numbers appear twice
+    // above a list too long to scroll.
+    several: 'Helm has these. Add another account, or continue.',
+    statAccounts: (n: number) => plural(n, 'account', 'accounts'),
+    statPositions: (n: number) => plural(n, 'position', 'positions'),
+    statValue: 'tracked',
+    showAll: 'All accounts and positions',
     yourEntry: 'What you typed in',
     andMore: (n: number) => `and ${n} more`,
     shares: (n: string) => `${n} ${plural(Number(n), 'share', 'shares')}`,

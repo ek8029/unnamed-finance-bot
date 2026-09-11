@@ -52,7 +52,16 @@ describe('shareLabel', () => {
   it('keeps an integer bare and a fraction visible', () => {
     expect(shareLabel(4)).toBe('4');
     expect(shareLabel(0.5)).toBe('0.5');
-    expect(shareLabel(1.23456789)).toBe('1.2346');
+  });
+
+  it('prints two decimals above a share and six below one', () => {
+    expect(shareLabel(103.922)).toBe('103.92');
+    expect(shareLabel(51.1503)).toBe('51.15');
+    expect(shareLabel(0.00234567)).toBe('0.002346');
+  });
+
+  it('never rounds a real position to zero', () => {
+    expect(shareLabel(0.0000004)).not.toBe('0');
   });
   it('reads a non-number as zero rather than NaN', () => {
     expect(shareLabel(Number.NaN)).toBe('0');
