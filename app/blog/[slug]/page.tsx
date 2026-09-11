@@ -25,7 +25,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!post) return { title: 'Post Not Found | Helm Terminal' };
 
   return {
-    title: `${post.title} | Helm Terminal`,
+    // " | Helm Terminal" is 17 characters of suffix on a 60-character budget,
+    // and it pushed 15 posts past where Google truncates, including
+    // best-bloomberg-terminal-alternatives, which took 46,804 impressions in
+    // three months. "Helm" keeps the brand and buys back 10 characters. The 39
+    // posts whose own titles run past 60 are untouched: those need the titles
+    // rewritten, which is Evan's call and not a template change.
+    title: `${post.title} | Helm`,
     description: post.description,
     openGraph: {
       title: post.title,
