@@ -7,7 +7,10 @@ export async function GET() {
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    return NextResponse.json(await readActivationState(client, user.id), {
+    // userId lets a client scope per-account browser state (the onboarding v3
+    // deferral) without plumbing the session through props. It is the caller's
+    // own id, already in their session.
+    return NextResponse.json({ ...await readActivationState(client, user.id), userId: user.id }, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch {

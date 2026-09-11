@@ -20,9 +20,9 @@ import { useBook } from './use-book';
 import type { FirstLook } from '@/lib/onboarding/first-look';
 import { afterSynced, nextSyncing, pickNewPlaidAccounts } from '@/lib/onboarding/v3-sync-state';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
+import { decideV3Gate, deferredKey, type GateOutcome } from '@/lib/onboarding/v3-gate';
 
 type Phase = 'ask' | 'loop' | 'reveal';
-const V3_KEY = 'helm_onboarding_v3_deferred';
 const STEP: Record<Phase, number> = { ask: 1, loop: 2, reveal: 3 };
 const SYNC_POLL_MS = 10_000;
 
@@ -30,8 +30,15 @@ function track(event: string, props?: Record<string, unknown>) {
   try { posthog.capture(event, props); } catch { /* posthog no-ops if uninitialized */ }
 }
 
-function markDeferred() {
-  try { localStorage.setItem(V3_KEY, '1'); } catch { /* storage blocked */ }
+// Scoped to the account. Without a user id there is nothing to scope, so
+// nothing is written: onboarding shows again rather than hiding for everyone.
+function markDeferred(userId: string | null) {
+  if (!userId) return;
+  try { localStorage.setItem(deferredKey(userId), '1'); } catch { /* storage blocked */ }
+}
+
+function isDeferred(userId: string) {
+  try { return localStorage.getItem(deferredKey(userId)) === '1'; } catch { return false; }
 }
 
 export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
@@ -71,27 +78,40 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   // a fresh connection whose institution is still importing.
   const knownIds = useRef<Set<string>>(new Set());
   const duplicatePending = useRef(false);
+  // The signed-in account, from the status read. "Do this later" needs it to
+  // write the scoped deferral.
+  const userIdRef = useRef<string | null>(null);
   const accountsRef = useRef(book.accounts);
   accountsRef.current = book.accounts;
 
-  // Gate. A returning user with a book, or anyone who chose "later", never sees this.
+  // Gate. A returning user with a book, or an account that chose "later" in
+  // this browser, never sees this. The server read comes first because the
+  // deferral is keyed on the account, not the browser, and it fails OPEN: a
+  // status outage shows onboarding rather than hiding it from a new user.
   useEffect(() => {
     if (harness) return;
     let cancelled = false;
-    try {
-      if (localStorage.getItem(V3_KEY) === '1') { settle(); return; }
-    } catch { /* storage blocked: fall through to the status read */ }
+    const apply = (outcome: GateOutcome, userId: string | null) => {
+      if (outcome === 'defer-and-settle') { markDeferred(userId); settle(); return; }
+      if (outcome === 'settle') { settle(); return; }
+      setShow(true);
+      track('onb3_shown', { flow: 'v3', gate: outcome === 'show-unavailable' ? 'unavailable' : 'ok' });
+    };
     fetch('/api/onboarding/status', { cache: 'no-store' })
       .then(async (r) => {
         if (cancelled) return;
-        if (!r.ok) { settle(); return; }
+        if (!r.ok) { apply(decideV3Gate({ ok: false }), null); return; }
         const s = await r.json();
         if (cancelled) return;
-        if (s?.hasSavedWork) { markDeferred(); settle(); return; }
-        setShow(true);
-        track('onb3_shown', { flow: 'v3' });
+        const userId = typeof s?.userId === 'string' && s.userId ? s.userId : null;
+        userIdRef.current = userId;
+        apply(decideV3Gate({
+          ok: true,
+          hasSavedWork: !!s?.hasSavedWork,
+          deferred: !!userId && isDeferred(userId),
+        }), userId);
       })
-      .catch(() => { if (!cancelled) settle(); });
+      .catch(() => { if (!cancelled) apply(decideV3Gate({ ok: false }), null); });
     return () => { cancelled = true; };
   }, [harness, settle]);
 
@@ -127,7 +147,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
       void book.refetch();
       return;
     }
-    markDeferred();
+    markDeferred(userIdRef.current);
     settle();
     window.location.href = '/dashboard/portfolio';
   }, [harness, settle, book.refetch]);
