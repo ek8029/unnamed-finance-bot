@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { WorklogResponse, WorklogStep, WorklogKind } from '@/app/api/agent/worklog/route';
+import { withNovelty } from '@/lib/agent/worklog-display';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const GOLD = '#E6B94D';
@@ -52,7 +53,13 @@ function useWorklog() {
 export function AgentWorklog() {
   const data = useWorklog();
   if (!data || data.steps.length === 0) return null;
-  const { steps, summary, ranAt } = data;
+  // Same novelty rule the overview card uses (819e903). Without it this
+  // surface still said "Ran the risk scans across your book" every night,
+  // which was the whole complaint: a true line that names nothing. The
+  // fallback keeps the newest line rather than rendering an empty panel.
+  const novel = withNovelty(data.steps);
+  const steps = novel.length > 0 ? novel : data.steps.slice(0, 1);
+  const { summary, ranAt } = data;
 
   const segs: string[] = [];
   if (summary.accounts > 0) segs.push(`${summary.accounts} account${summary.accounts === 1 ? '' : 's'}`);
