@@ -21,7 +21,7 @@ import { useBook } from './use-book';
 import type { FirstLook } from '@/lib/onboarding/first-look';
 import { afterSynced, nextSyncing, pickNewPlaidAccounts } from '@/lib/onboarding/v3-sync-state';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
-import { decideV3Gate, deferredKey, type GateOutcome } from '@/lib/onboarding/v3-gate';
+import { DEMO_DISMISSED_KEY, decideV3Gate, deferredKey, type GateOutcome } from '@/lib/onboarding/v3-gate';
 
 type Phase = 'ask' | 'loop' | 'first-look' | 'reveal';
 const STEP: Record<Phase, number> = { ask: 1, loop: 2, 'first-look': 3, reveal: 4 };
@@ -41,6 +41,16 @@ function markDeferred(userId: string | null) {
 
 function isDeferred(userId: string) {
   try { return localStorage.getItem(deferredKey(userId)) === '1'; } catch { return false; }
+}
+
+// The demo's exit lives in sessionStorage, not localStorage: it has to survive
+// the navigation to the portfolio, and it has to be gone by the next visit.
+function demoDismissed() {
+  try { return sessionStorage.getItem(DEMO_DISMISSED_KEY) === '1'; } catch { return false; }
+}
+
+function dismissDemo() {
+  try { sessionStorage.setItem(DEMO_DISMISSED_KEY, '1'); } catch { /* storage blocked */ }
 }
 
 export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
@@ -113,6 +123,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
         apply(decideV3Gate({
           ok: true,
           isDemo: s?.isDemo === true,
+          demoDismissed: demoDismissed(),
           hasSavedWork: !!s?.hasSavedWork,
           deferred: !!userId && isDeferred(userId),
         }), userId);
@@ -153,8 +164,11 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
       void book.refetch();
       return;
     }
-    // The demo starts from zero next visit, so its exit writes nothing.
-    if (!demo) markDeferred(userIdRef.current);
+    // The demo starts from zero next visit, so nothing is written that outlives
+    // this browsing session. It still has to record the exit, or the gate shows
+    // the flow again the moment the portfolio loads.
+    if (demo) dismissDemo();
+    else markDeferred(userIdRef.current);
     settle();
     window.location.href = '/dashboard/portfolio';
   }, [harness, settle, book.refetch, demo]);

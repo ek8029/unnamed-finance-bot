@@ -93,9 +93,18 @@ describe('the investor demo login', () => {
     expect(decideV3Gate({ ok: true, isDemo: true, hasSavedWork: true })).toBe('show-demo');
   });
 
-  it('ignores its own deferral, so "Do this later" does not end the demo forever', () => {
+  it('ignores its own long-lived deferral, so it is seen from zero next visit', () => {
     expect(decideV3Gate({ ok: true, isDemo: true, deferred: true })).toBe('show-demo');
     expect(decideV3Gate({ ok: true, isDemo: true, hasSavedWork: true, deferred: true })).toBe('show-demo');
+  });
+
+  it('takes the session dismissal, or "Do this later" loops forever', () => {
+    // Shipped broken: show-demo came before any dismissal and the demo wrote
+    // none, so the exit navigated to the portfolio and the gate reopened the
+    // flow on arrival, every time.
+    expect(decideV3Gate({ ok: true, isDemo: true, demoDismissed: true })).toBe('settle');
+    expect(decideV3Gate({ ok: true, isDemo: true, demoDismissed: true, hasSavedWork: true })).toBe('settle');
+    expect(decideV3Gate({ ok: false, isDemo: true, demoDismissed: true })).toBe('settle');
   });
 
   it('still shows when the status read failed', () => {
