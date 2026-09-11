@@ -108,8 +108,12 @@ describe('sectorSplit', () => {
     expect(byLabel.get('No sector on file')).toBe(50);
   });
 
-  it('prefers a real sector over the asset class', () => {
-    expect(sectorSplit([h(100, 'Diversified', 'etf')], labels)[0].label).toBe('Diversified');
+  it('counts a fund as a fund even when a vendor filed a sector against it', () => {
+    // SPY and VTI arrive with sector='Diversified'. Honouring that drew them as
+    // a sector slice on a card whose own line says a fund is counted as a fund.
+    expect(sectorSplit([h(100, 'Diversified', 'etf')], labels)[0].label).toBe('Funds');
+    expect(sectorSplit([h(100, 'Technology', 'mutual_fund')], labels)[0].label).toBe('Funds');
+    expect(sectorSplit([h(100, 'Technology', 'crypto')], labels)[0].label).toBe('Crypto');
   });
 
   it('reads the asset class case-insensitively', () => {

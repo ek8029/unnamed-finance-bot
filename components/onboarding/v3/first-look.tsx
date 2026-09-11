@@ -20,6 +20,7 @@ import { fetchReceipt, type Receipt } from './receipt-card';
 import type { BookAccount, BookHolding } from './use-book';
 
 const copy = V3_COPY.firstLook;
+const BUCKETS = new Set<string>([copy.buckets.funds, copy.buckets.crypto, copy.buckets.unclassified]);
 
 type Mover = { ticker: string; changePct: number; dollarImpact: number };
 type Delta = { movers: Mover[]; isToday: boolean };
@@ -180,6 +181,10 @@ function SectorPreview({ sectors, pending }: { sectors: SectorSlice[]; pending: 
   if (sectors.length === 0) return <Pending line={copy.empty} />;
   const tiles = squarify(sectors.map((s) => s.pct), MAP_W, MAP_H);
   const topPct = sectors[0].pct || 1;
+  // The sentence names the largest real SECTOR. Funds, crypto and the unfiled
+  // remainder are buckets, not sectors, so "Funds is your largest sector at
+  // 40%" would be a category error even though the tile is honest.
+  const headline = sectors.find((s) => !BUCKETS.has(s.label)) ?? null;
   return (
     <span className="block">
       <svg
@@ -236,9 +241,11 @@ function SectorPreview({ sectors, pending }: { sectors: SectorSlice[]; pending: 
           );
         })}
       </svg>
-      <span className="mt-2 block text-[13px] leading-relaxed text-[var(--color-text-primary)]">
-        {copy.sectorTop(sectors[0].label, Math.round(sectors[0].pct))}
-      </span>
+      {headline && (
+        <span className="mt-2 block text-[13px] leading-relaxed text-[var(--color-text-primary)]">
+          {copy.sectorTop(headline.label, Math.round(headline.pct))}
+        </span>
+      )}
     </span>
   );
 }

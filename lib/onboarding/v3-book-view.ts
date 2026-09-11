@@ -72,14 +72,19 @@ export function sectorSplit(holdings: Classified[], labels: { funds: string; cry
   for (const h of holdings) {
     const value = Number(h.total_value) || 0;
     if (value <= 0) continue;
+    // What a thing IS outranks the sector a vendor filed it under. The demo
+    // holds SPY and VTI with sector='Diversified', which drew them as a
+    // "Diversified" sector slice while the card promised a fund counted as a
+    // fund.
     const klass = (h.assetClass ?? '').toLowerCase();
-    const label = h.sector
-      ? h.sector
-      : klass === 'etf' || klass === 'mutual_fund'
+    const label =
+      klass === 'etf' || klass === 'mutual_fund'
         ? labels.funds
         : klass === 'crypto'
           ? labels.crypto
-          : labels.unclassified;
+          : h.sector
+            ? h.sector
+            : labels.unclassified;
     byLabel.set(label, (byLabel.get(label) ?? 0) + value);
     total += value;
   }
