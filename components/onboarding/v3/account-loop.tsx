@@ -4,7 +4,7 @@
 // Plaid item, the ask again (compact) for the next account, and the door to
 // the reveal. The parent owns the book; this renders it.
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { BookAsk } from './book-ask';
 import type { BookAccount, BookHolding } from './use-book';
 import { useSettings } from '@/contexts/settings-context';
@@ -165,7 +165,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
       </div>
 
       <div className="mt-8 flex flex-col items-start gap-3">
-        <button type="button" className="helm-button min-h-[44px]" onClick={onContinue}>{copy.primary}</button>
+        <button type="button" className="helm-button inline-flex min-h-[44px] items-center gap-2" onClick={onContinue}>{copy.primary}<ArrowRight size={18} aria-hidden="true" /></button>
         <span className="text-[13px] text-[var(--color-text-muted)]">{copy.secondary}</span>
       </div>
     </section>

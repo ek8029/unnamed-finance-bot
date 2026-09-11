@@ -10,6 +10,7 @@
 // than claiming calm, and the movers are labelled with the session they
 // describe instead of being called "today" on a Sunday.
 import { useEffect, useRef, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { FIRST_LOOK_CODES, type FirstLook } from '@/lib/onboarding/first-look';
 import { bookExposure, type ExposureRow } from '@/lib/onboarding/v3-exposure';
 import { squarify } from '@/lib/onboarding/treemap';
@@ -126,7 +127,7 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
       </fieldset>
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
-        <button type="button" className="helm-button min-h-[44px]" onClick={() => save(picked)} disabled={submitted}>{copy.save}</button>
+        <button type="button" className="helm-button inline-flex min-h-[44px] items-center gap-2" onClick={() => save(picked)} disabled={submitted}>{copy.save}<ArrowRight size={18} aria-hidden="true" /></button>
         <button type="button" className="min-h-[44px] text-[14px] text-[var(--color-text-muted)] underline-offset-2 hover:underline" onClick={() => save([])} disabled={submitted}>{copy.skip}</button>
       </div>
     </section>

@@ -11,6 +11,7 @@
 // "Do this later". Events carry counts and codes only.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import posthog from 'posthog-js';
 import { BookAsk } from './book-ask';
 import { AccountLoop } from './account-loop';
@@ -271,8 +272,9 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                 /* With writes off, no connect and no manual save can advance the
                    flow, so the demo gets the one door the screens cannot give it. */
                 <div className="mt-6">
-                  <button type="button" className="helm-button min-h-[44px]" onClick={() => setPhase('loop')}>
+                  <button type="button" className="helm-button inline-flex min-h-[44px] items-center gap-2" onClick={() => setPhase('loop')}>
                     {V3_COPY.demoContinue}
+                    <ArrowRight size={18} aria-hidden="true" />
                   </button>
                 </div>
               )}

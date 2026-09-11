@@ -4,6 +4,7 @@
 // largest name (or the honest fallback), an optional changes card. Never a
 // fabricated verdict: the receipt is whatever /api/scan/ticker cites.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import type { BookHolding } from './use-book';
 import { ReceiptCard, fetchReceipt, type Receipt } from './receipt-card';
 import { bookExposure, exposureSentence, overlapSentence, type BookExposure } from '@/lib/onboarding/v3-exposure';
@@ -70,7 +71,12 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, onOpenTermi
   }, [top, settled, syncing, onViewed]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
-  const primary = <button type="button" className="helm-button min-h-[44px]" onClick={onOpenTerminal}>{copy.primary}</button>;
+  const primary = (
+    <button type="button" className="helm-button inline-flex min-h-[44px] items-center gap-2" onClick={onOpenTerminal}>
+      {copy.primary}
+      <ArrowRight size={18} aria-hidden="true" />
+    </button>
+  );
 
   if (holdings.length === 0 && syncing) {
     return (
