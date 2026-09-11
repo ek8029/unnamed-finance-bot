@@ -2,7 +2,7 @@
 import { computePortfolioLookthrough, getUnderlyingExposure } from '@/lib/etf-holdings';
 import { canonicalTicker } from '@/lib/ticker-alias';
 
-export type ExposureRow = { ticker: string; totalPct: number; directPct: number; indirectPct: number; funds: string[]; accounts: number };
+export type ExposureRow = { ticker: string; totalPct: number; directPct: number; indirectPct: number; funds: string[]; accounts: number; accountIds: string[] };
 export type BookExposure = { total: number; rows: ExposureRow[]; top: ExposureRow | null };
 
 type Holding = { ticker: string; total_value: number | string | null; account_id?: string | null };
@@ -39,6 +39,9 @@ export function bookExposure(holdings: Holding[]): BookExposure {
       indirectPct: d.indirectWeight,
       funds: [...new Set(d.sources.filter((s) => s !== 'Direct').map(fundName))],
       accounts: accountsByTicker.get(ticker)?.size ?? 0,
+      // Which accounts, not just how many: the overlap graphic draws a cell
+      // per account and needs to know which ones to fill.
+      accountIds: [...(accountsByTicker.get(ticker) ?? [])],
     }))
     .sort((a, b) => b.totalPct - a.totalPct);
   return { total, rows: out, top: out[0] ?? null };

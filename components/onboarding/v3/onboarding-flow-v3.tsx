@@ -275,7 +275,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
               {phase === 'first-look' && (
                 <FirstLookScreen
                   holdings={bookFailed ? [] : book.holdings}
-                  accounts={book.accounts.length}
+                  accounts={book.accounts}
                   syncing={syncingFirst}
                   readOnly={readOnly}
                   onDone={onFirstLook}

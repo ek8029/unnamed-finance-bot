@@ -35,3 +35,22 @@ export function shareLabel(shares: number): string {
   if (Number.isInteger(shares)) return String(shares);
   return String(Number(shares.toFixed(4)));
 }
+
+/**
+ * The accounts worth showing as columns beside `rows`: the ones that actually
+ * hold the names on display, most first. Slicing the account list instead put
+ * five arbitrary accounts against a name held in the twentieth, so every cell
+ * read empty while the card said the name was in two accounts.
+ */
+export function overlapColumns<T extends { id: string }>(
+  rows: { accountIds: readonly string[] }[],
+  accounts: readonly T[],
+  max = 5,
+): T[] {
+  const hits = new Map<string, number>();
+  for (const r of rows) for (const id of new Set(r.accountIds)) hits.set(id, (hits.get(id) ?? 0) + 1);
+  return accounts
+    .filter((a) => (hits.get(a.id) ?? 0) > 0)
+    .sort((a, b) => (hits.get(b.id) ?? 0) - (hits.get(a.id) ?? 0))
+    .slice(0, max);
+}

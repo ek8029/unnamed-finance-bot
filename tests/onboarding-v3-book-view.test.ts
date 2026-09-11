@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manualPositions, shareLabel } from '@/lib/onboarding/v3-book-view';
+import { manualPositions, overlapColumns, shareLabel } from '@/lib/onboarding/v3-book-view';
 
 const accounts = [
   { id: 'm1', source: 'manual' as const },
@@ -54,5 +54,35 @@ describe('shareLabel', () => {
   });
   it('reads a non-number as zero rather than NaN', () => {
     expect(shareLabel(Number.NaN)).toBe('0');
+  });
+});
+
+describe('overlapColumns', () => {
+  const accounts = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }, { id: 'e' }, { id: 'f' }, { id: 'g' }];
+
+  it('keeps only the accounts that hold one of the shown names', () => {
+    const cols = overlapColumns([{ accountIds: ['c', 'f'] }], accounts);
+    expect(cols.map((a) => a.id)).toEqual(['c', 'f']);
+  });
+
+  it('puts the account holding the most of them first', () => {
+    const cols = overlapColumns(
+      [{ accountIds: ['a', 'g'] }, { accountIds: ['g'] }, { accountIds: ['g', 'b'] }],
+      accounts,
+    );
+    expect(cols[0].id).toBe('g');
+  });
+
+  it('caps the columns', () => {
+    expect(overlapColumns([{ accountIds: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] }], accounts, 5)).toHaveLength(5);
+  });
+
+  it('ignores an account id that belongs to no account, and counts an id once per row', () => {
+    expect(overlapColumns([{ accountIds: ['manual', 'manual', 'a'] }], accounts).map((a) => a.id)).toEqual(['a']);
+  });
+
+  it('is empty when nothing lines up', () => {
+    expect(overlapColumns([], accounts)).toEqual([]);
+    expect(overlapColumns([{ accountIds: ['manual'] }], accounts)).toEqual([]);
   });
 });
