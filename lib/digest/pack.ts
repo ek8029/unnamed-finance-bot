@@ -488,7 +488,9 @@ const CAT_ORDER: Cat[] = ['a', 'b', 'c', 'a2', 'a3', 'e', 'd', 'f', 'h', 'g'];
 const catRank = (c: Cat) => CAT_ORDER.indexOf(c);
 
 /** Spec 3.4: the first brief leads with what the person asked to see first. Later briefs use the normal order. */
-export const FIRST_LOOK_CATS: Record<FirstLook, Cat[]> = { exposure: ['a', 'f'], receipts: ['b', 'c'], changes: ['e', 'g', 'h'], overlap: ['a'] };
+// `brief` maps to nothing on purpose: asking for the brief is asking for the
+// whole brief, so there is no category to lift above the others.
+export const FIRST_LOOK_CATS: Record<FirstLook, Cat[]> = { exposure: ['a', 'f'], receipts: ['b', 'c'], changes: ['e', 'g', 'h'], overlap: ['a'], brief: [] };
 /** Larger than the whole CAT_BONUS spread (a = 3.0) so a chosen item leads regardless of category. */
 export const FIRST_LOOK_BONUS = 4.0;
 /** `firstLook` stays `string[]`: the column is TEXT[], so an unknown code fails open (no bonus) instead of throwing. */

@@ -2,8 +2,8 @@
 // Screen 3 of onboarding v3: what the person wants Helm to lead with. Its own
 // screen, and every card draws its answer from THEIR book: the book by sector
 // as a treemap, Helm's cited read on their largest position, the session's
-// biggest movers among their own names, and a grid of which account holds which
-// shared name.
+// biggest movers among their own names, the morning read on those names, and a
+// grid of which account holds which shared name.
 //
 // Nothing here is a verdict Helm did not reach and nothing is invented. A book
 // that has not landed yet says so, a failed read says nothing at all rather
@@ -83,10 +83,7 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
     done.current = true;
     setSubmitted(true);
     // Non-blocking: a failed save (migration not applied, network) never holds the reveal.
-    if (!readOnly) {
-      fetch('/api/user/preferences', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ first_look: codes }) })
-        .catch((e) => console.error('first_look save failed', e));
-    }
+    if (!readOnly) void persist(codes);
     onDone(codes);
   }
 
@@ -119,6 +116,7 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
                 {c === 'exposure' && <SectorPreview sectors={sectors} pending={pending} />}
                 {c === 'receipts' && <ReceiptsPreview row={book.top} receipt={receipt} pending={pending} />}
                 {c === 'changes' && <MoversPreview delta={delta} pending={pending} />}
+                {c === 'brief' && <BriefPreview names={new Set(holdings.map((h) => h.ticker.toUpperCase())).size} />}
                 {c === 'overlap' && <OverlapPreview shared={shared} accounts={accounts} pending={pending} />}
               </span>
             </label>
@@ -132,6 +130,31 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
       </div>
     </section>
   );
+}
+
+/**
+ * Writes the picks, and on a rejected write retries once without `brief`.
+ * `brief` is the one code newer than the CHECK constraint on
+ * user_preferences.first_look (migration 079 widens it). A single unknown value
+ * rejects the whole array, so without this retry a deploy that lands before the
+ * migration loses every pick the reader made, not just the new one.
+ */
+async function persist(codes: FirstLook[]) {
+  const put = (body: FirstLook[]) =>
+    fetch('/api/user/preferences', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_look: body }),
+    });
+  try {
+    const r = await put(codes);
+    if (r.ok || !codes.includes('brief')) return;
+    const rest = codes.filter((c) => c !== 'brief');
+    const retry = await put(rest);
+    if (!retry.ok) console.error('first_look save failed', retry.status);
+  } catch (e) {
+    console.error('first_look save failed', e);
+  }
 }
 
 function Pending({ line }: { line: string }) {
@@ -268,6 +291,41 @@ function MoversPreview({ delta, pending }: { delta: Delta | 'error' | undefined;
           </span>
         );
       })}
+    </span>
+  );
+}
+
+// The morning mail. The rail is 6:00 to 16:00 ET, so the brief sitting just
+// left of the opening bell is the whole point of the picture. 13:15 UTC in
+// vercel.json is 9:15 ET, and the daily cron is gated off on weekends and NYSE
+// holidays, which is why nothing here says "tomorrow".
+const RAIL_FROM = 6;
+const RAIL_TO = 16;
+const railX = (hour: number) => 8 + ((hour - RAIL_FROM) / (RAIL_TO - RAIL_FROM)) * 284;
+
+function BriefPreview({ names }: { names: number }) {
+  const brief = railX(9.25);
+  const open = railX(9.5);
+  return (
+    <span className="block">
+      <svg viewBox="0 0 300 52" className="block w-full" role="img" aria-label={copy.firstBrief}>
+        <line x1={8} y1={34} x2={292} y2={34} stroke="var(--color-border-strong)" strokeWidth={1} />
+        {[6, 8, 10, 12, 14, 16].map((h) => (
+          <line key={h} x1={railX(h)} y1={31} x2={railX(h)} y2={37} stroke="var(--color-border-strong)" strokeWidth={1} />
+        ))}
+        <line x1={open} y1={26} x2={open} y2={42} stroke="var(--color-text-muted)" strokeWidth={1} strokeDasharray="2 2" />
+        <text x={open + 5} y={48} fontSize={9} fill="var(--color-text-muted)">{copy.openBell}</text>
+        <line x1={brief} y1={14} x2={brief} y2={34} stroke="var(--color-gold)" strokeWidth={1.4} />
+        <circle cx={brief} cy={34} r={3.4} fill="var(--color-gold)" />
+        <text x={brief - 4} y={11} fontSize={10} fontWeight={600} textAnchor="end" fill="var(--color-gold)">9:15 ET</text>
+      </svg>
+      <span className="mt-1 block text-[13px] text-[var(--color-text-primary)]">{copy.firstBrief}</span>
+      <span className="mt-2 flex flex-wrap items-center gap-1.5">
+        {copy.sourceTags.map((tag) => (
+          <span key={tag} className="rounded border border-[var(--color-border-base)] px-1.5 py-0.5 text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{tag}</span>
+        ))}
+        {names > 0 && <span className="text-[12px] text-[var(--color-text-muted)]">{copy.watching(names)}</span>}
+      </span>
     </span>
   );
 }

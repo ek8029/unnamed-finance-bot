@@ -70,6 +70,7 @@ export const V3_COPY = {
       exposure: 'How much of everything I actually own',
       receipts: 'Whether the reasons I hold these still hold',
       changes: 'What changed in these positions',
+      brief: 'What Helm read while I was away',
       overlap: 'Overlap between my accounts',
     },
     hints: {
@@ -79,6 +80,7 @@ export const V3_COPY = {
       exposure: 'Your book by sector, with a fund counted as a fund.',
       receipts: 'The filings and news behind your largest position, quoted.',
       changes: 'The session\'s biggest moves among the names you hold.',
+      brief: 'One read on your own names before the open, 9:15 ET on trading days.',
       overlap: 'The names sitting in more than one of your accounts.',
     },
     pending: 'Your positions fill in here when the first import lands.',
@@ -93,6 +95,11 @@ export const V3_COPY = {
     movedLastSession: 'Last session',
     quiet: 'Nothing on the book moved more than 2% in the last session.',
     receiptOn: (t: string) => `Helm's read on ${t}`,
+    watching: (n: number) => `${n} ${plural(n, 'name', 'names')} in your book`,
+    // Day-agnostic on purpose: "tomorrow" is wrong on a Friday, and the daily
+    // cron is gated off on weekends and NYSE holidays.
+    firstBrief: 'Your first brief lands at 9:15 ET on the next trading day.',
+    openBell: '9:30 open',
     sharedNames: (n: number) => `${n} ${plural(n, 'name', 'names')} in more than one account, funds included`,
     noShared: 'Nothing is in more than one account yet.',
     heldIn: (t: string, n: number) => `${t} is held in ${n} of these accounts`,

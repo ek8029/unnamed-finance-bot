@@ -14,8 +14,12 @@ describe('parseFirstLook', () => {
   it('accepts the empty set (skipped) as an empty array', () => {
     expect(parseFirstLook([])).toEqual([]);
   });
-  it('has exactly the four spec codes', () => {
-    expect([...FIRST_LOOK_CODES]).toEqual(['exposure', 'receipts', 'changes', 'overlap']);
+  it('offers the four that always apply before the one that needs two accounts', () => {
+    expect([...FIRST_LOOK_CODES]).toEqual(['exposure', 'receipts', 'changes', 'brief', 'overlap']);
+  });
+
+  it('accepts brief, which migration 079 added to the column constraint', () => {
+    expect(parseFirstLook(['brief', 'exposure'])).toEqual(['brief', 'exposure']);
   });
 });
 

@@ -31,6 +31,12 @@ describe('firstLookBonus (spec 3.4: the first brief leads with the first-look ch
     expect(firstLookBonus('a', ['overlap'], true)).toBe(FIRST_LOOK_BONUS);
   });
 
+  it('lifts nothing for brief, which asks for the whole brief rather than a category', () => {
+    for (const cat of Object.keys(CAT_BONUS) as (keyof typeof CAT_BONUS)[]) {
+      expect(firstLookBonus(cat, ['brief'], true), cat).toBe(0);
+    }
+  });
+
   it('is larger than the whole category spread, so a chosen item leads regardless of category', () => {
     expect(FIRST_LOOK_BONUS).toBeGreaterThan(Math.max(...Object.values(CAT_BONUS)));
   });

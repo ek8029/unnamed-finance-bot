@@ -45,6 +45,8 @@ describe('onboarding v3 copy', () => {
     lint('firstLook.heldIn', V3_COPY.firstLook.heldIn('NVDA', 2));
     lint('firstLook.sectorTop', V3_COPY.firstLook.sectorTop('Technology', 34));
     lint('firstLook.receiptOn', V3_COPY.firstLook.receiptOn('NVDA'));
+    lint('firstLook.watching', V3_COPY.firstLook.watching(1));
+    lint('firstLook.watching', V3_COPY.firstLook.watching(14));
     lint('reveal.stillSyncing', V3_COPY.reveal.stillSyncing('Fidelity'));
     lint('reveal.receiptHeading', V3_COPY.reveal.receiptHeading('NVDA'));
     lint('reveal.receiptFallback', V3_COPY.reveal.receiptFallback('NVDA'));
@@ -62,6 +64,7 @@ describe('onboarding v3 copy', () => {
       'V3_COPY.firstLook.heldIn',
       'V3_COPY.firstLook.sectorTop',
       'V3_COPY.firstLook.receiptOn',
+      'V3_COPY.firstLook.watching',
       'V3_COPY.reveal.stillSyncing',
       'V3_COPY.reveal.receiptHeading',
       'V3_COPY.reveal.receiptFallback',
