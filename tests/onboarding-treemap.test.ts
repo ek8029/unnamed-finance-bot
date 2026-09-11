@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { squarify, sparkPath } from '@/lib/onboarding/treemap';
+import { squarify } from '@/lib/onboarding/treemap';
 
 const totalArea = (tiles: { w: number; h: number }[]) => tiles.reduce((n, t) => n + t.w * t.h, 0);
 
@@ -52,31 +52,5 @@ describe('squarify', () => {
     const tiles = squarify([10, 9, 8, 7, 6, 5, 4, 3], 300, 200);
     const worst = Math.max(...tiles.map((t) => Math.max(t.w / t.h, t.h / t.w)));
     expect(worst).toBeLessThan(4);
-  });
-});
-
-describe('sparkPath', () => {
-  it('starts at the first point and ends at the last, spanning the width', () => {
-    const d = sparkPath([1, 2, 3], 100, 20);
-    expect(d.startsWith('M0.00,')).toBe(true);
-    expect(d).toContain('L100.00,');
-  });
-
-  it('puts the highest value at the top and the lowest at the bottom', () => {
-    const d = sparkPath([1, 5], 100, 20, 1);
-    const ys = [...d.matchAll(/,(-?\d+\.\d+)/g)].map((m) => Number(m[1]));
-    expect(ys[0]).toBeCloseTo(19, 4);
-    expect(ys[1]).toBeCloseTo(1, 4);
-  });
-
-  it('draws a flat line through the middle when every value matches', () => {
-    const ys = [...sparkPath([4, 4, 4], 100, 20, 1).matchAll(/,(-?\d+\.\d+)/g)].map((m) => Number(m[1]));
-    expect(new Set(ys)).toEqual(new Set([10]));
-  });
-
-  it('returns nothing it cannot draw', () => {
-    expect(sparkPath([1], 100, 20)).toBe('');
-    expect(sparkPath([], 100, 20)).toBe('');
-    expect(sparkPath([1, 2], 100, 0)).toBe('');
   });
 });

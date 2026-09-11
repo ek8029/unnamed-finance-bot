@@ -82,16 +82,3 @@ export function squarify(values: readonly number[], width: number, height: numbe
   if (row.length > 0) place(row, box.x, box.y, box.w, box.h, out);
   return out;
 }
-
-/** An SVG path through `values`, left to right, scaled to the box. Flat when every value matches. */
-export function sparkPath(values: readonly number[], width: number, height: number, pad = 1): string {
-  const points = values.filter((v) => Number.isFinite(v));
-  if (points.length < 2 || !(width > 0) || !(height > 0)) return '';
-  const lo = Math.min(...points);
-  const hi = Math.max(...points);
-  const top = pad;
-  const bottom = Math.max(pad, height - pad);
-  const y = (v: number) => (hi === lo ? (top + bottom) / 2 : bottom - ((v - lo) / (hi - lo)) * (bottom - top));
-  const step = width / (points.length - 1);
-  return points.map((v, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(2)},${y(v).toFixed(2)}`).join(' ');
-}

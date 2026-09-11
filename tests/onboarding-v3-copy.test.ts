@@ -42,12 +42,9 @@ describe('onboarding v3 copy', () => {
     lint('loop.shares', V3_COPY.loop.shares('0.5'));
     lint('firstLook.sharedNames', V3_COPY.firstLook.sharedNames(1));
     lint('firstLook.sharedNames', V3_COPY.firstLook.sharedNames(4));
-    lint('firstLook.moverUp', V3_COPY.firstLook.moverUp('NVDA', '2.10%'));
-    lint('firstLook.moverDown', V3_COPY.firstLook.moverDown('NVDA', '2.10%'));
-    lint('firstLook.largest', V3_COPY.firstLook.largest('NVDA', 9));
     lint('firstLook.heldIn', V3_COPY.firstLook.heldIn('NVDA', 2));
-    lint('firstLook.lineLabel', V3_COPY.firstLook.lineLabel('NVDA', 45));
-    lint('firstLook.lineCaption', V3_COPY.firstLook.lineCaption(45));
+    lint('firstLook.sectorTop', V3_COPY.firstLook.sectorTop('Technology', 34));
+    lint('firstLook.receiptOn', V3_COPY.firstLook.receiptOn('NVDA'));
     lint('reveal.stillSyncing', V3_COPY.reveal.stillSyncing('Fidelity'));
     lint('reveal.receiptHeading', V3_COPY.reveal.receiptHeading('NVDA'));
     lint('reveal.receiptFallback', V3_COPY.reveal.receiptFallback('NVDA'));
@@ -62,12 +59,9 @@ describe('onboarding v3 copy', () => {
       'V3_COPY.loop.andMore',
       'V3_COPY.loop.shares',
       'V3_COPY.firstLook.sharedNames',
-      'V3_COPY.firstLook.moverUp',
-      'V3_COPY.firstLook.moverDown',
-      'V3_COPY.firstLook.largest',
       'V3_COPY.firstLook.heldIn',
-      'V3_COPY.firstLook.lineLabel',
-      'V3_COPY.firstLook.lineCaption',
+      'V3_COPY.firstLook.sectorTop',
+      'V3_COPY.firstLook.receiptOn',
       'V3_COPY.reveal.stillSyncing',
       'V3_COPY.reveal.receiptHeading',
       'V3_COPY.reveal.receiptFallback',

@@ -238,7 +238,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
             </div>
 
             <h1 className="type-h1 mt-6">{copy.title}</h1>
-            {lede && <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">{lede}</p>}
+            {lede && <p className="mt-2 text-[16px] leading-relaxed text-[var(--color-text-secondary)]">{lede}</p>}
 
             <div className="mt-8">
               {phase === 'ask' && (

@@ -1,23 +1,28 @@
 'use client';
 // Screen 3 of onboarding v3: what the person wants Helm to lead with. Its own
-// screen, and every card draws the answer from THEIR book: the whole book as a
-// treemap, their largest position on a sheet of filings, the day's largest move
-// as a 45-day line, and a grid of which account holds which shared name.
+// screen, and every card draws its answer from THEIR book: the book by sector
+// as a treemap, Helm's cited read on their largest position, the session's
+// biggest movers among their own names, and a grid of which account holds which
+// shared name.
 //
-// Nothing here is a verdict and nothing is invented. A book that has not landed
-// yet says so; a failed read says nothing at all rather than claiming calm.
+// Nothing here is a verdict Helm did not reach and nothing is invented. A book
+// that has not landed yet says so, a failed read says nothing at all rather
+// than claiming calm, and the movers are labelled with the session they
+// describe instead of being called "today" on a Sunday.
 import { useEffect, useRef, useState } from 'react';
 import { FIRST_LOOK_CODES, type FirstLook } from '@/lib/onboarding/first-look';
 import { bookExposure, type ExposureRow } from '@/lib/onboarding/v3-exposure';
-import { squarify, sparkPath } from '@/lib/onboarding/treemap';
-import { overlapColumns } from '@/lib/onboarding/v3-book-view';
+import { squarify } from '@/lib/onboarding/treemap';
+import { overlapColumns, sectorSplit, shortSector, type SectorSlice } from '@/lib/onboarding/v3-book-view';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
+import { useSettings } from '@/contexts/settings-context';
+import { fetchReceipt, type Receipt } from './receipt-card';
 import type { BookAccount, BookHolding } from './use-book';
 
 const copy = V3_COPY.firstLook;
-const STRIPE = { backgroundImage: 'repeating-linear-gradient(45deg, var(--color-gold) 0 4px, transparent 4px 8px)' } as const;
 
-type Mover = { ticker: string; changePct: number } | null;
+type Mover = { ticker: string; changePct: number; dollarImpact: number };
+type Delta = { movers: Mover[]; isToday: boolean };
 
 export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false, onDone }: {
   holdings: BookHolding[];
@@ -30,12 +35,13 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
 }) {
   const [picked, setPicked] = useState<FirstLook[]>([]);
   const [submitted, setSubmitted] = useState(false);
-  // undefined = still reading, 'error' = no claim either way, null = no mover.
-  const [mover, setMover] = useState<Mover | 'error' | undefined>(undefined);
-  const [closes, setCloses] = useState<number[]>([]);
+  // undefined = still reading, 'error' = no claim either way.
+  const [delta, setDelta] = useState<Delta | 'error' | undefined>(undefined);
+  const [receipt, setReceipt] = useState<Receipt | null | 'error' | undefined>(undefined);
   const done = useRef(false);
 
   const book = bookExposure(holdings);
+  const sectors = sectorSplit(holdings, copy.buckets);
   const shared = book.rows.filter((r) => r.accounts > 1);
   const options = FIRST_LOOK_CODES.filter((c) => c !== 'overlap' || accounts.length >= 2);
   // An empty book reads differently mid-import than after one: only the first
@@ -49,29 +55,26 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d) => {
         if (cancelled) return;
-        const m = d?.mover;
-        setMover(m && typeof m.ticker === 'string' && Number.isFinite(m.changePct) ? { ticker: m.ticker, changePct: m.changePct } : null);
+        const movers = (Array.isArray(d?.movers) ? d.movers : [])
+          .filter((m: Mover) => m && typeof m.ticker === 'string' && Number.isFinite(m.changePct));
+        setDelta({ movers, isToday: d?.isToday === true });
       })
-      .catch(() => { if (!cancelled) setMover('error'); });
+      .catch(() => { if (!cancelled) setDelta('error'); });
     return () => { cancelled = true; };
   }, [holdings.length]);
 
-  // The line under the move. A failed or too-short history draws nothing.
-  const moverTicker = mover && mover !== 'error' ? mover.ticker : null;
+  // Helm's own read on the largest name, cited. `null` means the ticker is
+  // outside coverage, which is a real answer and not a failure.
+  const top = book.top?.ticker ?? null;
   useEffect(() => {
-    if (!moverTicker) return;
+    if (!top) return;
     let cancelled = false;
-    fetch(`/api/market/history?ticker=${encodeURIComponent(moverTicker)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d) => {
-        if (cancelled) return;
-        setCloses((d?.prices ?? [])
-          .map((p: { close?: unknown }) => Number(p.close))
-          .filter((n: number) => Number.isFinite(n) && n > 0));
-      })
-      .catch(() => { if (!cancelled) setCloses([]); });
+    setReceipt(undefined);
+    fetchReceipt(top)
+      .then((r) => { if (!cancelled) setReceipt(r); })
+      .catch(() => { if (!cancelled) setReceipt('error'); });
     return () => { cancelled = true; };
-  }, [moverTicker]);
+  }, [top]);
 
   const toggle = (c: FirstLook) => setPicked((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
 
@@ -101,21 +104,21 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
               <span className="flex items-start gap-3">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 shrink-0"
+                  className="mt-1 h-[18px] w-[18px] shrink-0"
                   checked={picked.includes(c)}
                   onChange={() => toggle(c)}
                   disabled={submitted}
                 />
                 <span>
-                  <span className="block text-[15px] text-[var(--color-text-primary)]">{copy.options[c]}</span>
-                  <span className="mt-1 block text-[13px] leading-relaxed text-[var(--color-text-secondary)]">{copy.hints[c]}</span>
+                  <span className="block text-[17px] leading-snug text-[var(--color-text-primary)]">{copy.options[c]}</span>
+                  <span className="mt-1 block text-[14px] leading-relaxed text-[var(--color-text-secondary)]">{copy.hints[c]}</span>
                 </span>
               </span>
 
-              <span className="mt-4 block min-h-[104px]">
-                {c === 'exposure' && <ExposurePreview rows={book.rows} pending={pending} />}
-                {c === 'receipts' && <ReceiptsPreview row={book.top} pending={pending} />}
-                {c === 'changes' && <ChangesPreview mover={mover} closes={closes} pending={pending} />}
+              <span className="mt-4 block min-h-[112px]">
+                {c === 'exposure' && <SectorPreview sectors={sectors} pending={pending} />}
+                {c === 'receipts' && <ReceiptsPreview row={book.top} receipt={receipt} pending={pending} />}
+                {c === 'changes' && <MoversPreview delta={delta} pending={pending} />}
                 {c === 'overlap' && <OverlapPreview shared={shared} accounts={accounts} pending={pending} />}
               </span>
             </label>
@@ -125,126 +128,146 @@ export function FirstLookScreen({ holdings, accounts, syncing, readOnly = false,
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <button type="button" className="helm-button min-h-[44px]" onClick={() => save(picked)} disabled={submitted}>{copy.save}</button>
-        <button type="button" className="min-h-[44px] text-[13px] text-[var(--color-text-muted)] underline-offset-2 hover:underline" onClick={() => save([])} disabled={submitted}>{copy.skip}</button>
+        <button type="button" className="min-h-[44px] text-[14px] text-[var(--color-text-muted)] underline-offset-2 hover:underline" onClick={() => save([])} disabled={submitted}>{copy.skip}</button>
       </div>
     </section>
   );
 }
 
 function Pending({ line }: { line: string }) {
-  return <span className="block text-[12px] text-[var(--color-text-muted)]">{line}</span>;
+  return <span className="block text-[13px] text-[var(--color-text-muted)]">{line}</span>;
+}
+
+function Loading() {
+  return (
+    <span className="block" aria-hidden="true">
+      <span className="mb-2 block h-3 w-2/3 animate-pulse rounded bg-[var(--color-bg-base)]" />
+      <span className="block h-3 w-1/3 animate-pulse rounded bg-[var(--color-bg-base)]" />
+    </span>
+  );
 }
 
 // The treemap is laid out in these units and scaled by the SVG, so a tile can
 // be measured against its label here without touching the DOM.
 const MAP_W = 300;
-const MAP_H = 124;
+const MAP_H = 132;
 
-function ExposurePreview({ rows, pending }: { rows: ExposureRow[]; pending: string | null }) {
+function SectorPreview({ sectors, pending }: { sectors: SectorSlice[]; pending: string | null }) {
   if (pending) return <Pending line={pending} />;
-  // Every name, not a top five: the slivers are the point of the picture.
-  const tiles = squarify(rows.map((r) => r.totalPct), MAP_W, MAP_H);
-  const topPct = rows[0]?.totalPct || 1;
+  if (sectors.length === 0) return <Pending line={copy.empty} />;
+  const tiles = squarify(sectors.map((s) => s.pct), MAP_W, MAP_H);
+  const topPct = sectors[0].pct || 1;
   return (
     <span className="block">
       <svg
         viewBox={`0 0 ${MAP_W} ${MAP_H}`}
         className="block w-full rounded-md"
         role="img"
-        aria-label={rows.slice(0, 5).map((r) => `${r.ticker} ${Math.round(r.totalPct)}%`).join(', ')}
+        aria-label={sectors.slice(0, 6).map((s) => `${s.label} ${Math.round(s.pct)}%`).join(', ')}
       >
-        <defs>
-          <pattern id="fl-funds" width={6} height={6} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width={6} height={6} fill="var(--color-gold)" fillOpacity={0.18} />
-            <rect width={3} height={6} fill="var(--color-gold)" />
-          </pattern>
-        </defs>
         {tiles.map((t) => {
-          const row = rows[t.index];
+          const slice = sectors[t.index];
           // Weight reads as fill strength as well as area, so the eye lands on
           // the concentration instead of counting boxes.
-          const opacity = 0.2 + 0.72 * Math.min(1, row.totalPct / topPct);
-          // The striped band is the part of this name held through a fund, cut
-          // from the bottom of its own tile, so the legend below is literal.
-          const fundBand = row.totalPct > 0 ? t.h * Math.min(1, Math.max(0, row.indirectPct / row.totalPct)) : 0;
-          // 9px type runs about 5.6 units a character here, plus the inset.
-          const fits = t.w > row.ticker.length * 5.6 + 8;
+          const opacity = 0.22 + 0.7 * Math.min(1, slice.pct / topPct);
+          const short = shortSector(slice.label);
+          const name = short.length > 13 ? `${short.slice(0, 12)}.` : short;
           return (
-            <g key={row.ticker}>
-              <rect x={t.x} y={t.y} width={t.w} height={t.h} fill="var(--color-gold)" fillOpacity={opacity} />
-              {fundBand > 0.5 && <rect x={t.x} y={t.y + t.h - fundBand} width={t.w} height={fundBand} fill="url(#fl-funds)" fillOpacity={Math.min(1, opacity + 0.15)} />}
-              <rect x={t.x} y={t.y} width={t.w} height={t.h} fill="none" stroke="var(--color-bg-base)" strokeWidth={0.8} />
-              {fits && t.h > 15 && <text x={t.x + 4} y={t.y + 11} fontSize={9} fontWeight={600} fill="#0A0A0A">{row.ticker}</text>}
-              {fits && t.w > 52 && t.h > 31 && <text x={t.x + 4} y={t.y + 22} fontSize={8} fill="#0A0A0A" fillOpacity={0.7}>{Math.round(row.totalPct)}%</text>}
+            <g key={slice.label}>
+              <rect x={t.x} y={t.y} width={t.w} height={t.h} fill="var(--color-gold)" fillOpacity={opacity} stroke="var(--color-bg-base)" strokeWidth={0.9} />
+              {/* 9px type runs about 5.2 units a character here, plus the inset. */}
+              {t.w > name.length * 5.2 + 8 && t.h > 16 && (
+                <text x={t.x + 4} y={t.y + 12} fontSize={9} fontWeight={600} fill="#0A0A0A">{name}</text>
+              )}
+              {t.h > 30 && (
+                <text x={t.x + 4} y={t.y + 24} fontSize={9} fill="#0A0A0A" fillOpacity={0.72}>{Math.round(slice.pct)}%</text>
+              )}
             </g>
           );
         })}
       </svg>
-      <span className="mt-2 flex flex-wrap gap-4 text-[11px] text-[var(--color-text-muted)]">
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded-sm bg-[var(--color-gold)]" aria-hidden="true" />{V3_COPY.reveal.legendDirect}</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-4 rounded-sm" style={STRIPE} aria-hidden="true" />{V3_COPY.reveal.legendFunds}</span>
+      <span className="mt-2 block text-[13px] leading-relaxed text-[var(--color-text-primary)]">
+        {copy.sectorTop(sectors[0].label, Math.round(sectors[0].pct))}
       </span>
     </span>
   );
 }
 
-function ReceiptsPreview({ row, pending }: { row: ExposureRow | null; pending: string | null }) {
+function ReceiptsPreview({ row, receipt, pending }: { row: ExposureRow | null; receipt: Receipt | null | 'error' | undefined; pending: string | null }) {
   if (pending || !row) return <Pending line={pending ?? copy.empty} />;
-  return (
-    <span className="flex items-center gap-4">
-      {/* Three sheets, the front one carrying the ticker. */}
-      <svg viewBox="0 0 84 100" className="block h-[118px] w-[100px] shrink-0" aria-hidden="true">
-        <rect x={16} y={12} width={54} height={74} rx={3} fill="var(--color-surface-tint)" stroke="var(--color-border-base)" transform="rotate(-7 43 49)" />
-        <rect x={13} y={14} width={54} height={74} rx={3} fill="var(--color-surface-tint)" stroke="var(--color-border-base)" transform="rotate(4 40 51)" />
-        <rect x={15} y={15} width={54} height={74} rx={3} fill="var(--color-bg-base)" stroke="var(--color-gold-border)" />
-        <text x={42} y={42} fontSize={13} fontWeight={600} textAnchor="middle" fill="var(--color-gold)">{row.ticker}</text>
-        {[52, 60, 68, 76].map((y, i) => (
-          <rect key={y} x={23} y={y} width={i === 3 ? 20 : 38 - i * 4} height={3} rx={1.5} fill="var(--color-border-strong)" />
-        ))}
-      </svg>
-      <span className="block">
-        <span className="block text-[13px] leading-relaxed text-[var(--color-text-primary)]">{copy.largest(row.ticker, Math.round(row.totalPct))}</span>
-        <span className="mt-2 flex flex-wrap gap-1.5">
-          {copy.sourceTags.map((tag) => (
-            <span key={tag} className="rounded border border-[var(--color-border-base)] px-1.5 py-0.5 text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{tag}</span>
+  if (receipt === undefined) return <Loading />;
+  // A failed scan makes no claim in either direction.
+  if (receipt === 'error') return null;
+  if (receipt === null) {
+    return (
+      <span className="flex items-center gap-4">
+        <svg viewBox="0 0 84 100" className="block h-[104px] w-[88px] shrink-0" aria-hidden="true">
+          <rect x={16} y={12} width={54} height={74} rx={3} fill="var(--color-surface-tint)" stroke="var(--color-border-base)" transform="rotate(-7 43 49)" />
+          <rect x={13} y={14} width={54} height={74} rx={3} fill="var(--color-surface-tint)" stroke="var(--color-border-base)" transform="rotate(4 40 51)" />
+          <rect x={15} y={15} width={54} height={74} rx={3} fill="var(--color-bg-base)" stroke="var(--color-gold-border)" />
+          <text x={42} y={42} fontSize={13} fontWeight={600} textAnchor="middle" fill="var(--color-gold)">{row.ticker}</text>
+          {[52, 60, 68, 76].map((y, i) => (
+            <rect key={y} x={23} y={y} width={i === 3 ? 20 : 38 - i * 4} height={3} rx={1.5} fill="var(--color-border-strong)" />
           ))}
+        </svg>
+        <span className="block">
+          <span className="block text-[14px] leading-relaxed text-[var(--color-text-secondary)]">{V3_COPY.reveal.receiptFallback(row.ticker)}</span>
+          <span className="mt-2 flex flex-wrap gap-1.5">
+            {copy.sourceTags.map((tag) => (
+              <span key={tag} className="rounded border border-[var(--color-border-base)] px-1.5 py-0.5 text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">{tag}</span>
+            ))}
+          </span>
         </span>
       </span>
+    );
+  }
+  return (
+    <span className="block">
+      <span className="flex flex-wrap items-center gap-2">
+        <span className="text-[13px] text-[var(--color-text-muted)]">{copy.receiptOn(row.ticker)}</span>
+        <span className={`rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide ${receipt.verdict === 'supports' ? 'border-[var(--color-positive)] text-[var(--color-positive)]' : 'border-[var(--color-negative)] text-[var(--color-negative)]'}`}>
+          {receipt.verdict}
+        </span>
+      </span>
+      {receipt.claim && <span className="mt-2 block text-[14px] leading-snug text-[var(--color-text-primary)]">{receipt.claim}</span>}
+      <span className="mt-2 block border-l-2 border-[var(--color-gold-border)] pl-3 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
+        <span className="line-clamp-3 block">&ldquo;{receipt.verbatimCite}&rdquo;</span>
+      </span>
+      <span className="mt-2 block text-[12px] text-[var(--color-text-muted)]">{receipt.sourceLabel} {receipt.dateISO}</span>
     </span>
   );
 }
 
-const LINE_W = 150;
-const LINE_H = 44;
-
-function ChangesPreview({ mover, closes, pending }: { mover: Mover | 'error' | undefined; closes: number[]; pending: string | null }) {
+function MoversPreview({ delta, pending }: { delta: Delta | 'error' | undefined; pending: string | null }) {
+  const { formatCurrency } = useSettings();
   if (pending) return <Pending line={pending} />;
-  if (mover === 'error') return null;
-  if (mover === undefined) return <span className="block h-3 w-2/3 animate-pulse rounded bg-[var(--color-bg-base)]" aria-hidden="true" />;
-  if (mover === null) return <Pending line={copy.moverNone} />;
-  const up = mover.changePct >= 0;
-  const pct = `${Math.abs(mover.changePct).toFixed(2)}%`;
-  const colour = up ? 'var(--color-positive)' : 'var(--color-negative)';
-  const d = sparkPath(closes, LINE_W, LINE_H, 3);
-  // The last point of the path, for the dot that sits on today.
-  const lastY = d ? Number(d.slice(d.lastIndexOf(',') + 1)) : null;
+  if (delta === 'error') return null;
+  if (delta === undefined) return <Loading />;
+  if (delta.movers.length === 0) return <Pending line={copy.quiet} />;
+  const widest = Math.max(...delta.movers.map((m) => Math.abs(m.changePct)));
   return (
     <span className="block">
-      <span className="flex items-baseline gap-2">
-        <span className="text-[26px] tabular-nums" style={{ color: colour }}>{up ? '+' : '-'}{pct}</span>
-        <span className="text-[13px] text-[var(--color-text-secondary)]">{up ? copy.moverUp(mover.ticker, pct) : copy.moverDown(mover.ticker, pct)}</span>
+      <span className="mb-2 inline-block rounded border border-[var(--color-border-base)] px-1.5 py-0.5 text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+        {delta.isToday ? copy.movedToday : copy.movedLastSession}
       </span>
-      {d ? (
-        <>
-        <svg viewBox={`0 0 ${LINE_W} ${LINE_H}`} className="mt-2 block w-full max-w-[320px]" role="img" aria-label={copy.lineLabel(mover.ticker, closes.length)}>
-          <path d={d} fill="none" stroke={colour} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round" />
-          {lastY != null && Number.isFinite(lastY) && <circle cx={LINE_W} cy={lastY} r={2.2} fill={colour} />}
-        </svg>
-        <span className="mt-1 block text-[11px] text-[var(--color-text-muted)]">{copy.lineCaption(closes.length)}</span>
-        </>
-      ) : (
-        <span className="mt-2 block text-[11px] text-[var(--color-text-muted)]">{copy.noHistory}</span>
-      )}
+      {delta.movers.slice(0, 3).map((m) => {
+        const up = m.changePct >= 0;
+        const colour = up ? 'var(--color-positive)' : 'var(--color-negative)';
+        return (
+          <span key={m.ticker} className="mb-2 block last:mb-0">
+            <span className="flex items-baseline justify-between gap-3">
+              <span className="text-[15px] text-[var(--color-text-primary)]">{m.ticker}</span>
+              <span className="flex items-baseline gap-2">
+                <span className="text-[13px] text-[var(--color-text-muted)]">{up ? '+' : '-'}{formatCurrency(Math.abs(m.dollarImpact))}</span>
+                <span className="text-[16px] tabular-nums" style={{ color: colour }}>{up ? '+' : ''}{m.changePct.toFixed(2)}%</span>
+              </span>
+            </span>
+            <span className="mt-1 block h-1.5 w-full rounded bg-[var(--color-bg-base)]" aria-hidden="true">
+              <span className="block h-full rounded" style={{ width: `${(Math.abs(m.changePct) / widest) * 100}%`, background: colour }} />
+            </span>
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -261,10 +284,10 @@ function OverlapPreview({ shared, accounts, pending }: { shared: ExposureRow[]; 
   if (cols.length < 2) {
     return (
       <span className="block">
-        <span className="block text-[13px] text-[var(--color-text-primary)]">{copy.sharedNames(shared.length)}</span>
+        <span className="block text-[14px] text-[var(--color-text-primary)]">{copy.sharedNames(shared.length)}</span>
         <span className="mt-2 flex flex-wrap gap-1.5">
           {rows.map((r) => (
-            <span key={r.ticker} className="rounded-full border border-[var(--color-border-base)] px-2 py-0.5 text-[12px] text-[var(--color-text-secondary)]">{r.ticker}</span>
+            <span key={r.ticker} className="rounded-full border border-[var(--color-border-base)] px-2.5 py-1 text-[13px] text-[var(--color-text-secondary)]">{r.ticker}</span>
           ))}
         </span>
       </span>
@@ -272,18 +295,18 @@ function OverlapPreview({ shared, accounts, pending }: { shared: ExposureRow[]; 
   }
   return (
     <span className="block">
-      <span className="block text-[13px] text-[var(--color-text-primary)]">{copy.sharedNames(shared.length)}</span>
+      <span className="block text-[14px] text-[var(--color-text-primary)]">{copy.sharedNames(shared.length)}</span>
       <span className="mt-3 block">
         {rows.map((r) => {
           const held = new Set(r.accountIds);
           return (
-            <span key={r.ticker} className="mb-1.5 flex items-center gap-3 last:mb-0">
-              <span className="w-14 shrink-0 text-[12px] text-[var(--color-text-secondary)]">{r.ticker}</span>
+            <span key={r.ticker} className="mb-2 flex items-center gap-3 last:mb-0">
+              <span className="w-16 shrink-0 text-[13px] text-[var(--color-text-secondary)]">{r.ticker}</span>
               <span className="flex gap-1.5">
                 {cols.map((a) => (
                   <span
                     key={a.id}
-                    className={`inline-block h-3 w-3 rounded-sm ${held.has(a.id) ? 'bg-[var(--color-gold)]' : 'border border-[var(--color-border-strong)]'}`}
+                    className={`inline-block h-3.5 w-3.5 rounded-sm ${held.has(a.id) ? 'bg-[var(--color-gold)]' : 'border border-[var(--color-border-strong)]'}`}
                     aria-hidden="true"
                   />
                 ))}
@@ -293,9 +316,9 @@ function OverlapPreview({ shared, accounts, pending }: { shared: ExposureRow[]; 
           );
         })}
       </span>
-      <span className="mt-2 flex gap-1.5 pl-[68px] text-[10px] uppercase text-[var(--color-text-muted)]">
+      <span className="mt-2 flex gap-1.5 pl-[76px] text-[11px] uppercase text-[var(--color-text-muted)]">
         {cols.map((a) => (
-          <span key={a.id} className="inline-block w-3 text-center" title={a.institution}>{a.institution.slice(0, 2)}</span>
+          <span key={a.id} className="inline-block w-3.5 text-center" title={a.institution}>{a.institution.slice(0, 2)}</span>
         ))}
       </span>
     </span>

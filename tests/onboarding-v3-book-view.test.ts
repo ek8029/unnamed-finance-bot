@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manualPositions, overlapColumns, shareLabel } from '@/lib/onboarding/v3-book-view';
+import { manualPositions, overlapColumns, sectorSplit, shareLabel } from '@/lib/onboarding/v3-book-view';
 
 const accounts = [
   { id: 'm1', source: 'manual' as const },
@@ -84,5 +84,43 @@ describe('overlapColumns', () => {
   it('is empty when nothing lines up', () => {
     expect(overlapColumns([], accounts)).toEqual([]);
     expect(overlapColumns([{ accountIds: ['manual'] }], accounts)).toEqual([]);
+  });
+});
+
+describe('sectorSplit', () => {
+  const labels = { funds: 'Funds', crypto: 'Crypto', unclassified: 'No sector on file' };
+  const h = (total_value: number, sector: string | null, assetClass: string | null) => ({ total_value, sector, assetClass });
+
+  it('sums by sector and returns the largest first, as percentages of the whole', () => {
+    const out = sectorSplit([h(300, 'Technology', 'equity'), h(100, 'Energy', 'equity'), h(100, 'Technology', 'equity')], labels);
+    expect(out.map((s) => s.label)).toEqual(['Technology', 'Energy']);
+    expect(out[0].pct).toBeCloseTo(80, 6);
+    expect(out[0].value).toBe(400);
+  });
+
+  it('buckets a fund, a coin and an unclassified equity rather than dropping them', () => {
+    const out = sectorSplit([h(100, null, 'etf'), h(100, null, 'mutual_fund'), h(50, null, 'crypto'), h(25, null, 'equity'), h(25, null, null)], labels);
+    const byLabel = new Map(out.map((s) => [s.label, s.value]));
+    expect(byLabel.get('Funds')).toBe(200);
+    expect(byLabel.get('Crypto')).toBe(50);
+    expect(byLabel.get('No sector on file')).toBe(50);
+  });
+
+  it('prefers a real sector over the asset class', () => {
+    expect(sectorSplit([h(100, 'Diversified', 'etf')], labels)[0].label).toBe('Diversified');
+  });
+
+  it('reads the asset class case-insensitively', () => {
+    expect(sectorSplit([h(100, null, 'ETF')], labels)[0].label).toBe('Funds');
+  });
+
+  it('ignores positions with no value, and returns nothing when none have any', () => {
+    expect(sectorSplit([h(0, 'Technology', 'equity'), h(-5, 'Energy', 'equity')], labels)).toEqual([]);
+    expect(sectorSplit([], labels)).toEqual([]);
+  });
+
+  it('adds up to 100 percent', () => {
+    const out = sectorSplit([h(37, 'Technology', 'equity'), h(11, null, 'etf'), h(3, null, 'crypto')], labels);
+    expect(out.reduce((n, s) => n + s.pct, 0)).toBeCloseTo(100, 6);
   });
 });

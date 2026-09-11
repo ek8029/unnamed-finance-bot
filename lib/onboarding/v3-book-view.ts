@@ -54,3 +54,53 @@ export function overlapColumns<T extends { id: string }>(
     .sort((a, b) => (hits.get(b.id) ?? 0) - (hits.get(a.id) ?? 0))
     .slice(0, max);
 }
+
+export type SectorSlice = { label: string; pct: number; value: number };
+
+type Classified = { total_value: number | string | null; sector?: string | null; assetClass?: string | null };
+
+/**
+ * The book by sector, largest first. Only 46% of the securities anyone holds
+ * carry a sector (measured 2026-09-11), and most of the rest are funds, so the
+ * unnamed part is bucketed honestly rather than dropped: a fund is a fund, a
+ * coin is a coin, and an equity with no sector on file says so.
+ */
+export function sectorSplit(holdings: Classified[], labels: { funds: string; crypto: string; unclassified: string }): SectorSlice[] {
+  const byLabel = new Map<string, number>();
+  let total = 0;
+  for (const h of holdings) {
+    const value = Number(h.total_value) || 0;
+    if (value <= 0) continue;
+    const klass = (h.assetClass ?? '').toLowerCase();
+    const label = h.sector
+      ? h.sector
+      : klass === 'etf' || klass === 'mutual_fund'
+        ? labels.funds
+        : klass === 'crypto'
+          ? labels.crypto
+          : labels.unclassified;
+    byLabel.set(label, (byLabel.get(label) ?? 0) + value);
+    total += value;
+  }
+  if (total <= 0) return [];
+  return [...byLabel.entries()]
+    .map(([label, value]) => ({ label, value, pct: (value / total) * 100 }))
+    .sort((a, b) => b.value - a.value);
+}
+
+// The vendor's sector names are too long for a treemap tile at 9px. These are
+// the standard short forms, not new categories: anything unlisted is returned
+// unchanged, and the caller still truncates what will not fit.
+const SHORT_SECTOR: Record<string, string> = {
+  'Financial Services': 'Financials',
+  'Consumer Cyclical': 'Consumer cyc',
+  'Consumer Defensive': 'Consumer def',
+  'Communication Services': 'Comms',
+  'Basic Materials': 'Materials',
+  'Information Technology': 'Technology',
+  'Health Care': 'Healthcare',
+};
+
+export function shortSector(label: string): string {
+  return SHORT_SECTOR[label] ?? label;
+}

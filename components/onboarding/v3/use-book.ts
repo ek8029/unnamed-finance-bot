@@ -7,7 +7,16 @@ import { previewSentence } from '@/lib/onboarding/v3-exposure';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
 
 export type BookAccount = { id: string; institution: string; account_type: string; source: 'plaid' | 'manual'; positions: number };
-export type BookHolding = { ticker: string; total_value: number; account_id: string | null; shares: number };
+export type BookHolding = {
+  ticker: string;
+  total_value: number;
+  account_id: string | null;
+  shares: number;
+  /** From securities.sector, null on 54% of held securities (measured 2026-09-11). */
+  sector: string | null;
+  /** equity | etf | mutual_fund | crypto | other, which is what buckets the rest. */
+  assetClass: string | null;
+};
 
 export function useBook(enabled = true) {
   const [accounts, setAccounts] = useState<BookAccount[]>([]);
@@ -20,7 +29,18 @@ export function useBook(enabled = true) {
       const r = await fetch('/api/financial-summary', { cache: 'no-store' });
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
-      const hs: BookHolding[] = (d.holdings ?? []).map((h: Record<string, unknown>) => ({ ticker: String(h.ticker), total_value: Number(h.total_value) || 0, account_id: (h.account_id as string) ?? null, shares: Number(h.shares) || 0 }));
+      const hs: BookHolding[] = (d.holdings ?? []).map((h: Record<string, unknown>) => {
+        // financial-summary selects `*, securities(security_name, sector, asset_class)`.
+        const sec = (h.securities ?? {}) as Record<string, unknown>;
+        return {
+          ticker: String(h.ticker),
+          total_value: Number(h.total_value) || 0,
+          account_id: (h.account_id as string) ?? null,
+          shares: Number(h.shares) || 0,
+          sector: typeof sec.sector === 'string' && sec.sector ? sec.sector : null,
+          assetClass: typeof sec.asset_class === 'string' && sec.asset_class ? sec.asset_class : null,
+        };
+      });
       const counts = new Map<string, number>();
       for (const h of hs) if (h.account_id) counts.set(h.account_id, (counts.get(h.account_id) ?? 0) + 1);
       setAccounts((d.accounts ?? []).map((a: Record<string, unknown>) => ({ id: String(a.id), institution: String(a.institution), account_type: String(a.account_type), source: a.source === 'manual' ? 'manual' : 'plaid', positions: counts.get(String(a.id)) ?? 0 })));

@@ -34,15 +34,24 @@ function todayET(): string {
   }).format(new Date());
 }
 
+export interface Mover {
+  ticker: string;
+  changePct: number;
+  /** Dollar move on THEIR position — the part that is about them. */
+  dollarImpact: number;
+  positionValue: number;
+}
+
 export interface DashboardDelta {
   /** null when nothing on the book moved enough to be worth a sentence. */
-  mover: {
-    ticker: string;
-    changePct: number;
-    /** Dollar move on THEIR position — the part that is about them. */
-    dollarImpact: number;
-    positionValue: number;
-  } | null;
+  mover: Mover | null;
+  /**
+   * Every re-priced position that cleared the threshold, largest first, so a
+   * caller that wants a short list does not have to settle for one name or
+   * re-read the stale stored column. `mover` is movers[0] when there is one.
+   * Bounded by LIVE_CHECK_LIMIT: these are the only positions priced live.
+   */
+  movers: Mover[];
   /** How many other positions also cleared the threshold. */
   otherMovers: number;
   /** Largest move among everything else, for the "nothing else moved" clause. */
@@ -118,8 +127,21 @@ export async function GET() {
     const today = todayET();
     const sessionDate = ranked[0]?.sessionDate ?? null;
 
+    // One shape for both exits, so a caller reading `movers` never has to
+    // special-case the quiet day.
+    const asMover = (r: { ticker: string; value: number; pct: number }): Mover => ({
+      ticker: r.ticker,
+      changePct: r.pct,
+      // Back out the session's dollar move from the position's CURRENT value.
+      dollarImpact: r.value - r.value / (1 + r.pct / 100),
+      positionValue: r.value,
+    });
+    const cleared = ranked.filter((r) => Math.abs(r.pct) >= MOVE_THRESHOLD_PCT).map(asMover);
+
     const empty: DashboardDelta = {
       mover: null,
+      // Sorted by magnitude, so nothing cleared the threshold if the top did not.
+      movers: cleared,
       otherMovers: 0,
       nextLargestPct: ranked.length > 0 ? ranked[0].pct : null,
       headline: null,
@@ -134,7 +156,6 @@ export async function GET() {
     }
 
     const { ticker, value, pct: changePct } = top;
-    // Back out today's dollar move from the position's CURRENT value.
     const dollarImpact = value - value / (1 + changePct / 100);
 
     const others = ranked.slice(1).filter((r) => Math.abs(r.pct) >= MOVE_THRESHOLD_PCT);
@@ -171,6 +192,7 @@ export async function GET() {
 
     return NextResponse.json({
       mover: { ticker, changePct, dollarImpact, positionValue: value },
+      movers: cleared,
       otherMovers: others.length,
       nextLargestPct: ranked[1] ? ranked[1].pct : null,
       headline,
