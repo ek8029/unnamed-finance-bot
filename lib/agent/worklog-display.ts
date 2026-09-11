@@ -46,6 +46,44 @@ export function topSteps(steps: readonly WorklogStep[], n: number = AGENT_LOG_LI
     .slice(0, Math.max(0, n));
 }
 
+/** Steps whose id says only that a job ran, naming no filing, no story and no
+ *  finding. Exact ids, from the four pushes in lib/agent/worklog.ts that use a
+ *  fixed id. The specific lines all carry a suffix (`filing-`, `news-`,
+ *  `severe-`, `flag-`, `inv-`), but the dash is NOT the discriminator:
+ *  `read-filings` and `read-news` carry one too. This set is. */
+const GENERIC_STEP_IDS = new Set(['sync', 'read-filings', 'read-news', 'scan']);
+
+/** Drop the generic lines that add nothing over the specific lines beside them.
+ *
+ *  The builder records everything it does, and it should: the record is the
+ *  honest one. But news-watch runs every five minutes and the judge queue every
+ *  minute, so there is always something recent to say, and "Ran the risk scans
+ *  across your book" at 12:03 AM is a true line and an empty one. A line earns a
+ *  slot when it carries a subject.
+ *
+ *  `scan` never earns one: it found nothing, or it found things and those are
+ *  the flag lines. `read-filings` and `read-news` are counts, redundant once the
+ *  filings and stories themselves are listed. `sync` is real but it is not a
+ *  finding, so it never displaces a specific line.
+ *
+ *  The one thing `sync` beats is nothing at all, so it survives when no other
+ *  line does. Input order is preserved. */
+export function withNovelty(steps: readonly WorklogStep[]): WorklogStep[] {
+  const hasFiling = steps.some((s) => s.id.startsWith('filing-'));
+  const hasNews = steps.some((s) => s.id.startsWith('news-'));
+  const earns = (s: WorklogStep) => {
+    if (s.emphasis) return true; // contradictions and flagged findings, always
+    if (!GENERIC_STEP_IDS.has(s.id)) return true;
+    if (s.id === 'read-filings') return !hasFiling;
+    if (s.id === 'read-news') return !hasNews;
+    return false; // `scan` and `sync`
+  };
+  const kept = steps.filter(earns);
+  if (kept.length > 0) return kept;
+  const sync = steps.find((s) => s.id === 'sync');
+  return sync ? [sync] : [];
+}
+
 export interface UpdatesView {
   /** What the card renders, newest first. */
   lines: WorklogStep[];
@@ -63,21 +101,35 @@ export interface UpdatesView {
  *  people land on and mixing new work into older lines without a boundary
  *  would blur the two. With nothing new it falls back to the most recent lines
  *  rather than leaving the best slot on the page empty, and says so. No
- *  watermark, or one that will not parse, is the old behaviour exactly. */
+ *  watermark, or one that will not parse, is the old behaviour exactly.
+ *
+ *  Both paths run through withNovelty, and each judges redundancy against its
+ *  own candidates: a new aggregate count is dropped only when a specific line
+ *  is new beside it, not because one was read yesterday and is off screen.
+ *  newCount counts survivors, because the card renders it as "3 new since your
+ *  last visit" and the reader must be able to find all three. A "new" set that
+ *  was nothing but generic lines reads as nothing new, which is the point.
+ *
+ *  The recent list keeps its newest line even when the filter takes everything,
+ *  because the card's empty copy says nothing was recorded and something was. */
 export function updatesView(
   steps: readonly WorklogStep[],
   seenAt: string | null | undefined,
   n: number = AGENT_LOG_LINES,
 ): UpdatesView {
-  const ordered = topSteps(steps, steps.length);
+  const all = topSteps(steps, steps.length);
+  const novel = withNovelty(all);
+  const recent = (novel.length > 0 ? novel : all.slice(0, 1)).slice(0, Math.max(0, n));
   const at = seenAt ? Date.parse(seenAt) : NaN;
-  if (Number.isNaN(at)) return { lines: ordered.slice(0, Math.max(0, n)), newCount: 0, note: '' };
-  const fresh = ordered.filter((s) => {
-    const t = s.ts ? Date.parse(s.ts) : NaN;
-    return !Number.isNaN(t) && t > at;
-  });
+  if (Number.isNaN(at)) return { lines: recent, newCount: 0, note: '' };
+  const fresh = withNovelty(
+    all.filter((s) => {
+      const t = s.ts ? Date.parse(s.ts) : NaN;
+      return !Number.isNaN(t) && t > at;
+    }),
+  );
   if (fresh.length === 0) {
-    return { lines: ordered.slice(0, Math.max(0, n)), newCount: 0, note: AGENT_LOG_COPY.nothingNew };
+    return { lines: recent, newCount: 0, note: AGENT_LOG_COPY.nothingNew };
   }
   return {
     lines: fresh.slice(0, Math.max(0, n)),
