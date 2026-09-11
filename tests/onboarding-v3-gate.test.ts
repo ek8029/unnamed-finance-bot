@@ -87,3 +87,25 @@ describe('/api/onboarding/status', () => {
     expect(await res.json()).not.toHaveProperty('userId');
   });
 });
+
+describe('the investor demo login', () => {
+  it('shows every visit, even with a book on record', () => {
+    expect(decideV3Gate({ ok: true, isDemo: true, hasSavedWork: true })).toBe('show-demo');
+  });
+
+  it('ignores its own deferral, so "Do this later" does not end the demo forever', () => {
+    expect(decideV3Gate({ ok: true, isDemo: true, deferred: true })).toBe('show-demo');
+    expect(decideV3Gate({ ok: true, isDemo: true, hasSavedWork: true, deferred: true })).toBe('show-demo');
+  });
+
+  it('still shows when the status read failed', () => {
+    expect(decideV3Gate({ ok: false, isDemo: true })).toBe('show-demo');
+  });
+
+  it('changes nothing for everyone else', () => {
+    expect(decideV3Gate({ ok: true, isDemo: false, hasSavedWork: true })).toBe('defer-and-settle');
+    expect(decideV3Gate({ ok: true, isDemo: false, deferred: true })).toBe('settle');
+    expect(decideV3Gate({ ok: true, isDemo: false })).toBe('show');
+    expect(decideV3Gate({ ok: true })).toBe('show');
+  });
+});

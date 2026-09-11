@@ -52,6 +52,10 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 } = {}) {
   // The harness renders the ask on the server so /testing/onboarding-v3 shows it at once.
   const [show, setShow] = useState(!!harness);
+  // The investor demo login: every screen, every visit, nothing written. v2 had
+  // this and v3 had lost it, so the demo dashboard stopped showing onboarding
+  // the day the v3 flag went on.
+  const [demo, setDemo] = useState(false);
   // onSettled must fire once and only once, from whichever exit is reached.
   const settled = useRef(false);
   const settle = useCallback(() => {
@@ -90,8 +94,12 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
     const apply = (outcome: GateOutcome, userId: string | null) => {
       if (outcome === 'defer-and-settle') { markDeferred(userId); settle(); return; }
       if (outcome === 'settle') { settle(); return; }
+      if (outcome === 'show-demo') setDemo(true);
       setShow(true);
-      track('onb3_shown', { flow: 'v3', gate: outcome === 'show-unavailable' ? 'unavailable' : 'ok' });
+      track('onb3_shown', {
+        flow: 'v3',
+        gate: outcome === 'show-demo' ? 'demo' : outcome === 'show-unavailable' ? 'unavailable' : 'ok',
+      });
     };
     fetch('/api/onboarding/status', { cache: 'no-store' })
       .then(async (r) => {
@@ -103,6 +111,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
         userIdRef.current = userId;
         apply(decideV3Gate({
           ok: true,
+          isDemo: s?.isDemo === true,
           hasSavedWork: !!s?.hasSavedWork,
           deferred: !!userId && isDeferred(userId),
         }), userId);
@@ -143,10 +152,11 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
       void book.refetch();
       return;
     }
-    markDeferred(userIdRef.current);
+    // The demo starts from zero next visit, so its exit writes nothing.
+    if (!demo) markDeferred(userIdRef.current);
     settle();
     window.location.href = '/dashboard/portfolio';
-  }, [harness, settle, book.refetch]);
+  }, [harness, settle, book.refetch, demo]);
 
   const onPlaidSuccess = useCallback(() => {
     track('onb3_account_added', { flow: 'v3', via: 'plaid', accounts: accountsRef.current.length + 1 });
@@ -215,6 +225,10 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
 
   if (!show) return null;
 
+  // A demo visitor must not write to the house account, so the forms render
+  // exactly as they do in the harness: real, and refusing to save.
+  const noWrites = readOnly || demo;
+
   const copy = phase === 'ask' ? V3_COPY.ask : phase === 'loop' ? V3_COPY.loop : phase === 'first-look' ? V3_COPY.firstLook : V3_COPY.reveal;
   // BookAsk renders the ask lede itself; the other ledes belong to the frame.
   const lede = phase === 'loop' ? V3_COPY.loop.lede : phase === 'first-look' ? V3_COPY.firstLook.lede : null;
@@ -250,8 +264,17 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   onDuplicate={onDuplicate}
                   onChoice={onChoice}
                   onPlaidExit={onPlaidExit}
-                  readOnly={readOnly}
+                  readOnly={noWrites}
                 />
+              )}
+              {demo && phase === 'ask' && (
+                /* With writes off, no connect and no manual save can advance the
+                   flow, so the demo gets the one door the screens cannot give it. */
+                <div className="mt-6">
+                  <button type="button" className="helm-button min-h-[44px]" onClick={() => setPhase('loop')}>
+                    {V3_COPY.demoContinue}
+                  </button>
+                </div>
               )}
               {phase === 'loop' && bookFailed && (
                 <p role="status" className="mb-4 text-[13px] text-[var(--color-text-secondary)]">{book.error}</p>
@@ -269,7 +292,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   onChoice={onChoice}
                   onPlaidExit={onPlaidExit}
                   onContinue={onContinue}
-                  readOnly={readOnly}
+                  readOnly={noWrites}
                 />
               )}
               {phase === 'first-look' && (
@@ -277,7 +300,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   holdings={bookFailed ? [] : book.holdings}
                   accounts={book.accounts}
                   syncing={syncingFirst}
-                  readOnly={readOnly}
+                  readOnly={noWrites}
                   onDone={onFirstLook}
                 />
               )}

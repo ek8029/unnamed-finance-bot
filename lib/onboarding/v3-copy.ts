@@ -6,6 +6,8 @@ function plural(n: number, one: string, many: string): string {
 
 export const V3_COPY = {
   later: 'Do this later',
+  // Demo only: with writes off, nothing on the ask screen can advance the flow.
+  demoContinue: 'Continue with the demo book',
   step: (n: number) => `Step ${n} of 4`,
   ask: {
     title: 'Start with what you own.',

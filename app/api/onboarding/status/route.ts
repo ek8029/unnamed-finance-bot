@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { readActivationState } from '@/lib/activation-state';
+import { isDemoAccount } from '@/lib/onboarding/demo-account';
 
 export async function GET() {
   const client = await createClient();
@@ -9,8 +10,13 @@ export async function GET() {
   try {
     // userId lets a client scope per-account browser state (the onboarding v3
     // deferral) without plumbing the session through props. It is the caller's
-    // own id, already in their session.
-    return NextResponse.json({ ...await readActivationState(client, user.id), userId: user.id }, {
+    // own id, already in their session. isDemo is resolved here rather than in
+    // the browser so the address never has to reach the client bundle.
+    return NextResponse.json({
+      ...await readActivationState(client, user.id),
+      userId: user.id,
+      isDemo: isDemoAccount(user.email),
+    }, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch {

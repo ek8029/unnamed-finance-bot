@@ -27,12 +27,13 @@ import { saveOnboardingReasons, type OnboardingSaveResult } from '@/lib/onboardi
 import { supabase } from '@/lib/supabase/client';
 import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
 import { cachedGet } from '@/lib/api-cache';
+import { demoAccountEmail } from '@/lib/onboarding/demo-account';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 // The investor demo login runs onboarding on EVERY visit, in preview mode (no
 // writes, no dismissed flag), so a visitor always sees the flow from zero and
 // lands on the populated demo dashboard. Nothing about this touches real users.
-const DEMO_EMAIL = 'test@helmterminal.dev';
+// The address itself lives in lib/onboarding/demo-account.ts, which v3 reads too.
 // Recognizable house names that currently carry live cited evidence (receipt cards).
 // Names without a fresh catch still scan fine — they land on the "Watching" card.
 const HOUSE_PICKS = ['NVDA', 'TSM', 'AVGO', 'MU', 'META', 'AAPL'];
@@ -295,7 +296,7 @@ export function OnboardingFlowV2({
       .getUser()
       .then(({ data }) => {
         if (cancelled) return;
-        if (data.user?.email?.toLowerCase() === DEMO_EMAIL) {
+        if (data.user?.email?.toLowerCase() === demoAccountEmail()) {
           setDemo(true);
           setPreview(true);
           setHasPlaid(false);
