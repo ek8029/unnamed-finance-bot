@@ -8,6 +8,9 @@ import { createClient } from '@/lib/supabase/server';
 import { AnalysisTerminal } from '@/app/analyze/[ticker]/analysis-terminal';
 import { deriveThesisVerdict, VERDICT_META } from '@/lib/thesis-verdict';
 import type { PillarStatus } from '@/lib/thesis-status';
+import { getUserTier, tierAtLeast } from '@/lib/tier';
+import { FREE_THESIS_LIMIT } from '@/lib/thesis-entitlement';
+import { freeThesisEntryHref } from '@/lib/thesis-entry';
 
 // Research → thesis bridge. The research tab used to dead-end: you studied a
 // name and the loop stopped there. This strip closes it — route the research
@@ -18,6 +21,7 @@ async function getThesisBridge(symbol: string): Promise<{
   variant: 'thesis' | 'draft' | 'held' | 'research';
   thesisId?: string;
   verdictLabel?: string;
+  freeEntry?: boolean;
 } | null> {
   try {
     const supabase = await createClient();
@@ -45,15 +49,29 @@ async function getThesisBridge(symbol: string): Promise<{
       const verdictLabel = VERDICT_META[deriveThesisVerdict(counts)].label;
       return { variant: 'thesis', thesisId: thesis.id as string, verdictLabel };
     }
-    if (thesis) return { variant: 'draft' };
-    if (held) return { variant: 'held' };
-    return { variant: 'research' };
+    let freeEntry = false;
+    if (!tierAtLeast(await getUserTier(user.id), 'pro')) {
+      if (thesis) {
+        // Existing drafts remain readable/confirmable even when they occupy
+        // the Free slot. Never send their owner to a fully blurred Builder.
+        freeEntry = true;
+      } else {
+        const { count, error } = await supabase.from('theses')
+          .select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+        if (error || count == null) return null;
+        freeEntry = count < FREE_THESIS_LIMIT;
+      }
+    }
+    if (thesis) return { variant: 'draft', freeEntry };
+    if (held) return { variant: 'held', freeEntry };
+    return { variant: 'research', freeEntry };
   } catch {
     return null;
   }
 }
 
-function ThesisBridge({ symbol, bridge }: { symbol: string; bridge: { variant: 'thesis' | 'draft' | 'held' | 'research'; thesisId?: string; verdictLabel?: string } }) {
+function ThesisBridge({ symbol, bridge }: { symbol: string; bridge: { variant: 'thesis' | 'draft' | 'held' | 'research'; thesisId?: string; verdictLabel?: string; freeEntry?: boolean } }) {
+  const draftHref = bridge.freeEntry ? freeThesisEntryHref(symbol) : `/dashboard/theses/builder?ticker=${symbol}`;
   const copy = {
     thesis: {
       label: bridge.verdictLabel ? `Thesis on file · ${bridge.verdictLabel}` : 'Thesis on file',
@@ -65,19 +83,21 @@ function ThesisBridge({ symbol, bridge }: { symbol: string; bridge: { variant: '
       label: 'Draft in progress',
       line: `You started a thesis on ${symbol}. Confirm the pillars and track it, and Helm starts watching.`,
       cta: 'Finish your draft',
-      href: `/dashboard/theses/builder?ticker=${symbol}`,
+      href: draftHref,
     },
     held: {
       label: `You hold ${symbol}`,
       line: 'No thesis on record. Write down why you own it and Helm will watch those reasons for you.',
       cta: 'Draft your thesis',
-      href: `/dashboard/theses/builder?ticker=${symbol}`,
+      href: draftHref,
     },
     research: {
       label: `Researching ${symbol}?`,
-      line: 'Stress-test it before you buy: draft the pillars, see the concentration it would add, the drivers you already lean on, and the bear case.',
-      cta: 'Stress-test before you buy',
-      href: `/dashboard/theses/builder?ticker=${symbol}`,
+      line: bridge.freeEntry
+        ? 'Your first monitored thesis is free. Draft your reasons, confirm them, and read the evidence behind them.'
+        : 'Stress-test it before you buy: draft the pillars, see the concentration it would add, the drivers you already lean on, and the bear case.',
+      cta: bridge.freeEntry ? 'Draft your first thesis' : 'Stress-test before you buy',
+      href: draftHref,
     },
   }[bridge.variant];
 

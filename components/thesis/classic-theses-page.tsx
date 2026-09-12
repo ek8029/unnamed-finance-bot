@@ -4,8 +4,9 @@
 // Strong / Holding / Under review). Click a row to expand its Why-I-Own-This.
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
 import { ProBlur } from '@/components/pro-blur';
@@ -24,6 +25,7 @@ import { VerdictLine } from '@/components/thesis/verdict-chip';
 import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type PillarStatus } from '@/lib/thesis-palette';
 import { CompanyLogo } from '@/components/company-logo';
 import { cachedGet, invalidate } from '@/lib/api-cache';
+import { thesisEntryTicker } from '@/lib/thesis-entry';
 
 /* ── Local types ── */
 interface EvidenceRow {
@@ -171,10 +173,30 @@ function LoadingSkeleton() {
   );
 }
 
+async function requireSaved(response: Response, fallback: string): Promise<void> {
+  if (response.ok) return;
+  const body = await response.json().catch(() => null) as { error?: unknown } | null;
+  throw new Error(typeof body?.error === 'string' ? body.error : fallback);
+}
+
+async function finishWriteBatch(writes: Promise<void>[]): Promise<void> {
+  // A failed sibling must not unlock retry while another write is still live.
+  const results = await Promise.allSettled(writes);
+  const failed = results.find((result) => result.status === 'rejected');
+  if (failed?.status === 'rejected') throw failed.reason;
+}
+
 /* ════════════════════════════════════════════════════════════════════
    Main page
    ════════════════════════════════════════════════════════════════════ */
 export function ClassicThesesPage() {
+  return <Suspense fallback={<LoadingSkeleton />}><ClassicThesesInner /></Suspense>;
+}
+
+function ClassicThesesInner() {
+  const searchParams = useSearchParams();
+  const requestedTicker = thesisEntryTicker(searchParams.get('ticker'));
+  const entryHandled = useRef<string | null>(null);
   const [theses, setTheses] = useState<Thesis[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [phase, setPhase] = useState<'loading' | 'error' | 'ready' | 'locked'>('loading');
@@ -191,6 +213,11 @@ export function ClassicThesesPage() {
   const [keptClaims, setKeptClaims] = useState<Record<string, string>>({});
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const [scanEvidence, setScanEvidence] = useState<number | null>(null);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [historyPending, setHistoryPending] = useState(false);
+  const confirmInFlight = useRef(false);
+  const historyInFlight = useRef(false);
   const [detailOpen, setDetailOpen] = useState(false);
   // Standings view toggle: show only theses with a broken or weakening pillar.
   const [breakingOnly, setBreakingOnly] = useState(false);
@@ -246,6 +273,35 @@ export function ClassicThesesPage() {
     loadTheses();
     loadHoldings();
   }, [loadTheses, loadHoldings]);
+
+  useEffect(() => {
+    if (!requestedTicker) { entryHandled.current = null; return; }
+    if (phase !== 'ready' || entryHandled.current === requestedTicker) return;
+    entryHandled.current = requestedTicker;
+    const existing = theses.find((thesis) => thesis.ticker.toUpperCase() === requestedTicker);
+    const drafts = existing?.pillars.filter((pillar) => !pillar.confirmed && pillar.lifecycle !== 'dismissed') ?? [];
+    setFirstTicker(requestedTicker);
+    setConfirmationError(null);
+    if (drafts.length > 0) {
+      // Read the saved draft as-is. Following a research link must not create
+      // or regenerate anything; confirmation remains the user's next action.
+      setDraftTicker(requestedTicker);
+      setDraftPillars(drafts.map(({ id, claim }) => ({ id, claim })));
+      setKeptClaims(Object.fromEntries(drafts.map(({ id, claim }) => [id, claim])));
+      setRemovedIds([]);
+      setOnboardStep('confirm');
+      setForceFirstRun(true);
+    } else if (existing?.pillars.some((pillar) => pillar.confirmed && pillar.lifecycle !== 'dismissed')) {
+      setForceFirstRun(false);
+      setSelectedTicker(requestedTicker);
+      setDetailOpen(true);
+    } else {
+      // A new ticker is only prefilled. The visible Draft thesis button owns
+      // the write, and the API continues to enforce the one-thesis Free cap.
+      setOnboardStep('pick');
+      setForceFirstRun(true);
+    }
+  }, [phase, requestedTicker, theses]);
 
   /* ── Derived data ── */
   const summaries = theses.map((t) => ({ t, summary: summarizePillars(t.pillars) }));
@@ -371,36 +427,74 @@ export function ClassicThesesPage() {
   }
 
   /* ── Confirm drafted pillars, track, then backfill (the aha) ── */
-  async function handleConfirm() {
-    const kept = draftPillars.filter((p) => !removedIds.includes(p.id) && keptClaims[p.id]?.trim());
-    if (kept.length === 0) return;
+  async function loadHistory() {
+    if (historyInFlight.current) return;
+    historyInFlight.current = true;
     setOnboardStep('scanning');
+    setScanEvidence(null);
     try {
-      await Promise.all(kept.map((p) =>
-        fetch(`/api/thesis/pillars/${p.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ confirmed: true, claim: keptClaims[p.id].trim() }),
-        }),
-      ));
-      const toRemove = draftPillars.filter((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim());
-      await Promise.all(toRemove.map((p) => fetch(`/api/thesis/pillars/${p.id}`, { method: 'DELETE' })));
-      await fetch(`/api/thesis/${draftTicker}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracked: true }),
-      });
-      const br = await fetch('/api/thesis/backfill', {
+      const response = await fetch('/api/thesis/backfill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker: draftTicker }),
       });
-      const result = br.ok ? (await br.json() as { evidenceAdded?: number }) : null;
+      await requireSaved(response, 'History is not ready yet.');
+      const result = await response.json() as { evidenceAdded?: number };
       if (!mountedRef.current) return;
-      setScanEvidence(result?.evidenceAdded ?? 0);
-      setOnboardStep('done');
+      setScanEvidence(result.evidenceAdded ?? 0);
+      setHistoryPending(false);
     } catch {
-      if (mountedRef.current) { setSeedError(draftTicker); setOnboardStep('confirm'); }
+      // The tracking PATCH already succeeded. A failed/rate-limited history
+      // read must not claim zero evidence or send the user through saves again.
+      if (mountedRef.current) setHistoryPending(true);
+    } finally {
+      historyInFlight.current = false;
+      if (mountedRef.current) setOnboardStep('done');
+    }
+  }
+
+  async function handleConfirm() {
+    const kept = draftPillars.filter((p) => !removedIds.includes(p.id) && keptClaims[p.id]?.trim());
+    if (kept.length === 0 || confirmInFlight.current) return;
+    confirmInFlight.current = true;
+    setConfirming(true);
+    setConfirmationError(null);
+    try {
+      await finishWriteBatch(kept.map(async (p) => {
+        const response = await fetch(`/api/thesis/pillars/${p.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ confirmed: true, claim: keptClaims[p.id].trim() }),
+        });
+        await requireSaved(response, 'Could not save your reasons.');
+      }));
+      if (!mountedRef.current) return;
+      const toRemove = draftPillars.filter((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim());
+      await finishWriteBatch(toRemove.map(async (p) => {
+        const response = await fetch(`/api/thesis/pillars/${p.id}`, { method: 'DELETE' });
+        // AI drafts soft-dismiss idempotently. A retry of a hard deletion may
+        // return 404; absent is the intended result for an explicit removal.
+        if (response.status !== 404) await requireSaved(response, 'Could not remove a reason.');
+        if (mountedRef.current) setDraftPillars((previous) => previous.filter((pillar) => pillar.id !== p.id));
+      }));
+      if (!mountedRef.current) return;
+      const tracked = await fetch(`/api/thesis/${draftTicker}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tracked: true }),
+      });
+      await requireSaved(tracked, 'Could not start monitoring this thesis.');
+      if (!mountedRef.current) return;
+      invalidate('/api/thesis');
+      await loadHistory();
+    } catch (error) {
+      if (mountedRef.current) {
+        setConfirmationError(error instanceof Error ? error.message : 'Could not save your thesis. Please try again.');
+        setOnboardStep('confirm');
+      }
+    } finally {
+      confirmInFlight.current = false;
+      if (mountedRef.current) setConfirming(false);
     }
   }
 
@@ -915,13 +1009,14 @@ export function ClassicThesesPage() {
                     <textarea
                       value={keptClaims[p.id] ?? ''}
                       onChange={(e) => setKeptClaims((m) => ({ ...m, [p.id]: e.target.value }))}
-                      disabled={removed}
+                      disabled={removed || confirming}
                       rows={2}
                       className="flex-1 bg-transparent border-0 resize-none text-[15.5px] leading-[1.5] text-[#FAFAFA] focus:outline-none disabled:line-through disabled:text-[#6A6A6A]"
                     />
                     <button
                       type="button"
                       onClick={() => setRemovedIds((ids) => removed ? ids.filter((x) => x !== p.id) : [...ids, p.id])}
+                      disabled={confirming}
                       className="shrink-0 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-[#6A6A6A] hover:text-[#F87171] transition-colors mt-0.5"
                       style={MONO}
                     >
@@ -937,16 +1032,16 @@ export function ClassicThesesPage() {
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={draftPillars.every((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim())}
+              disabled={confirming || draftPillars.every((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim())}
               className="font-mono text-[15px] font-semibold uppercase tracking-[0.14em] px-5 py-3 rounded bg-[var(--color-gold)] text-black border border-[var(--color-gold)] hover:bg-[#EFCB72] transition-colors disabled:opacity-50"
               style={MONO}
             >
-              Track this thesis
+              {confirming ? 'Saving your reasons…' : 'Track this thesis'}
             </button>
             <span className="font-mono text-[14px] text-[#5A5A5A]" style={MONO}>Helm will scan 12 months of filings and news against these.</span>
           </div>
-          {seedError && (
-            <p className="font-mono text-[14.5px] text-[#F87171]" style={MONO}>Something went wrong. Try again.</p>
+          {confirmationError && (
+            <p role="alert" className="font-mono text-[14.5px] text-[#F87171]" style={MONO}>{confirmationError}</p>
           )}
         </section>
         ) : onboardStep === 'scanning' ? (
@@ -961,7 +1056,13 @@ export function ClassicThesesPage() {
         ) : (
         <section className="space-y-5">
           <div className="font-mono text-[14px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>Now watching {draftTicker}</div>
-          {scanEvidence && scanEvidence > 0 ? (
+          {historyPending ? (
+            <>
+              <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Your thesis is tracked. Its history is not ready yet.</h2>
+              <p className="text-[16px] leading-[1.6] text-[#9A9A9A] max-w-[600px] m-0">Your reasons are saved. You can open the thesis now or retry the historical scan shortly.</p>
+              <button type="button" onClick={loadHistory} className="inline-flex min-h-[44px] items-center font-semibold text-[var(--color-gold)] hover:underline">Retry history</button>
+            </>
+          ) : scanEvidence && scanEvidence > 0 ? (
             <>
               <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Helm already found {scanEvidence} piece{scanEvidence === 1 ? '' : 's'} of evidence.</h2>
               <p className="text-[16px] leading-[1.6] text-[#9A9A9A] max-w-[600px] m-0">Across the reasons you confirmed, going back 12 months. From here Helm scans every hour the market is open and flags anything that strengthens or breaks them.</p>
@@ -969,7 +1070,7 @@ export function ClassicThesesPage() {
           ) : (
             <>
               <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[#FAFAFA] m-0">Helm is now watching {draftTicker}.</h2>
-              <p className="text-[16px] leading-[1.6] text-[#9A9A9A] max-w-[600px] m-0">Nothing in the last 12 months moved these reasons. Helm scans every hour the market is open and will surface anything that strengthens or breaks them.</p>
+              <p className="text-[16px] leading-[1.6] text-[#9A9A9A] max-w-[600px] m-0">This scan added no historical evidence. Helm will keep watching for new evidence against your reasons.</p>
             </>
           )}
           <button

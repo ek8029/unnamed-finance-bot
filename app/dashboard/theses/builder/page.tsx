@@ -12,6 +12,9 @@ import { ArrowLeft, Check, Lock, Pencil, Sparkles, TrendingDown, X } from 'lucid
 import { TierLock } from '@/components/tier-lock';
 import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 import { invalidate } from '@/lib/api-cache';
+import { usePreview } from '@/lib/preview-context';
+import { tierAtLeast } from '@/lib/tier-shared';
+import { freeThesisEntryHref } from '@/lib/thesis-entry';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -590,15 +593,32 @@ function BuilderInner() {
   );
 }
 
+function FreeThesisEntry() {
+  const searchParams = useSearchParams();
+  return (
+    <div className="mx-auto max-w-[560px] px-6 pb-8 text-center">
+      <p className="text-sm text-[var(--color-text-secondary)]">Free includes one monitored thesis. You can draft it or continue a saved draft in Theses.</p>
+      <Link href={freeThesisEntryHref(searchParams.get('ticker'))} className="mt-3 inline-flex min-h-[44px] items-center font-semibold text-sm text-[var(--color-gold)] hover:underline">
+        Open your thesis workspace
+      </Link>
+    </div>
+  );
+}
+
 export default function BuilderPage() {
+  const { tier, resolved } = usePreview();
+  const entitled = resolved && tierAtLeast(tier, 'pro');
   return (
     <Suspense fallback={null}>
+      {resolved && !entitled && <FreeThesisEntry />}
       <TierLock
         required="pro"
         label="Unlock the Thesis Builder with Pro"
         blurb="Stress-test a name before you buy. Draft a starting set of pillars to edit and make your own, see the sector concentration it would add, the drivers it shares with what you already hold, and the bear case. Then track it."
       >
-        <BuilderInner />
+        {/* TierLock blurs children but still mounts them. Keep the auto-seed
+            component absent until access is resolved, across every entry URL. */}
+        {entitled ? <BuilderInner /> : <div className="h-[540px]" aria-hidden />}
       </TierLock>
     </Suspense>
   );
