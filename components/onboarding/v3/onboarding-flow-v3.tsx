@@ -22,6 +22,8 @@ import type { FirstLook } from '@/lib/onboarding/first-look';
 import { afterSynced, nextSyncing, pickNewPlaidAccounts } from '@/lib/onboarding/v3-sync-state';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
 import { decideV3Gate, deferredKey, type GateOutcome } from '@/lib/onboarding/v3-gate';
+import { runBackgroundSync, type BackgroundSyncResult } from '@/lib/plaid/background-sync';
+import { importSummary, recordImportOutcome, type ImportOutcomes } from './import-outcome';
 
 type Phase = 'ask' | 'loop' | 'first-look' | 'reveal';
 const STEP: Record<Phase, number> = { ask: 1, loop: 2, 'first-look': 3, reveal: 4 };
@@ -72,6 +74,15 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   // settled sync removes the oldest.
   const [syncing, setSyncing] = useState<string[]>([]);
   const [pendingConnects, setPendingConnects] = useState(0);
+  const [importOutcomes, setImportOutcomes] = useState<ImportOutcomes>({});
+  const importOutcomesRef = useRef<ImportOutcomes>({});
+  const retryingImport = useRef(false);
+  const importGeneration = useRef(0);
+  const recordImport = useCallback((itemId: string | undefined, outcome: BackgroundSyncResult | 'pending') => {
+    const next = recordImportOutcome(importOutcomesRef.current, itemId, outcome);
+    importOutcomesRef.current = next;
+    setImportOutcomes(next);
+  }, []);
   const [duplicate, setDuplicate] = useState<string | null>(null);
   // null = not answered yet.
   const [firstLook, setFirstLook] = useState<FirstLook[] | null>(null);
@@ -150,6 +161,10 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
       setPhase('ask');
       setSyncing([]);
       setPendingConnects(0);
+      importOutcomesRef.current = {};
+      setImportOutcomes({});
+      importGeneration.current += 1;
+      retryingImport.current = false;
       void book.refetch();
       return;
     }
@@ -159,18 +174,40 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
     window.location.href = '/dashboard/portfolio';
   }, [harness, settle, book.refetch, demo]);
 
-  const onPlaidSuccess = useCallback(() => {
+  const onPlaidSuccess = useCallback((itemId?: string) => {
     track('onb3_account_added', { flow: 'v3', via: 'plaid', accounts: accountsRef.current.length + 1 });
+    recordImport(itemId, 'pending');
     setPendingConnects((n) => n + 1);
     void book.refetch();
     setPhase('loop');
-  }, [book.refetch]);
+  }, [book.refetch, recordImport]);
 
-  const onPlaidSynced = useCallback(() => {
+  const onPlaidSynced = useCallback((result: BackgroundSyncResult, itemId?: string) => {
+    recordImport(itemId, result);
+    track('onb3_import_settled', { flow: 'v3', outcome: result });
     setSyncing(afterSynced);
     setPendingConnects((n) => Math.max(0, n - 1));
     void book.refetch();
-  }, [book.refetch]);
+  }, [book.refetch, recordImport]);
+
+  const retryImport = useCallback(async () => {
+    const summary = importSummary(importOutcomesRef.current);
+    // Do not fan out a second import while Link or another retry is pending.
+    // The shared sync client also deduplicates a timed-out item's live request.
+    if (readOnly || demo || retryingImport.current || summary.pending || !summary.retryItemId) return;
+    retryingImport.current = true;
+    const generation = importGeneration.current;
+    const itemId = summary.retryItemId;
+    recordImport(itemId, 'pending');
+    setPendingConnects((n) => n + 1);
+    track('onb3_import_retry', { flow: 'v3' });
+    try {
+      const result = await runBackgroundSync({ itemId });
+      if (generation === importGeneration.current) onPlaidSynced(result, itemId);
+    } finally {
+      if (generation === importGeneration.current) retryingImport.current = false;
+    }
+  }, [readOnly, demo, recordImport, onPlaidSynced]);
 
   const onManualComplete = useCallback(() => {
     track('onb3_account_added', { flow: 'v3', via: 'manual', accounts: accountsRef.current.length + 1 });
@@ -234,8 +271,12 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
   // BookAsk renders the ask lede itself; the other ledes belong to the frame.
   const lede = phase === 'loop' ? V3_COPY.loop.lede : phase === 'first-look' ? V3_COPY.firstLook.lede : null;
   const step = STEP[phase];
-  // The screens take one institution; the oldest import is the one they name.
-  const syncingFirst = syncing[0] ?? null;
+  // BookAccount has no item-to-institution mapping. Once multiple items have
+  // participated, FIFO labels cannot identify the import that is still pending.
+  const imports = importSummary(importOutcomes);
+  const syncingFirst = imports.pending
+    ? Object.keys(importOutcomes).length > 1 ? 'Your brokerage' : syncing[0] ?? 'Your brokerage'
+    : null;
   // A failed book read must not pass for an empty book: the reveal would read
   // no positions and the loop would count none.
   const bookFailed = !!book.error && !book.loading;
@@ -256,6 +297,26 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
             {lede && <p className="mt-2 text-[16px] leading-relaxed text-[var(--color-text-secondary)]">{lede}</p>}
 
             <div className="mt-8">
+              {imports.incomplete && (
+                <section role="status" className="mb-5 rounded-xl border border-[var(--color-gold-border)] bg-[var(--color-gold-surface)] p-4">
+                  <p className="text-[14px] text-[var(--color-text-primary)]">
+                    {imports.issue === 'partial'
+                      ? 'The import is incomplete. Helm can read the positions received so far, but some information is still missing.'
+                      : imports.issue === 'timeout'
+                        ? 'Your brokerage connection is saved. The import is taking longer than expected, so we cannot confirm your holdings yet.'
+                        : 'Your brokerage connection is saved, but the holdings import did not finish.'}
+                  </p>
+                  <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">Retry the import and review the positions received. A connected brokerage can still import later, so do not enter the same holdings manually. You can use the form for positions held outside your linked accounts.</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {imports.retryItemId && !noWrites && (
+                      <button type="button" disabled={imports.pending} onClick={() => void retryImport()} className="min-h-[44px] rounded-md border border-[var(--color-border-base)] px-4 text-[13px] text-[var(--color-text-primary)] disabled:opacity-50">{imports.pending ? 'Import in progress' : 'Retry import'}</button>
+                    )}
+                    {phase !== 'loop' && (
+                      <button type="button" onClick={() => setPhase('loop')} className="min-h-[44px] rounded-md border border-[var(--color-border-base)] px-4 text-[13px] text-[var(--color-text-primary)]">Review or add positions</button>
+                    )}
+                  </div>
+                </section>
+              )}
               {phase === 'ask' && (
                 <BookAsk
                   linkedInstitutions={book.accounts.map((a) => a.institution)}
@@ -286,6 +347,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   accounts={book.accounts}
                   holdings={book.holdings}
                   syncing={syncingFirst}
+                  importsIncomplete={imports.incomplete || imports.pending}
                   duplicate={duplicate}
                   onPlaidSuccess={onPlaidSuccess}
                   onPlaidSynced={onPlaidSynced}
@@ -320,6 +382,7 @@ export function OnboardingFlowV3({ harness, jumpTo, readOnly, onSettled }: {
                   holdings={book.holdings}
                   accounts={book.accounts.length}
                   syncing={syncingFirst}
+                  importsIncomplete={imports.incomplete}
                   firstLook={firstLook}
                   onOpenTerminal={onOpenTerminal}
                   onViewed={onViewed}

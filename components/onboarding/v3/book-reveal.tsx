@@ -10,6 +10,7 @@ import { ReceiptCard, fetchReceipt, type Receipt } from './receipt-card';
 import { bookExposure, exposureSentence, overlapSentence, type BookExposure } from '@/lib/onboarding/v3-exposure';
 import { orderRevealCards, wantsOverlap, type FirstLook } from '@/lib/onboarding/first-look';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
+import { revealViewedProperties } from './import-outcome';
 
 const copy = V3_COPY.reveal;
 const CARD = 'rounded-xl border border-[var(--color-border-base)] bg-[var(--color-surface-tint)] p-5';
@@ -18,10 +19,11 @@ const STRIPE = { backgroundImage: 'repeating-linear-gradient(45deg, var(--color-
 type Mover = { ticker: string; changePct: number };
 type ReceiptState = { ticker: string; state: 'loading' | 'error' } | { ticker: string; state: 'ready'; data: Receipt | null };
 
-export function BookReveal({ holdings, accounts, syncing, firstLook, onOpenTerminal, onViewed }: {
+export function BookReveal({ holdings, accounts, syncing, importsIncomplete, firstLook, onOpenTerminal, onViewed }: {
   holdings: BookHolding[];
   accounts: number;
   syncing: string | null;
+  importsIncomplete: boolean;
   /** null = not answered yet, which orders the cards the default way. */
   firstLook: FirstLook[] | null;
   onOpenTerminal: () => void;
@@ -67,8 +69,8 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, onOpenTermi
   useEffect(() => {
     if (!top || !settled || viewed.current) return;
     viewed.current = true;
-    onViewed({ top_ticker_covered: settled.data !== null, synced: !syncing });
-  }, [top, settled, syncing, onViewed]);
+    onViewed(revealViewedProperties(settled.data !== null, !!syncing, importsIncomplete));
+  }, [top, settled, syncing, importsIncomplete, onViewed]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
   const primary = (
@@ -92,7 +94,8 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, onOpenTermi
   if (!top) {
     return (
       <section>
-        <div className="flex flex-col items-start gap-3">{primary}<p className="text-[13px] text-[var(--color-text-muted)]">{copy.promise}</p></div>
+        <p className="mb-4 text-[14px] text-[var(--color-text-secondary)]">No positions are available to read yet. Add positions or check your connected accounts.</p>
+        <div className="flex flex-col items-start gap-3">{primary}</div>
       </section>
     );
   }
@@ -142,7 +145,7 @@ export function BookReveal({ holdings, accounts, syncing, firstLook, onOpenTermi
           );
         })}
       </div>
-      <div className="mt-8 flex flex-col items-start gap-3">{primary}<p className="text-[13px] text-[var(--color-text-muted)]">{copy.promise}</p></div>
+      <div className="mt-8 flex flex-col items-start gap-3">{primary}{!importsIncomplete && !syncing && <p className="text-[13px] text-[var(--color-text-muted)]">{copy.promise}</p>}</div>
     </section>
   );
 }
