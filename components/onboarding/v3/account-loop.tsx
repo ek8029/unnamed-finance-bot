@@ -12,11 +12,12 @@ import { V3_COPY } from '@/lib/onboarding/v3-copy';
 import { manualPositions, shareLabel } from '@/lib/onboarding/v3-book-view';
 import type { BackgroundSyncResult } from '@/lib/plaid/background-sync';
 
-export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuccess, onPlaidSynced, onManualComplete, onDuplicate, onChoice, onPlaidExit, onContinue, readOnly = false }: {
+export function AccountLoop({ accounts, holdings, syncing, importsIncomplete, duplicate, onPlaidSuccess, onPlaidSynced, onManualComplete, onDuplicate, onChoice, onPlaidExit, onContinue, readOnly = false }: {
   accounts: BookAccount[];
   holdings: BookHolding[];
   /** Institution name while its first import runs. */
   syncing: string | null;
+  importsIncomplete: boolean;
   /** Institution name from a duplicate_institution warning. */
   duplicate: string | null;
   onPlaidSuccess: (itemId?: string) => void;
@@ -116,7 +117,7 @@ export function AccountLoop({ accounts, holdings, syncing, duplicate, onPlaidSuc
                 ) : (
                   <p className="shrink-0 text-right text-[13px] text-[var(--color-text-secondary)]">
                     {copy.positions(a.positions)}
-                    <span className="block text-[12px] text-[var(--color-text-muted)]">{a.source === 'manual' ? copy.byHand : copy.imported}</span>
+                    <span className="block text-[12px] text-[var(--color-text-muted)]">{a.source === 'manual' ? copy.byHand : importsIncomplete ? 'connection saved' : copy.imported}</span>
                   </p>
                 )}
               </div>
