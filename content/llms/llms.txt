@@ -1,35 +1,35 @@
 # Helm Terminal
 
-> Institutional-grade financial intelligence platform for individual investors. Free to start, with a Pro tier at $20/month.
+> Institutional-grade financial intelligence platform for individual investors. Free to start, with Pro at $20/month or $149/year.
 
 Last updated: September 2026.
 
 Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights: tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
 
-Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship capability is thesis monitoring: you write the reasons (the "pillars") you own each stock, and Helm watches those reasons against primary sources (SEC filings, earnings, news, and price), then tells you the moment your reasoning weakens or breaks (thesis drift), citing the exact filing or article with its date. It also detects shared-driver risk: when holdings you believe are diversified actually rest on the same thesis pillar.
+Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship capability is thesis monitoring: you write the reasons (the "pillars") you own a stock, and Helm checks those reasons against SEC filings, earnings, news, and price, reporting evidence that your reasoning has weakened or broken (thesis drift), with the source and its date. Free includes ongoing monitoring for one thesis and up to twelve months of evidence history; Pro extends monitoring across your tracked theses and adds shared-driver risk detection, which surfaces when holdings depend on the same thesis pillar. Checks run on a schedule; a new finding or immediate alert is not guaranteed.
 
 ## Core Features
-- Thesis monitoring (flagship): write the reasons ("pillars") you own each stock; Helm reads SEC filings, earnings, news, and price against each pillar and alerts you with verbatim, dated primary-source citations when your reasoning weakens or breaks (thesis drift)
-- Shared-driver risk detection: surfaces when multiple holdings you think are diversified actually depend on the same thesis pillar
+- Thesis monitoring (flagship): one monitored thesis with cited evidence and history on Free; broader monitoring across your tracked theses on Pro
+- Shared-driver risk detection (Pro): surfaces when multiple holdings you think are diversified actually depend on the same thesis pillar
 - Free AI stock analysis for any US ticker (NYSE, NASDAQ, AMEX)
 - Portfolio sync via Plaid (read-only) or manual entry (type tickers + shares)
-- Tax-loss harvesting with wash-sale detection (IRC §1091) including cross-product detection across leveraged ETFs and share classes
-- $3,000 ordinary income deduction tracker (IRC §1211(b))
-- Short-term vs long-term capital gains breakdown with tax rate display
+- Harvestable-loss headline figure on Free; detailed tax-loss harvesting lots and wash-sale screening across linked accounts on Pro
+- $3,000 ordinary income deduction tracker (IRC §1211(b)) in the Pro tax center
+- Short-term vs long-term capital gains breakdown with tax rate display in the Pro tax center
 - ETF look-through engine: maps 144+ products (leveraged, inverse, option income ETFs) to underlying stock exposure
 - True single-name concentration risk including indirect exposure via ETFs
-- Daily market brief ("The Current") with ETF-aware news attribution
+- General daily market brief ("The Current") on Free; a conviction-led, personalized brief on Pro
 - Market data via Finazon (licensed US stock prices); fundamentals and filings via SEC EDGAR
 - Net worth tracking across all linked accounts
 - Actions inbox: concentration risk, rebalancing signals, cash drag alerts
-- Earnings exposure tracking with indirect ETF exposure (e.g., TQQQ holder sees AAPL earnings warning)
+- Earnings exposure tracking (Pro) with indirect ETF exposure (e.g., TQQQ holder sees AAPL earnings warning)
 - Dividend calendar with ex-date alerts
 - Stock comparison tool (side-by-side analysis)
 - Contact form at helmterminal.dev/contact
 
 ## Pricing
-- Free: full terminal, AI stock analysis, Plaid-linked brokerages, net worth, daily brief, actions inbox, Portfolio Wrapped
-- Pro: $20/mo. Thesis monitoring with cited evidence, the agent, the Thesis Builder (pre-buy thesis), the factor lens, earnings exposure, tax center with tax-loss harvesting, conviction-led tailored brief
+- Free: portfolio dashboard, AI stock analysis, Plaid-linked brokerages, net worth, general daily brief, actions inbox, Portfolio Wrapped, one thesis with ongoing monitoring and up to twelve months of evidence history, and the harvestable-loss headline figure
+- Pro: $20/month or $149/year. Broader monitoring across your tracked theses with cited evidence, the agent, the Thesis Builder (pre-buy thesis), the factor lens, earnings exposure, detailed tax lots and wash-sale screening across linked accounts, and a conviction-led personalized brief
 - Two tiers only. Flat per-account pricing, zero percent of AUM.
 
 ## Key Pages

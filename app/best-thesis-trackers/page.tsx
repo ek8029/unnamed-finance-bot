@@ -39,7 +39,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a free investment thesis tracker?',
-    a: 'Helm Terminal is free to start: portfolio aggregation, AI stock analysis, and the actions inbox are free. The thesis-monitoring layer is part of Helm Pro at $20/month for your whole portfolio. MyThesis gives you your first holding free and charges $4.99 per holding per month after that. ThesisLoop is $60/year or $200/year. Vela and Thesis had not published pricing as of August 2026.',
+    a: 'Helm Terminal includes one ongoing monitored thesis with up to 12 months of cited history on Free, alongside portfolio aggregation, AI stock analysis, and the actions inbox. Helm Pro extends monitoring across your portfolio at $20/month or $149/year. MyThesis gives you your first holding free and charges $4.99 per holding per month after that. ThesisLoop is $60/year or $200/year. Vela and Thesis had not published pricing as of August 2026.',
   },
   {
     q: 'How is MyThesis different from Helm Terminal?',
@@ -50,7 +50,7 @@ const FAQS: { q: string; a: string }[] = [
 type Cell = string;
 const ROWS: { label: string; helm: Cell; mythesis: Cell; vela: Cell; thesis: Cell; watch: Cell }[] = [
   { label: 'Status (July 2026)', helm: 'Live, shipping', mythesis: 'Live, shipping', vela: 'Private waitlist', thesis: 'Early access', watch: 'Not disclosed' },
-  { label: 'Free tier', helm: 'Yes', mythesis: '1 holding', vela: 'Not shown', thesis: 'Not shown', watch: 'Not disclosed' },
+  { label: 'Free tier', helm: '1 monitored thesis', mythesis: '1 holding', vela: 'Not shown', thesis: 'Not shown', watch: 'Not disclosed' },
   { label: 'Paid price', helm: '$20/mo, unlimited holdings', mythesis: '$4.99/mo per holding, 1st free', vela: 'Not public', thesis: 'Not public', watch: 'Not disclosed' },
   { label: 'Reads SEC filings', helm: 'Yes (EDGAR)', mythesis: 'Not shown', vela: 'Yes', thesis: 'No', watch: 'Not disclosed' },
   { label: 'Verbatim dated citations', helm: 'Yes', mythesis: 'No (source named only)', vela: 'No (paraphrased)', thesis: 'No', watch: 'Not disclosed' },
@@ -148,7 +148,7 @@ export default function BestThesisTrackersPage() {
           <section className="space-y-8">
             <div>
               <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Helm Terminal</h2>
-              <p>Helm is a financial intelligence terminal whose flagship layer is thesis monitoring. You write the pillars behind each holding, and Helm scores SEC filings, earnings, news, and price against them every trading day, flagging thesis drift with verbatim, dated citations. It is the only tool here that cites primary sources verbatim, detects shared-driver risk across positions, and runs the thesis layer inside a whole-portfolio agent: brokerage aggregation, tax-loss harvesting, concentration and earnings scans, and a daily brief. The core terminal is free; the thesis layer is Pro at $20/month for unlimited holdings. <Link href="/thesis-monitoring" className="text-[var(--color-gold)] hover:underline">How it works.</Link></p>
+              <p>Helm is a financial intelligence terminal whose flagship layer is thesis monitoring. You write the pillars behind each holding, and Helm scores SEC filings, earnings, news, and price against them every trading day, flagging thesis drift with verbatim, dated citations. It is the only tool here that cites primary sources verbatim, detects shared-driver risk across positions, and runs the thesis layer inside a whole-portfolio agent: brokerage aggregation, tax-loss harvesting, concentration and earnings scans, and a daily brief. Free includes the core terminal and one ongoing monitored thesis with up to 12 months of cited history. Pro extends monitoring across your portfolio at $20/month or $149/year. <Link href="/thesis-monitoring" className="text-[var(--color-gold)] hover:underline">How it works.</Link></p>
             </div>
             <div>
               <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">MyThesis</h2>
@@ -184,7 +184,7 @@ export default function BestThesisTrackersPage() {
           {/* CTA */}
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Every holding. One flat price. Real receipts.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Helm watches the thesis behind every position and tells you, with dated citations, when it breaks. No per-holding meter. Free to start.</p>
+            <p className="mb-5 max-w-xl mx-auto">Start with one monitored thesis on Free. Pro watches the thesis behind every position with dated citations at $20/month or $149/year. No per-holding meter.</p>
             <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 

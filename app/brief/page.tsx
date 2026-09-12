@@ -6,6 +6,9 @@ import { getVixQuote } from '@/lib/vix';
 export const metadata: Metadata = {
   title: 'The Current — Today\'s Market Brief | Helm Terminal',
   description: 'A daily market intelligence brief. What moved, what matters, what to watch. Free, no signup required.',
+  alternates: {
+    canonical: 'https://helmterminal.dev/brief',
+  },
   openGraph: {
     title: 'The Current — Today\'s Market Brief | Helm Terminal',
     description: 'A daily market intelligence brief. What moved, what matters, what to watch.',

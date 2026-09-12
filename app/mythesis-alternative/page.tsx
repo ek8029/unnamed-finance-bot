@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: 'Is there a free MyThesis alternative?',
-    a: 'Helm Terminal is free to start: portfolio aggregation, free AI stock analysis, and the actions inbox cost nothing. The thesis-monitoring layer is part of Helm Pro at $20/month for unlimited holdings. MyThesis has a free tier limited to a single holding.',
+    a: 'Helm Terminal includes one ongoing monitored thesis with up to 12 months of cited history on Free, alongside portfolio aggregation, AI stock analysis, and the actions inbox. Helm Pro extends monitoring across your portfolio at $20/month or $149/year. MyThesis has a free tier limited to a single holding.',
   },
   {
     q: 'What is the difference between MyThesis and Helm Terminal?',
@@ -159,7 +159,7 @@ export default function MyThesisAlternativePage() {
 
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-2">Watch every thesis. Pay one flat price.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Helm monitors the reasons behind every position you hold, quotes the evidence verbatim, and runs taxes, risk, and earnings on the same book. Free to start.</p>
+            <p className="mb-5 max-w-xl mx-auto">Start with one monitored thesis on Free. Helm Pro extends monitoring across your portfolio and adds detailed tax tools, the agent, and earnings exposure at $20/month or $149/year.</p>
             <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 
