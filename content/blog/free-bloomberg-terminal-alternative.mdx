@@ -5,7 +5,7 @@ date: "2026-05-12"
 author: "Evan Kim"
 tags: ["bloomberg", "alternatives", "free", "investing", "portfolio"]
 published: true
-updated: "2026-06-24"
+updated: "2026-09-12"
 faq:
   - q: "Is there a completely free Bloomberg Terminal?"
     a: "No. Bloomberg has no free or trial version; access starts around $24,000 per year. The free path for retail investors is to combine tools: Yahoo Finance and Finviz for data and screening, TradingView's free tier for charts, Koyfin's free tier for fundamentals, and Helm Terminal's free tier for portfolio intelligence."
@@ -63,11 +63,13 @@ The honest assessment: if you need fixed income analytics, options flow, or the 
 
 ### 1. Helm Terminal (Free Tier)
 
-**What it does well:** Portfolio intelligence, risk alerts, tax optimization
+**What it does well:** Portfolio visibility, concentration analysis, and monitoring one investment thesis on Free
 
 [Helm Terminal](/) takes a different approach than most tools on this list. Instead of giving you a firehose of market data and letting you figure out what matters, Helm connects to your actual accounts through Plaid (read-only) and tells you what to pay attention to.
 
-Think of it as the PORT function from Bloomberg, but designed for individual investors instead of institutional portfolio managers. You get concentration risk alerts with actual dollar amounts ("NVDA is 34% of your portfolio, a 20% decline costs you $9,440"), tax-loss harvesting opportunities across all your accounts, earnings impact mapped to your holdings, and a daily intelligence brief that surfaces what changed and why it matters.
+The free tier brings your holdings into one portfolio view, reports concentration, and includes a general daily market brief. You can save one investment thesis, read up to twelve months of evidence history behind it, and keep it under ongoing monitoring. Checks run on a schedule, so monitoring does not guarantee a new finding or an immediate alert.
+
+Free also shows a harvestable-loss headline figure from the portfolio data available to Helm. The detailed tax lots and wash-sale screening across linked accounts are part of [Helm Pro](/pricing), at $20 a month or $149 a year. Pro also extends monitoring across your tracked theses and adds earnings exposure and a personalized brief.
 
 **Free tier includes:**
 - Unlimited account connections (brokerage, bank, retirement)
@@ -75,10 +77,13 @@ Think of it as the PORT function from Bloomberg, but designed for individual inv
 - AI-powered stock analysis for any ticker
 - Risk alerts and intelligence feed
 - Real-time market data for holdings
+- One investment thesis with ongoing monitoring and evidence history
+- General daily market brief
+- Harvestable-loss headline figure; detailed tax tools require Pro
 
 **Where it falls short vs. Bloomberg:** Helm focuses on equities and ETFs. No fixed income analytics, no options chain analysis, no proprietary news wire. The charting is portfolio-focused, not the deep technical analysis you'd get from a dedicated charting tool.
 
-**Best for:** Investors with multiple accounts who want "what should I do?" answers, not just data.
+**Best for:** Investors who want a consolidated portfolio view and evidence to review alongside their reasons for holding a stock.
 
 <CTACard title="Start with one stock you know" description="Try a free stock analysis before creating an account or connecting a brokerage." buttonText="Analyze a stock free" href="/analyze" />
 
@@ -200,7 +205,7 @@ If you're technical, OpenBB gives you something no other free tool does: complet
 
 | Tool | Real-Time Data | Portfolio Tracking | AI Analysis | Risk Alerts | Tax-Loss Harvesting | Price |
 |------|---------------|-------------------|-------------|-------------|-------------------|-------|
-| **Helm Terminal** | Yes (holdings) | Full (via Plaid) | Yes | Yes | Yes | Free |
+| **Helm Terminal** | Yes (holdings) | Full (via Plaid) | Yes | Yes | Headline loss figure free; tax lots and wash-sale screening on Pro | Free; Pro $20/mo or $149/year |
 | **Yahoo Finance** | Yes (US stocks) | Manual only | No | No | No | Free |
 | **Google Finance** | Yes (basic) | Watchlist only | No | No | No | Free |
 | **TradingView** | Yes (major exchanges) | No | No | No | No | Free |
@@ -214,21 +219,21 @@ I keep saying "80%" because I think it's the right framing. Here's what most ind
 
 1. **Know what you own.** Total allocation across all accounts. Which positions are your largest. How concentrated you are in any single stock or sector.
 2. **Know what changed.** Which holdings moved significantly. Whether any earnings reports affected your positions. If your allocation drifted from where you want it.
-3. **Know what to do.** Tax-loss harvesting opportunities. Positions that need rebalancing. Concentration risk that crossed a threshold.
+3. **Know what to review.** Unrealized losses, allocation drift, and concentration risk. Detailed tax-lot analysis and wash-sale screening need to be distinguished from a headline loss figure.
 4. **Research before buying.** Basic fundamentals, analyst sentiment, recent news for stocks you're considering.
 
 Bloomberg gives you all of this and about 500 other things on top. But those 500 other things are mostly relevant to institutional workflows: bond valuation models, credit analysis, FX hedging, compliance reporting, trading desk integration.
 
-For items 1-3, Helm covers it through account aggregation and automated intelligence. For item 4, Koyfin and Yahoo Finance handle it well. For charting and technical analysis, TradingView is best in class.
+Helm's free tier covers portfolio visibility, concentration, a general brief, and a headline harvestable-loss figure. Detailed tax analysis and earnings exposure require Pro. For item 4, Koyfin and Yahoo Finance handle company research. For charting and technical analysis, TradingView is best in class.
 
 A realistic free stack for most retail investors looks like:
 
-- **Helm Terminal** for portfolio intelligence, risk monitoring, and tax optimization
+- **Helm Terminal Free** for portfolio visibility, concentration, one monitored thesis, a general brief, and a harvestable-loss headline figure
 - **Koyfin free** for deep fundamental research
 - **TradingView free** for charting (if you use technical analysis)
 - **Yahoo Finance** for quick lookups and news
 
-Total cost: $0. Covers roughly 80% of what a retail investor would actually use Bloomberg for.
+Total cost for those free tiers: $0. Helm's detailed tax tools, broader thesis monitoring, earnings exposure, and personalized brief require Pro at $20 a month or $149 a year.
 
 ## What No Free Tool Can Replace
 

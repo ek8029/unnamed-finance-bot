@@ -48,7 +48,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a free version?',
-    a: 'Helm Terminal is free to use for portfolio aggregation, AI stock analysis, the daily brief, and the actions inbox. The deeper agentic layers, including thesis monitoring and the factor lens, are part of Helm Pro at $20/month.',
+    a: 'Helm Terminal includes portfolio aggregation, AI stock analysis, the general daily brief, the actions inbox, and one ongoing monitored thesis with up to 12 months of cited history on Free. Helm Pro extends monitoring across your portfolio and adds the agent, factor lens, personalized brief, detailed tax tools, and earnings exposure at $20/month or $149/year.',
   },
 ];
 
@@ -216,7 +216,7 @@ export default function PortfolioIntelligencePage() {
           {/* CTA */}
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Have an AI analyst watch your book.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Helm Terminal monitors your whole portfolio for risk, taxes, earnings, and broken theses, and shows its work with dated citations. Free to start, read-only. The deeper agentic layers are part of Pro at $20/month.</p>
+            <p className="mb-5 max-w-xl mx-auto">Start with a read-only connected portfolio and one monitored thesis on Free. Pro extends monitoring across your portfolio and adds the agent, detailed tax tools, and earnings exposure at $20/month or $149/year.</p>
             <div className="flex items-center justify-center gap-3">
               <Link href="/signup" className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
               <Link href="/analyze" className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors">Try free analysis</Link>

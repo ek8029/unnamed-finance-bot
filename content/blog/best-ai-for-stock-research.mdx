@@ -1,127 +1,108 @@
 ---
 title: "ChatGPT vs Claude vs Gemini vs Perplexity for Stock Research (2026)"
-description: "There is no single best AI for stock research in 2026: Claude, Perplexity, ChatGPT, and Gemini each win a different task. Here is the task-by-task map, plus the one blind spot all four share."
+description: "Compare Claude, ChatGPT, Perplexity, and Gemini for stock research: filings, spreadsheets, news, and portfolio monitoring. Practical prompts and tradeoffs."
 date: "2026-07-08"
-updated: "2026-07-08"
+updated: "2026-09-12"
 author: "Evan Kim"
 tags: ["ai investing", "stock research", "chatgpt", "claude", "perplexity", "gemini"]
 published: true
 faq:
   - q: "What is the best AI for stock research in 2026?"
-    a: "There is no single best AI for stock research; each major model wins a different task. In 2026 comparisons, Claude leads on deep filing analysis and qualitative synthesis, Perplexity leads on live cited facts and finance features, ChatGPT leads on spreadsheet and quantitative work, and Gemini leads on fresh news and macro context through Google Search grounding. The strongest setup is a multi-model workflow that assigns each tool the job it does best."
+    a: "Choose by the task: Claude is a useful starting point for comparing filings, ChatGPT for inspectable spreadsheet analysis, Perplexity for finding current sources, and Gemini for exploring news and industry context. Their capabilities overlap. Check original sources and calculations before relying on an answer; this comparison is a workflow guide, not an accuracy benchmark."
   - q: "Is Claude or ChatGPT better for stock analysis?"
-    a: "They are better at different parts of the job. Claude is stronger at reading long documents like 10-Ks and earnings transcripts and at qualitative judgment; one May 2026 four-way test found it won four of five research dimensions. ChatGPT is stronger at quantitative work: analyzing spreadsheets, writing Python for screens and backtests, and building scenario models. Many investors use Claude for the reading and ChatGPT for the numbers."
+    a: "Both can analyze documents, execute code, and work with spreadsheets. Try Claude for a filing comparison and ChatGPT for an explicit calculation workflow, then compare their output against the same source documents. Neither is automatically more accurate because of its brand or a confident answer."
   - q: "Is Perplexity good for stock research?"
-    a: "Perplexity is the strongest of the major chatbots for live, source-cited facts: current prices, breaking news, and explaining why a stock moved today. It also ships the most finance features, including a free Finance hub, live earnings call transcription, and a natural-language screener. Its weakness is thinly covered names, where documented tests have shown it misreading filings, so treat small-cap numbers as starting points to verify."
+    a: "Perplexity is useful for finding current news and source links. Its Finance features include an earnings hub and price alerts. Open the cited filing yourself: a citation helps you check an answer but does not guarantee the answer interpreted the source correctly."
   - q: "Can ChatGPT, Claude, Gemini, or Perplexity monitor my portfolio?"
-    a: "No chatbot offers continuous portfolio monitoring. ChatGPT and Perplexity added Plaid-based account connections in 2026, but both are read-only dashboards that answer questions when you ask; nothing watches your positions, re-checks your thesis against new filings, or alerts you between sessions. That always-on layer is what a dedicated tool like Helm Terminal is built for: it monitors your actual holdings overnight and flags changes with cited sources."
+    a: "Some AI products can run between sessions. ChatGPT supports scheduled tasks, including portfolio updates with eligible Finances access, and Perplexity offers tasks and price alerts. Compare which holdings a tool can access, whether it retains your investment thesis, what triggers a check, and whether you can review dated evidence and history. Availability depends on the product, account, and plan."
   - q: "Should I trust the numbers AI chatbots give me about stocks?"
-    a: "Not without verification. Every model in this comparison has documented cases of confidently stated, wrong financial figures, and one 2026 multi-model audit found hallucinated facts in up to 41 percent of finance-related AI responses across engines. Verify any number you plan to act on against the primary filing or a grounded data source. Helm Terminal's approach is to cite the exact source, verbatim and dated, for every flag it raises, which is the standard worth holding any tool to."
+    a: "Verify decision-relevant numbers against the original filing or data source. Check the reporting period, units, currency, and whether a figure is reported, adjusted, or estimated. For calculations, ask to see the formula and inputs. A plausible explanation and a source link are not sufficient checks on their own."
 ---
 
-I keep four AI chatbots open in tabs, and I use a different one depending on the task. That sounds like something a productivity influencer would say, but I arrived at it by getting burned.
+**The best AI for stock research depends on the work you need done.** Start with Claude for comparing filings, ChatGPT for calculations you can inspect, Perplexity for finding current sources, and Gemini for exploring news and industry context. These are suggested workflows, not a league table of model accuracy.
 
-Earlier this year I asked one model to digest a long filing and got a genuinely sharp synthesis, then asked it for the current price and got a stale number delivered with total confidence. A different model nailed the price in two seconds with a source, then summarized the same filing like a press release.
-
-I build an AI portfolio tool for a living, so I test these things more than a normal person should. Where I have landed: there is no best AI for stock research in 2026, only a best AI for each task. This post maps them, then covers the one task none of them can do.
+I build Helm Terminal, so this comparison includes my product and its limits. The question worth asking: **what would make your next investment review better?** A faster summary, a calculation you can reproduce, or a record of whether your original reasons for owning a stock still hold?
 
 ## The short answer
 
-Claude is the strongest reader: long filings, transcripts, qualitative synthesis. Perplexity is the strongest fact-checker: live, cited, and it ships the most actual finance features. ChatGPT is the quant all-rounder: spreadsheets, scripts, scenario models, second opinions. Gemini is the freshest news and macro read, grounded in Google Search. Grok is a social sentiment thermometer and not much else. And none of the five will watch your portfolio between sessions.
-
-Now the detail.
-
-## Claude: the filings reader
-
-When 2026 guides compare these models on fundamental research, they keep converging on the same verdict: [Claude](/blog/claude-stock-analysis) is the strongest at deep document work. Upload a full 10-K plus the earnings transcript and it can hold all of it in one session, break down segments, and flag guidance-language changes against last quarter.
-
-One four-way head-to-head test in May 2026 had Claude winning four of five dimensions. Two details stuck with me: it was the only model that pushed back on a flawed averaging-down premise instead of just processing it, and when told no live options data existed, it refused to invent premiums while a rival produced a formatted table of made-up numbers. Separate testing caught it reading a CFO's one-sided use of the word underestimate as hedged bias other models missed.
-
-The weaknesses: it still states wrong financial figures with a straight face, so every number needs checking against the actual filing. And per 2026 comparisons it trails ChatGPT at spreadsheet and scripting work.
-
-## Perplexity: the live-facts machine
-
-[Perplexity](/blog/perplexity-stock-research) is the one I open when the question is what is happening right now. Its index updates in near real time and every answer comes with clickable sources. One 2026 comparison put it around 94 percent accuracy on stock-specific questions versus roughly 81 percent for ChatGPT, crediting the fresher index.
-
-It also ships the most finance product of the four: a free Finance hub with quotes and charts, an Earnings Hub that transcribes and summarizes calls while they are still in session, a natural-language screener, and a Plaid-based Portfolio connection launched around March 2026.
-
-The catch is that it retrieves better than it reasons. In that same May 2026 test it misread a thinly covered company's 10-K revenue by a factor of 1,000, then built a confident false narrative on top of the error. Great for household names and live facts. Treat small-cap numbers as unverified starting points.
-
-## ChatGPT: the quant all-rounder
-
-[ChatGPT](/blog/chatgpt-stock-analysis) is the generalist. Upload a CSV or a messy spreadsheet and it writes and runs Python against it. It drafts DCF scaffolds and scenario models. Deep Research produces cited long-form memos that work as a first pass on a new name. It is also the best second opinion: risk prioritization, competitor comparisons, stress-testing your own thesis.
-
-The most useful stat I know about it: the FinanceBench study found a GPT-4-class model answered about 79 percent of financial questions correctly with full SEC filing context, and about 9 percent without it. Its finance problem is data access, not reasoning. Hand it the source document and it is sharp. Ask it from memory and it fabricates.
-
-Worth noting: as of mid-2026, ChatGPT has a Plaid-based personal finance experience (Plus and Pro tiers, US only) that shows your actual holdings in a dashboard. It is read-only and reactive. It answers questions about your book. It does not watch it.
-
-## Gemini: the morning macro read
-
-[Gemini's](/blog/gemini-stock-analysis) edge is Google. Search grounding gives it fresh product and industry context; one 2026 four-way comparison found it surfaced product-level detail no other model did and rated it best for fast-cycle sectors like semis and AI. Google has also pushed it deepest into retail finance surfaces: Deep Search inside Google Finance, live earnings audio with AI insights, even prediction-market data.
-
-The weakness is trust. A documented May 2026 case had Gemini stating a stock paid a 9 percent dividend when the real figure was 1.4 percent, complete with an invented citation. Users also report its Pro modes sometimes skip live retrieval entirely and present training-data answers as current. Use it for the morning sweep; verify anything you would act on.
-
-## Grok: the sentiment thermometer
-
-Brief, because the use case is narrow. Grok's genuine moat is native access to the X firehose. What is retail saying about a ticker right now, and why is it moving this hour: no other consumer chatbot can answer that.
-
-But 2026 hallucination trackers put its flagship among the highest of the frontier models, a Columbia Journalism Review test found an earlier version the worst tested for citation accuracy, and it placed last in one six-assistant test of extracting earnings figures from filings. Read it as a mood ring, not a data source.
-
-## The workflow that actually works
-
-My sequence when a position moves or a filing drops:
-
-1. **Perplexity first, for what happened.** "Why did [TICKER] fall 6% today? Cite the specific news, filings, or analyst actions behind the move." Two minutes, sourced.
-2. **Claude second, with the documents.** Upload the 10-K and the transcript, then: "Break down segment revenue and flag any changes in guidance language versus last quarter." This is where the actual thinking happens.
-3. **ChatGPT for the numbers.** Hand it the spreadsheet and let it run scenarios, or run a Deep Research pass: "Build a sourced bull case and bear case, including what would falsify each."
-4. **Gemini in the morning** for the macro and product-news sweep, especially in fast-moving sectors.
-
-One guardrail practitioner guides repeat everywhere in 2026, and I will too: verify every number against the primary filing before acting on it. All of these models produce precise-sounding figures that are occasionally wrong, and the output alone gives no tell.
-
-## The blind spot all five share
-
-Strip away the branding and they share one architecture: a smart analyst who only exists while you are typing at them.
-
-**They are ask-first.** Every session starts from zero, at your initiative. Nothing runs while you sleep.
-
-**They have no working memory of your portfolio.** ChatGPT and Perplexity now offer Plaid-connected dashboards, which is real progress, but both are reactive: they answer questions about your holdings when asked. Neither remembers why you own something or checks whether that reason still holds.
-
-**They monitor nothing.** No model watches the filing feed against your positions, re-tests a thesis when new evidence lands, or notices that two of your holdings quietly lean on the same underlying driver. No alerts tied to your reasoning.
-
-**They are all confidently wrong sometimes.** One 2026 multi-model audit found hallucinated facts in up to 41 percent of finance-related AI responses across engines. Not a reason to avoid them. A reason to never treat them as your source of record.
-
-## The job none of them can do: watch your portfolio
-
-Here is my bias stated plainly: I built [Helm Terminal](/portfolio-intelligence) because I wanted the watching layer these chatbots do not have, and I sell it. Weigh accordingly.
-
-Helm connects to your brokerages through Plaid, read-only. It can see holdings; it can never trade or move money. Then it does the thing no chat window does: it works while you are gone. Overnight it re-prices the book, re-reads new SEC filings and news against every position, runs risk, tax, and earnings scans, and writes a morning brief. You open a timestamped work log of what it did while you were away.
-
-The part I care most about is thesis monitoring. You write down the reasons you hold each position. Helm re-checks those reasons against fresh filings, and when one breaks it flags the exact pillar with the cited source, verbatim and dated. It also catches the portfolio-level things a chat cannot see: hidden concentration, positions sharing the same driver, tax-loss harvesting candidates in taxable accounts with retirement accounts correctly excluded, and upcoming earnings exposure across your holdings.
-
-It never tells you to buy or sell anything. It surfaces; you decide. The chatbots are the thinking. Helm is the watching. The stack is both.
-
-<CTACard title="See what grounded AI analysis looks like" description="Helm runs AI analysis on any US ticker with real data and cited sources. Free, no account required." buttonText="Analyze a stock free" buttonLink="/analyze" />
-
-## The cheat sheet
-
-| Task | Reach for | Why |
+| Your research task | A useful starting point | What to check |
 | --- | --- | --- |
-| Digest a 10-K or earnings transcript | Claude | Holds full filings in one session; strongest qualitative synthesis in 2026 head-to-heads |
-| Check a live number or explain today's move | Perplexity | Near-real-time index, clickable citations, free Finance hub |
-| Analyze a spreadsheet or build a model | ChatGPT | Python code execution, scenario scaffolds, Deep Research memos |
-| Morning macro and fresh product news | Gemini | Google Search grounding, Deep Search inside Google Finance |
-| Gauge social sentiment on a ticker | Grok | Native X firehose access; no equivalent elsewhere |
-| Watch your portfolio between sessions | None of them | All five are ask-first with zero monitoring. This is the job Helm exists for |
+| Compare a 10-K with an earnings transcript | Claude with the actual documents | Exact passages, dates, and changes in management's explanation |
+| Analyze a spreadsheet or build scenarios | ChatGPT with your data | Inputs, formulas, units, and assumptions |
+| Find the news behind today's move | Perplexity | Original publication, timestamp, and evidence of causation |
+| Explore an industry or macro story | Gemini | Supporting sources and what remains uncertain |
+| Receive recurring updates | A supported scheduled task or alert | Schedule, account access, coverage, and notifications |
+| Keep holdings, theses, and subsequent evidence together | A portfolio workflow such as Helm | Monitored positions, last check, evidence, history, and plan limits |
 
-## So how should you actually use them?
+Capabilities overlap and change. You do not need four paid subscriptions to start: give one tool a specific job and verify its output before adding another.
 
-Assign jobs. Perplexity when you need a fact with a source. Claude when you need to actually understand a filing. ChatGPT when there are numbers to crunch or a thesis to stress-test. Gemini for the fresh-context morning sweep. Grok when you want to know what the crowd thinks, knowing the crowd includes bots.
+## Claude: compare the documents
 
-Then verify. The pattern across every credible 2026 test is the same: these models are strongest when you hand them the source document and weakest when you trust their memory.
+[Claude](/blog/claude-stock-analysis) can work with uploaded filings and transcripts. Its file tools also cover spreadsheets and code execution, so treating it as only a writing assistant would miss part of the product. [Document support](https://support.claude.com/en/articles/8241126-upload-files-to-claude), [file creation and analysis](https://support.claude.com/en/articles/12111783-create-and-edit-files-with-claude).
 
-And accept what they are: thinking tools. The big four all price their main tier around 20 dollars a month, and none of it buys a minute of watching. For the wider tool landscape, I keep a roundup of [AI stock analysis tools](/blog/best-ai-stock-analysis-tools), and I build one of them.
+Try this with the actual source documents:
 
-<CTACard title="Add the watching layer to your stack" description="Helm monitors your actual holdings for broken theses, concentration, taxes, and earnings exposure, and cites every source. Free to start, read-only." buttonText="Open the terminal" buttonLink="/analyze" />
+> Compare these two earnings transcripts. For each change in guidance, demand, margins, or capital spending, show the earlier statement, the newer statement, reporting dates, and source location. Separate a measurable change from a change in tone. Say when the documents do not establish an answer.
+
+Check the original passages, particularly qualifiers such as "approximately" or "excluding." The useful output is a reviewable comparison; a polished summary alone can hide missing context.
+
+## Perplexity: find the current sources
+
+[Perplexity](/blog/perplexity-stock-research) is a useful starting point for finding news behind a company update. Its Finance product also includes an earnings hub and price alerts; alerts can trigger a query and notification. [Perplexity Finance features](https://www.perplexity.ai/changelog/what-we-shipped-july-18th).
+
+> Find the primary sources behind today's move in [TICKER]. Separate company announcements, SEC filings, and analyst commentary. Give each publication time. If the move cannot be confidently explained, say so rather than inventing a reason.
+
+Follow the links. A recent article can repeat an old number, and a cited document can be misread. The timestamp and reporting period matter as much as the presence of a citation.
+
+## ChatGPT: make the calculations inspectable
+
+[ChatGPT](/blog/chatgpt-stock-analysis) can analyze uploaded spreadsheets, create charts, and run Python for calculations. That makes it useful for scenario analysis when you supply inputs and inspect the method. [OpenAI's data-analysis guide](https://help.openai.com/en/articles/8437071-data-analysis-with-chatgpt).
+
+> Using this spreadsheet, calculate each holding's weight. Show the formula and reconcile the weights to 100%. Model a 10% decline in the three largest positions with all others unchanged. Keep observed data separate from scenario assumptions.
+
+For valuation, make growth assumptions, margins, discount rates, and terminal values explicit. An attractive chart cannot repair a wrong input.
+
+ChatGPT also supports scheduled tasks and, where eligible Finances access is available, portfolio updates. Availability varies. A comparison claiming it can never work between sessions would be inaccurate. [Scheduled tasks in ChatGPT](https://help.openai.com/en/articles/10291617).
+
+## Gemini: explore the wider context
+
+[Gemini](/blog/gemini-stock-analysis) can help organize questions around industry developments and surface related sources. Its double-check feature uses Google Search to look for supporting or conflicting material. Google explains that a matching link is not necessarily the source originally used to generate the answer. [Gemini's source and double-check guide](https://support.google.com/gemini/answer/14143489?hl=en).
+
+> Explain how this industry development could affect [COMPANY]. Separate confirmed facts from hypotheses. Find primary sources for the facts and list the next disclosures that could support or weaken each hypothesis.
+
+That produces a research agenda. It should not turn a plausible industry narrative into a claim about future earnings.
+
+<CTACard title="Start with one stock you already own" description="Try Helm's free stock analysis before setting up a portfolio. No account required." buttonText="Analyze a stock free" href="/analyze" />
+
+## Research and portfolio monitoring: compare the workflow
+
+AI tools can search, retain context, and run scheduled work. The relevant difference is how well a particular setup supports your investing process.
+
+1. **What does it cover?** Your actual holdings, a watchlist, or a list typed into a prompt?
+2. **What is it checking?** A price threshold, general news, or a specific claim in your investment thesis?
+3. **When did it last check?** Look for a timestamp and understand the schedule and data coverage.
+4. **What changed?** Inspect the evidence and compare it with the earlier view.
+5. **What does the plan include?** One monitored position and a whole portfolio are different offers.
+
+For example, "margins must remain above my thesis threshold" is a useful claim to revisit after earnings. Your threshold is an assumption to test, not an AI forecast.
+
+## Where Helm fits
+
+[Helm Terminal](/portfolio-intelligence) puts holdings, portfolio analysis, and thesis monitoring in one place. Connect supported accounts through read-only Plaid access or enter positions manually. Helm does not trade or move your money.
+
+Write down why you own a position. Scheduled thesis checks can surface supporting or conflicting evidence for review, with source references and history. Monitoring depends on plan coverage and available evidence; it does not guarantee that every development will be detected immediately.
+
+**Free** includes portfolio tracking, AI stock analysis, a general morning brief, and one monitored investment thesis. **Pro is $20/month or $149/year** and adds broader thesis monitoring, a personalized brief, the agent, and deeper portfolio tools. Free users can see a harvestable-loss headline; lot-level tax details and wash-sale screening are Pro features. [Compare current plans](/pricing).
+
+The reason to pay should be recurring usefulness: less time reconstructing your portfolio review and clearer evidence when your reasoning needs another look. Start with one real position and judge that value yourself.
+
+<CTACard title="Keep track of why you own it" description="Add holdings through Plaid or manually, then monitor one investment thesis on Free. Pro adds broader monitoring for $20/month or $149/year." buttonText="Set up my portfolio" href="/signup" />
+
+## A repeatable stock-research workflow
+
+Find the primary filing or announcement. Compare it with the previous disclosure. Check numbers using visible inputs and formulas. Record why you own the stock and what would change your mind. Choose how to revisit those reasons: a calendar review, a configured AI task, or a dedicated portfolio tool.
+
+The goal is a decision process you can explain and repeat. No model name, citation badge, or subscription price can substitute for that.
 
 ## Related reading
 
@@ -129,3 +110,4 @@ And accept what they are: thinking tools. The big four all price their main tier
 - [How to use Perplexity for stock research](/blog/perplexity-stock-research)
 - [How to use Gemini for stock analysis](/blog/gemini-stock-analysis)
 - [How to use ChatGPT for stock analysis](/blog/chatgpt-stock-analysis)
+- [Compare AI stock analysis tools](/blog/best-ai-stock-analysis-tools)

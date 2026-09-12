@@ -8,7 +8,7 @@ import { Search, Wallet, LineChart, FileText } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Portfolio Intelligence for Self-Directed Investors | Helm Terminal',
   description:
-    'AI-powered stock analysis on 500+ tickers, portfolio tracking, tax-loss harvesting, and a daily brief that tells you what matters. Free.',
+    'Free AI stock analysis, portfolio tracking, a general daily brief, and your harvestable-loss figure. Pro adds detailed tax lots and wash-sale screening.',
   openGraph: {
     title: 'Portfolio Intelligence for Self-Directed Investors | Helm Terminal',
     description: 'What moved. What matters. What\'s next.',
@@ -49,7 +49,7 @@ const FEATURES = [
     icon: FileText,
     title: 'Tax Intelligence',
     description:
-      'Automated tax-loss harvesting detection, wash sale tracking, and estimated tax impact. Maximize after-tax returns without the spreadsheet gymnastics.',
+      'See your harvestable-loss figure on Free. Pro adds detailed tax lots and wash-sale screening to help you evaluate harvesting opportunities.',
   },
 ];
 
@@ -140,8 +140,8 @@ export default function InvestorsPage() {
             Your edge starts here
           </h2>
           <p className="text-[15px] text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">
-            Free AI stock analysis. Free portfolio sync. Free daily briefs.
-            Pro features available when you need them.
+            Free AI stock analysis, portfolio sync, and the general daily brief.
+            Pro adds a personalized brief and detailed tax tools when you need them.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

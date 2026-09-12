@@ -15,7 +15,7 @@ faq:
   - q: "Is thesis drift the same as a stop loss?"
     a: "No. A stop loss triggers on price and knows nothing about the business. Thesis drift triggers on evidence that a stated reason no longer holds and knows nothing about the price. A position can be down heavily with every reason intact, and up with its reasoning already gone, which is the case a price-based rule cannot see."
   - q: "How does Helm detect thesis drift?"
-    a: "Positions carry written reasons, called pillars, each with a breaks-if condition. Helm reads SEC filings, earnings and news against those pillars every trading day and reports when one weakens or breaks, quoting the source sentence verbatim with its date and a link to the document. It also flags when separate holdings rest on the same pillar. Thesis monitoring is part of Helm Pro."
+    a: "Positions carry written reasons, called pillars, each with a breaks-if condition. Helm checks available SEC filings, earnings and news against those pillars on a schedule and reports evidence that one has weakened or broken, quoting the source with its date and a link. Free includes one thesis with ongoing monitoring and up to twelve months of evidence history. Pro, at $20/month or $149/year, extends monitoring across your tracked theses and adds shared-driver risk detection."
 ---
 
 Ask most investors why they own a stock and you get a clean answer. "I own it because their margins keep expanding." "Because the government revenue is sticky." "Because the AI capex cycle has years left to run." Good answers. Real reasons.
