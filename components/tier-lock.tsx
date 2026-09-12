@@ -89,10 +89,10 @@ export function TierLock({
             className="inline-flex items-center justify-center rounded-md px-4 py-2 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] mt-1"
             style={{ background: meta.color, color: '#0A0A0A', fontFamily: 'var(--font-mono)' }}
           >
-            Start 14 day free trial
+            See Pro plans
           </Link>
           <p className="text-[11px] text-[#6E6E6E] mt-2.5 mb-0">
-            Card required. Then {meta.price}. Cancel before the trial ends to pay nothing.
+            {meta.price}. Eligible accounts get 14 days free. Card required. Cancel anytime.
           </p>
         </div>
       </div>

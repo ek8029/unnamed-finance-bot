@@ -46,6 +46,12 @@ export async function GET() {
     // Billing/purchase surfaces need the tier as the table has it — the
     // open-access window unlocks features, it does not create subscriptions.
     realTier: realSub.tier,
+    // Active no-card trials unlock Pro but can still buy it. The real resolver
+    // excludes Stripe/App Store subscriptions from this marker, even when an
+    // old trial date remains. Open-access feature dates cannot decide billing.
+    canPurchasePro: realSub.tier === 'free' || (
+      typeof realSub.trialEndsAt === 'string' && realSub.trialEndsAt.length > 0
+    ),
     openAccess: isOpenAccessWindow(),
     billingPeriod: data?.billing_period || null,
     currentPeriodEnd: data?.current_period_end || null,

@@ -115,11 +115,10 @@ export default function PricingPage() {
   // schedules work here.
   const [billingInterval, setBillingInterval] = useState<PaidPeriod>('pro');
   const annual = billingInterval === 'pro_annual';
-  // Purchase logic runs on the REAL subscription tier. During the open-access
-  // window everyone's features read as Pro, but nobody has bought anything,
-  // and "Current plan" on an unpurchased tier reads as billing that
-  // doesn't exist (and kills the buy buttons for a week).
-  const { realTier: tier } = useTier();
+  // Temporary Pro access is not a purchase. Only an explicit server answer
+  // can label this the current plan; anonymous/loading/failed lookups retain
+  // a neutral checkout path, whose endpoint verifies auth and eligibility.
+  const { canPurchasePro } = useTier();
 
   return (
     <main id="main-content" className="min-h-screen bg-[var(--color-bg-base)] bg-depth relative overflow-hidden">
@@ -240,7 +239,7 @@ export default function PricingPage() {
                   trial ends, and you can cancel any time before then.
                 </p>
 
-                {tier === 'free' ? (
+                {canPurchasePro !== false ? (
                   <button
                     onClick={() => setCheckoutPeriod(billingInterval)}
                     className="group mt-6 w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] text-[var(--color-bg-base)] font-semibold text-[15px] rounded-[var(--radius-md)] cursor-pointer transition-colors duration-200 min-h-[44px]"
