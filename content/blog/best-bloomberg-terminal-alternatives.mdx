@@ -1,168 +1,129 @@
 ---
 title: "Best Bloomberg Terminal Alternatives in 2026"
-description: "Bloomberg Terminal costs $24,000 a year. I tested the best alternatives for retail investors in 2026: free charting, screeners, AI stock analysis, and portfolio intelligence, most under $50/month."
+description: "Compare Bloomberg alternatives by task: Koyfin for fundamentals, TradingView for charts, OpenBB for custom research, and Helm for monitoring your investment thesis. Free and paid options explained."
 date: "2026-03-15"
-updated: "2026-06-24"
+updated: "2026-09-12"
 author: "Evan Kim"
 tags: ["bloomberg", "fintech", "investing", "tools", "alternatives"]
 published: true
 faq:
-  - q: "Is there a free version of the Bloomberg Terminal?"
-    a: "No. Bloomberg does not offer a free or trial version of the Terminal; access starts at roughly $24,000 per year on a two-year minimum lease. For free, retail investors typically combine tools like Yahoo Finance, Finviz, TradingView's free tier, and Koyfin's free tier, which together cover most of what an individual actually uses Bloomberg for."
-  - q: "How much does a Bloomberg Terminal cost in 2026?"
-    a: "A single Bloomberg Terminal subscription runs about $24,000 to $27,000 per year, usually on a two-year commitment, so the real first cost is closer to $54,000. Discounts exist for firms running multiple terminals, but there is no individual or retail pricing tier."
-  - q: "What do retail investors use instead of a Bloomberg Terminal?"
-    a: "Most self-directed investors stack a few specialized tools instead of one terminal: Koyfin or Yahoo Finance for data and fundamentals, TradingView for charting, Finviz for screening, Seeking Alpha for research, and a portfolio-intelligence layer like Helm Terminal to connect their own accounts and surface risk, taxes, and earnings exposure. Total cost usually lands between $0 and $150 a month."
-  - q: "What is the best Bloomberg Terminal alternative under $50 a month?"
-    a: "For a single paid tool under $50/month, Koyfin (around $15-$70) covers the most ground for data and fundamental analysis. If you want analysis tied to your own holdings rather than raw market data, Helm Terminal is free to start and focuses on personalized portfolio intelligence. Many investors run both alongside the free tiers of TradingView and Finviz."
-  - q: "Is there a cheap Bloomberg alternative for individual investors?"
-    a: "Yes. No individual needs a $24,000 terminal. A capable retail stack (Koyfin, TradingView, Finviz, Yahoo Finance, plus a portfolio-intelligence tool) costs between $0 and roughly $150 a month depending on which paid tiers you choose, a small fraction of Bloomberg's price."
+  - q: "What is the best Bloomberg Terminal alternative for individual investors?"
+    a: "Choose by task. Koyfin is a useful starting point for company fundamentals and market dashboards; TradingView for charting; Finviz for screening; Seeking Alpha for published research and ratings; OpenBB for configurable research workflows. Helm connects investment convictions to evidence and portfolio context, with one monitored thesis on Free."
+  - q: "Is there a free Bloomberg Terminal alternative?"
+    a: "Several tools offer free access to particular workflows, including Yahoo Finance, Koyfin, TradingView, Finviz, OpenBB Community and Helm. Free plans have different data, history and usage limits. They do not reproduce Bloomberg's complete data, messaging and execution environment."
+  - q: "How much does Bloomberg Terminal cost in 2026?"
+    a: "Ask Bloomberg for a current quote and demonstration. This guide does not use an unverified flat price or assume a minimum contract term. Compare the quoted access and data coverage with the specific tasks you need."
+  - q: "Is OpenBB still a free, open-source Bloomberg alternative?"
+    a: "OpenBB offers a free hosted Community edition and a separate open-source Open Data Platform for configurable research. Commercial editions and third-party data can have separate costs. Free software does not make every connected data source free."
+  - q: "What can I do with Helm for free?"
+    a: "Try public stock analysis without an account. With a free account, add positions manually or through Plaid, review portfolio concentration, and monitor one investment thesis with evidence history. Pro costs $20 per month or $149 per year and adds broader thesis monitoring, a personalized brief, earnings exposure, and detailed tax tools."
 ---
 
-I've spent a lot of time around Bloomberg Terminals. As an econ student at Penn State, I got to use one through our university's finance lab, and I'll admit — the thing is impressive. Real-time data on essentially every financial instrument on earth, a news wire that breaks stories before anyone else, and enough analytical horsepower to keep a hedge fund running. It's the gold standard for a reason.
+The best Bloomberg Terminal alternative depends on the work you want to finish. **Start with Koyfin for fundamentals, TradingView for charts, or Finviz for screening.** If your question is whether the evidence still supports a stock you own, start with **Helm's free analysis and one monitored investment thesis**.
 
-It also costs $24,000 a year. Two-year lease minimum, so you're really committing $54,000 before you even start.
+Pick the tool that addresses a gap in your current process, then check whether its free plan covers that task.
 
-That's fine if you're running a desk at Goldman. It's completely insane if you're a regular person trying to manage a $200K portfolio.
+**Disclosure:** I'm Evan Kim, Helm Terminal's founder. Helm is included here and offers paid subscriptions. This comparison is based on official product and plan information checked on September 12, 2026. Prices, data access and limits can change.
 
-I started looking for alternatives about two years ago, and what I found was frustrating. Plenty of tools solve one piece of the puzzle really well, but nothing brought it all together the way Bloomberg does for institutions. That search is actually what led me to build Helm Terminal — but I'll get to that later.
+## Quick comparison: choose the task first
 
-First, let me walk through what's actually out there and worth your time.
+| Your main task | Tool to consider | What to check before paying |
+|---|---|---|
+| Research financial statements and compare companies | **Koyfin** | Financial history, estimates and portfolio analytics vary by plan |
+| Study price charts and build technical indicators | **TradingView** | Chart and alert limits; exchange data can cost extra |
+| Look up quotes, headlines and basic financials | **Yahoo Finance** | Paid research and portfolio analytics have separate tiers |
+| Read investment arguments and compare ratings | **Seeking Alpha** | Premium research, Quant Ratings and portfolio features |
+| Screen stocks and scan market heat maps | **Finviz** | Delayed free quotes versus Elite data, alerts and exports |
+| Build a configurable research workspace | **OpenBB** | Hosted Community versus commercial editions and data-provider costs |
+| Investigate company segments and operating KPIs | **Fiscal.ai, formerly FinChat** | Current research access and plan limits |
+| Build, backtest and automate a trading strategy | **Composer** | Subscription, brokerage requirements and applicable fees |
+| Review whether evidence supports your investment thesis | **Helm Terminal** | One monitored thesis on Free; broader monitoring on Pro |
 
-## What are you actually replacing?
+## Helm Terminal: keep your investment thesis accountable
 
-Most people say they want a "Bloomberg alternative" without really thinking about which parts of Bloomberg they need. The terminal does a ridiculous amount of stuff. Real-time market data across every asset class. A proprietary news wire. Financial modeling. A messaging network that basically every institutional trader uses. Company fundamentals, filings, earnings. Portfolio analytics. Trading execution.
+A stock can rise while the reason you bought it weakens. A headline can sound important while having little bearing on your original thesis. Helm is built around making that distinction easier to review.
 
-You probably need like three of those things. Maybe four.
+Start with a stock you know. Read its [public analysis](/analyze), write down the reasons you would hold it, and review the evidence alongside those reasons over time. Add positions manually or connect supported accounts through Plaid for portfolio context. A brokerage connection is optional.
 
-Once you figure out which capabilities actually matter to you, the picture gets a lot simpler. You don't need one $24K platform. You need two or three specialized tools that do their specific thing better than Bloomberg does anyway.
+**Free includes one monitored thesis**, evidence history, portfolio visibility and concentration analysis, a general daily market brief, and a harvestable-loss headline figure from available portfolio data. Monitoring runs on a schedule; it does not promise an immediate alert or a new finding on every check.
 
-## Koyfin — the one most people should start with
+**[Pro is $20/month or $149/year](/pricing).** It extends monitoring across your tracked theses and adds a personalized brief, earnings exposure, and detailed tax lots and wash-sale screening. The Free loss headline is not the full Pro tax workflow.
 
-If someone asked me for a single Bloomberg alternative, I'd say Koyfin. It's not even close in terms of value for what you get.
+Helm fits investors who already have ideas and want a repeatable way to review them. It does not replace Bloomberg's professional data and execution environment or promise better returns.
 
-The founders built it specifically because they were frustrated with Bloomberg's cost, and you can tell. The interface is clean and modern (Bloomberg's, famously, is not), the data coverage is deep enough for serious fundamental analysis, and the charting is genuinely good. Over 500,000 people use it now, and the Kitces Report gave it a 9.5 out of 10 on value — higher than FactSet, YCharts, Morningstar, and Bloomberg.
+<CTACard title="Start with a stock you already know" description="Read a free stock analysis before creating an account or connecting a brokerage." buttonText="Analyze a stock free" href="/analyze" />
 
-Where Koyfin falls short is anything personal. It's a market data platform. It'll show you everything about AAPL's financials, but it has no idea what AAPL means to your specific portfolio. There's no account linking, no tax analysis, no "here's what you should actually do" layer. You're still the one connecting the dots between the data and your money.
+Already know what you want to monitor? **[Create a free account and track your first thesis](/signup)**. Enter positions manually or connect through Plaid.
 
-The free tier is surprisingly usable. Paid plans run $15 to $70 a month, which is pocket change compared to Bloomberg.
+## Koyfin: fundamentals, market dashboards and portfolio tools
 
-## TradingView — if charts are your thing
+Koyfin is worth considering when your work starts with financial statements, estimates, valuation comparisons and market dashboards. Its Free plan includes My Portfolios as well as limited financial history and screening.
 
-TradingView has basically won the charting war. 200 million monthly visits. Their charts show up embedded on financial sites everywhere. And honestly, the product is just beautiful to use.
+Paid plans add deeper history and research access; advanced portfolio analytics and advisor integrations have their own plan boundaries. Check those boundaries against your needs before choosing a tier. [Koyfin features and pricing](https://www.koyfin.com/pricing/).
 
-The technical analysis capabilities are best-in-class at any price. Hundreds of indicators, custom scripting with Pine Script, multi-chart layouts. If you make decisions based on price action and patterns, TradingView is probably already in your workflow.
+## TradingView: charts and technical workflows
 
-The social layer is interesting too — traders publishing chart setups and debating patterns. It's like a financial Twitter but focused specifically on chart analysis. That community aspect doesn't exist on Bloomberg.
+TradingView brings charting, Pine Script, screeners, fundamentals and portfolio features together, with trading through supported brokers. The relevant distinction is how many charts, indicators and alerts your workflow needs.
 
-The downside is that TradingView is very specifically a charting platform. Fundamental analysis is an afterthought. There's no portfolio tracking, no connection to your accounts, no tax stuff, no AI analysis. It tells you what price is doing. What you do about it is your problem.
+Basic access is free. Some exchange data subscriptions cost extra even on a paid plan, so check the feed you need before comparing subscription prices. [TradingView plan and market-data details](https://www.tradingview.com/pricing/).
 
-Free tier works fine for most people. Paid plans go from about $15 to $60 a month.
+## Yahoo Finance: quick lookups and a familiar starting point
 
-## Yahoo Finance — don't sleep on it
+Yahoo Finance's free offering covers quotes, headlines, watchlists, charts and financial statements. It is a practical starting point for checking a company before opening a more specialized research tool.
 
-I know, I know. Yahoo Finance doesn't sound sexy compared to these other tools. But for a completely free platform, it covers a shocking amount of ground.
+Paid tiers add capabilities such as portfolio performance and risk analysis, research reports, valuations, deeper history and exports. Those features are not all included in free access. [Yahoo Finance's official plan guide](https://ca.help.yahoo.com/kb/SLN36623.html).
 
-Real-time quotes. Financial statements for basically every public company. Earnings data. Analyst estimates. A portfolio tracker that actually works. News aggregation. A solid mobile app. All free.
+## Seeking Alpha: research arguments and ratings
 
-Is it going to replace Bloomberg for a professional? Obviously not. But for a retail investor who wants to check in on their holdings, scan headlines, and look up basic financials before making a trade, Yahoo Finance handles it. I still use it for quick lookups when I don't want to log into anything heavier.
+Seeking Alpha is a fit for reading investment arguments and comparing them with ratings. Premium includes research articles, Quant Ratings and portfolio features such as broker linking and a Portfolio Health Check.
 
-The Premium tier at $35 a month adds research reports and advanced screeners, but honestly the free version covers 90% of what most people need from it.
+If you want to track your own reasons for owning a stock, compare the workflow for maintaining those reasons with the workflow for reading and rating someone else's research. [Seeking Alpha Premium features](https://help.seekingalpha.com/premium/seeking-alpha-premium-feature-list) and [subscription options](https://seekingalpha.com/subscriptions).
 
-## Seeking Alpha — for when you want someone else's take
+## Finviz: screening and visual market scans
 
-Seeking Alpha's superpower is volume. Over 7,000 contributors write more than 10,000 articles a month. Whatever stock you're looking at, someone has written a deep dive on it. Probably multiple people, with opposing views.
+Finviz is useful for filtering a stock universe and scanning sector heat maps. Free access is a starting point for generating a shortlist; Elite adds real-time stock data, expanded tools, alerts and exports.
 
-That crowdsourced approach has real value. You get bull cases and bear cases from people who've actually done the work. The Quant Rating system scores stocks across multiple factors, which adds a quantitative layer on top of all the opinion content. For small-cap and mid-cap stocks especially, Seeking Alpha often has more detailed coverage than you'll find anywhere else.
+Finviz also has portfolio features. The decision is whether the data timing and feature limits fit your process. [Finviz Free and Elite comparison](https://finviz.com/elite).
 
-The flip side is that quality varies. A lot. Some contributors are genuinely sharp analysts. Others are writing their first article. You have to develop a filter for which authors are worth your time, and that takes a while.
+## OpenBB: configurable research, with two starting points
 
-It's a research platform, not a terminal. No real-time charting, no portfolio intelligence, no personal finance features. Premium runs $239 a year.
+OpenBB belongs on a Bloomberg alternatives shortlist, but "free Python terminal" no longer describes its whole offering. **OpenBB Community is a free hosted edition.** The **Open Data Platform** is a separate open-source foundation for connecting public, licensed and proprietary data through interfaces including Python and a command line.
 
-## Composer — a totally different animal
+Commercial editions serve other deployment and team needs. Connected data can carry its own licensing fees and limits; included data access is limited. Choose this route when control over sources and research workflows matters to you. [OpenBB editions](https://openbb.co/pricing/) and [Open Data Platform documentation](https://docs.openbb.co/odp).
 
-Composer doesn't really compete with Bloomberg at all, but it's worth mentioning because it represents where this space is heading.
+## Fiscal.ai, formerly FinChat: company operating detail
 
-Instead of showing you data and charts, Composer lets you describe a trading strategy in plain English — something like "buy SPY when its 50-day moving average is above its 200-day, sell when it crosses below" — and turns it into an executable algorithm. You can backtest it, tweak it, and run it live. They've facilitated over $20 billion in trading volume doing this.
+Fiscal.ai is worth a look for research that goes beyond headline financial ratios into company segments and operating KPIs. Its current official research documentation covers financial statements, ratios, segment data and KPI analysis.
 
-It's narrow but genuinely innovative. If you've ever thought "I have a trading idea but I can't code it," Composer is built for you.
+The useful comparison is company-research depth: can you inspect the operating drivers behind your thesis? Check current consumer plan limits before subscribing. [Fiscal.ai research documentation](https://docs.fiscal.ai/docs/guides/mcp-skills) and [current plans](https://fiscal.ai/pricing/).
 
-It won't help with your taxes, doesn't know about your bank accounts, and isn't designed for holistic financial management. But for the specific problem of turning investment ideas into systematic strategies, it's impressive. Starts at about $25 a month.
+## Composer: strategy automation
 
-## Finviz — the screener everyone secretly uses
+Composer offers AI-assisted strategy creation, a visual editor, backtesting and automated execution. It addresses turning a defined strategy into a running process, a different purchase decision from choosing a market-data or research subscription.
 
-Finviz doesn't get mentioned in the same breath as Bloomberg, but its stock screener is genuinely one of the most used tools in finance. 16 to 24 million monthly visits, and a lot of those are professional investors who'd never admit they use a free tool.
+Review its subscription and brokerage requirements before funding an account. Backtest results describe a historical simulation, not a guaranteed future result. [Composer's current product and pricing information](https://www.composer.trade/).
 
-The heat maps are great for getting a quick visual read on what sectors are moving. The screening tools let you filter on dozens of fundamental and technical criteria. And it's free for the core functionality.
+## What a retail tool stack does not replace
 
-The catch is that free Finviz data is delayed. Real-time data requires the Elite subscription at about $40 a month. And like most tools on this list, Finviz helps you find stocks — it doesn't help you manage your money once you own them.
+Bloomberg combines cross-asset data, news, research, analytics, collaboration and execution workflows. If your job depends on a particular feed, asset class or institutional network, validate that requirement directly. [Bloomberg Terminal's official product overview and demo request](https://professional.bloomberg.com/products/bloomberg-terminal/).
 
-## OpenBB — the open-source option
+Get a current quote for the access you need, then compare it with the cost of the specific alternatives you would actually use. This guide does not assume a universal Terminal price or minimum contract term.
 
-If you're technical, OpenBB is the most interesting thing to happen to this space in years. It's an open-source investment research platform — free, extensible, and increasingly the answer people give on Reddit when someone asks for a Bloomberg alternative. You get fundamentals, economic data, screening, and a growing set of integrations, all scriptable in Python.
+## Start with one useful result
 
-The catch is exactly what you'd expect from open source: there's a learning curve, you sometimes wire up your own data keys, and the polish is uneven next to a commercial product. But for a developer or quant-leaning investor who wants control and zero subscription cost, nothing else here comes close. It won't manage your personal portfolio or taxes — it's a research engine, not a financial-life tool.
+For a company-research gap, try a financial statement or peer comparison in Koyfin. For a charting gap, try TradingView. For a screening gap, build a shortlist in Finviz. Pay when you encounter a relevant limit.
 
-## FinChat (Fiscal.ai) — conversational fundamentals
+For a conviction-monitoring gap, choose one stock you own and write down what would strengthen or weaken your reason for holding it. Helm's Free plan gives you a place to keep one thesis and review evidence over time. Add Pro when broader monitoring or the personalized portfolio tools address a need you have identified.
 
-FinChat, now Fiscal.ai, took the "ask a question, get an answer" idea and pointed it at company fundamentals. You can ask for a segment breakdown, a KPI trend, or a quick model and get a sourced answer back instead of digging through filings yourself. For fundamental research on individual companies, it's genuinely fast.
+<CTACard title="Put one investment idea under review" description="Begin with public stock analysis. No account is required to read it." buttonText="Analyze a stock free" href="/analyze" />
 
-Like the others, it's a research tool — it knows everything about a company and nothing about your specific portfolio. Free tier to start, paid plans scale with depth.
+Ready to save your work? **[Create your free Helm account](/signup)** to monitor your first thesis. [Compare Free and Pro](/pricing) before choosing paid features.
 
-## Helm Terminal — the part that's missing from everything above
-
-Okay, so this is us. I'm biased. But let me explain why I built this.
-
-I went through every tool on this list. Koyfin for data, TradingView for charts, Seeking Alpha for research. They're all good at what they do. But after using all of them, I still had the same problem: none of them knew anything about my actual financial situation.
-
-I could look up NVDA's P/E ratio on five different platforms. But none of them could tell me that NVDA was 34% of my portfolio, that I was $12,700 above my target concentration, and that a 20% decline would cost me $9,440 specifically. None of them could scan my holdings for tax-loss harvesting opportunities and tell me I was leaving $6,700 in tax savings on the table. None of them could map an earnings report to my actual positions and say "AAPL's earnings beat means +$847 for your portfolio."
-
-That's what Bloomberg does for institutions. Not market data — personalized financial intelligence. And that's what nobody was building for regular people.
-
-Helm connects to your bank accounts, brokerages, and credit cards through Plaid (read-only, before anyone asks). Then it runs AI analysis across all of it. Portfolio risk with actual dollar amounts. Tax optimization with specific savings. Cash flow anomalies. Earnings impact mapped to your holdings. A daily intelligence feed that tells you what needs attention before you have to go looking for it.
-
-The AI stock analysis is free to try at helmterminal.dev/analyze — no account needed. For the full portfolio intelligence, you connect your accounts and let Helm do its thing.
-
-I'm not going to pretend Helm replaces Bloomberg. Bloomberg is an $11 billion a year business with four decades of data infrastructure. But for the specific problem of "tell me what's going on with my money and what I should pay attention to," I think we're building something that didn't exist before.
-
-<CTACard title="Try the free AI stock analysis" description="Get institutional-grade analysis for any ticker — no account required." buttonText="Analyze a stock" href="/analyze" />
-
-## Side-by-side comparison
-
-| Feature | Bloomberg | Koyfin | TradingView | Yahoo Finance | Helm Terminal |
-|---|---|---|---|---|---|
-| **Price** | $24,000/yr | $0-840/yr | $0-720/yr | $0-420/yr | Free to start |
-| **Real-time data** | All assets | Stocks, ETFs | Stocks, crypto, forex | Stocks, delayed | Stocks via portfolio |
-| **Charting** | Advanced | Advanced | Best in class | Basic | Portfolio charts |
-| **Screening** | Advanced | Advanced | Community scripts | Basic | AI-powered |
-| **Portfolio tracking** | Yes | Limited | No | Basic | Full (via Plaid) |
-| **AI analysis** | ASKB (new) | No | No | No | Core feature |
-| **Tax optimization** | No | No | No | No | Yes |
-| **Personal financial intelligence** | No | No | No | No | Core feature |
-| **Cash flow analysis** | No | No | No | No | Yes |
-| **Best for** | Institutions | Data research | Technical trading | Casual investors | Personal finance |
-
-## So what should you actually use?
-
-Here's my honest recommendation, having used all of these.
-
-**For market data and research:** Koyfin's free tier. It's the best starting point. If you find yourself wanting deeper financial statement analysis, upgrade to Plus.
-
-**For charts:** TradingView free. Upgrade if you need real-time data or you're doing serious technical analysis with custom indicators.
-
-**For reading smart people's takes on stocks:** Seeking Alpha free tier gets you a lot. Premium if you're actively picking individual stocks.
-
-**For understanding your own financial picture:** That's where Helm fits. Connect your accounts, and instead of you pulling insights from five different tools, the AI surfaces what matters. Tax savings you're missing. Concentration risks you didn't notice. Earnings that affect your specific holdings. Cash flow patterns that changed.
-
-Total cost for this stack runs somewhere between $0 and $150 a month, depending on which paid tiers you go with. That's less than 1% of what Bloomberg charges, and for most retail investors, it honestly covers more of what you actually need day-to-day.
-
-The Bloomberg Terminal is an incredible product. But the era of needing a $24K terminal to be a well-informed investor is over. The tools are out there. You just have to pick the right ones.
-
-<CTACard title="Start with free AI analysis" description="Try Helm Terminal's stock analysis — no signup required. Then connect your accounts for personalized financial intelligence." buttonText="Analyze a stock free" href="/analyze" />
 ---
 
 ## Related Reading
 
 - [Best Koyfin Alternatives in 2026](/blog/best-koyfin-alternatives)
+- [Free Bloomberg Terminal Alternatives](/blog/free-bloomberg-terminal-alternative)
 - [Best Free Portfolio Analysis Tools](/blog/free-portfolio-analysis-tools)
 - [Best Yahoo Finance Alternatives](/blog/best-yahoo-finance-alternatives)
