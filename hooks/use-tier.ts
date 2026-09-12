@@ -5,6 +5,8 @@ export interface TierInfo {
   tier: 'free' | 'pro' | 'max';
   /** Tier as the subscriptions table has it — ignores the open-access window. */
   realTier?: 'free' | 'pro' | 'max';
+  /** Purchase eligibility is separate from temporary Pro feature access. */
+  canPurchasePro?: boolean;
   quota: {
     allowed: boolean;
     used: number;
@@ -53,6 +55,9 @@ export function useTier() {
   return {
     tier,
     realTier: data?.realTier ?? tier,
+    // Unknown during loading, errors or a rolling deployment. A caller must
+    // not turn a missing marker into an assertion that someone already pays.
+    canPurchasePro: typeof data?.canPurchasePro === 'boolean' ? data.canPurchasePro : null,
     quota: data?.quota ?? null,
     isPro: tier === 'pro' || tier === 'max', // max is a superset of pro
     isMax: tier === 'max',
