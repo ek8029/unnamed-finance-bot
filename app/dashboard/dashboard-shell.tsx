@@ -8,6 +8,7 @@ import { useTier } from '@/hooks/use-tier';
 import { useAccounts } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
 import { CheckoutModal } from '@/components/checkout-modal';
+import { CheckoutReturnStatus } from '@/components/checkout-return-status';
 import { CHECKOUT_PARAM, PENDING_CHECKOUT_KEY, isCheckoutIntent, type CheckoutIntent } from '@/lib/checkout-intent';
 import { TIER_RANK, type Tier } from '@/lib/tier-shared';
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
@@ -650,6 +651,7 @@ export default function DashboardShell({
   return (
     <DemoProvider>
     <>
+    {!previewPath && <CheckoutReturnStatus />}
     {!previewPath && checkoutChecked && !resumeCheckout && (ONBOARDING_V3 ? <OnboardingFlowV3 onSettled={settleOnboarding} /> : ONBOARDING_V2 ? <OnboardingFlowV2 onSettled={settleOnboarding} /> : <OnboardingFlow onSettled={settleOnboarding} />)}
     {/* Both setup flows settle before a requested trial checkout opens. */}
     {resumeCheckout && (
