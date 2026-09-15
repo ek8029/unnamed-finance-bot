@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { MDXComponents } from 'mdx/types';
+import { AnalyzeTickerForm } from './analyze-ticker-form';
 
 /* ── Anchor link icon ── */
 function AnchorIcon() {
@@ -317,4 +318,5 @@ export const mdxComponents: MDXComponents = {
   ComparisonTable,
   CTACard,
   ProTip,
+  AnalyzeTicker: AnalyzeTickerForm,
 };
