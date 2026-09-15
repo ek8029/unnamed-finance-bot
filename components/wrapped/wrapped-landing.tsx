@@ -27,7 +27,12 @@ const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
 export function WrappedLanding() {
   const router = useRouter();
-  const [flowState, setFlowState] = useState<FlowState>('loading');
+  // 'landing' rather than 'loading': the mount effect below sets 'landing'
+  // for a signed-out visitor anyway, and starting there puts the page in the
+  // server HTML. The crawl of this route saw four words, no heading and no
+  // links, because the server rendered a pulsing logo. A signed-in visitor
+  // sees one landing paint before the redirect.
+  const [flowState, setFlowState] = useState<FlowState>('landing');
   const [plaidError, setPlaidError] = useState<string | null>(null);
 
   // Signup form state

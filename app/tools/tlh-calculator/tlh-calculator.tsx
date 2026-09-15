@@ -136,21 +136,9 @@ export function TLHCalculator() {
 
   return (
     <div className="relative z-10 min-h-[80vh]">
-      <section className="relative container mx-auto px-6 pt-16 pb-20 max-w-xl">
-
-        {/* ── Header ── */}
-        <div className="mb-12">
-          <div className="type-eyebrow text-[var(--color-gold)] mb-4">Tax-Loss Harvesting Calculator</div>
-          <h1 className="font-sans font-bold text-[30px] sm:text-[36px] md:text-[44px] tracking-tight leading-[1.08] mb-3">
-            How much could<br />
-            <span className="text-[var(--color-gold)]">tax-loss harvesting</span><br />
-            save you?
-          </h1>
-          <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">
-            30 seconds. Two numbers. Real math.
-          </p>
-        </div>
-
+      {/* The header lives in page.tsx so it is in the server HTML. This
+          component reads the query string, which keeps it out of the SSR pass. */}
+      <section className="relative container mx-auto px-6 pb-20 max-w-xl">
         <AnimatePresence mode="wait">
           {step === 'input' ? (
             <motion.div
@@ -164,7 +152,7 @@ export function TLHCalculator() {
               <div className="space-y-8 mb-8">
                 <InputField
                   label="What's your taxable portfolio worth?"
-                  hint="401(k), IRA, Roth don't count — taxable accounts only."
+                  hint="401(k), IRA, Roth don't count. Taxable accounts only."
                   value={portfolio}
                   onChange={setPortfolio}
                   placeholder="250,000"
@@ -177,7 +165,7 @@ export function TLHCalculator() {
                   placeholder="15,000"
                   belowHint={
                     <Link href="/signup" className="inline-flex items-center gap-1 text-[13px] text-[var(--color-gold)] hover:text-[var(--color-gold-hi)] transition-colors mt-1">
-                      Not sure? Connect your brokerage — Helm calculates it for you <ArrowRight className="w-3 h-3" />
+                      Not sure? Connect your brokerage and Helm calculates it for you <ArrowRight className="w-3 h-3" />
                     </Link>
                   }
                 />
@@ -402,7 +390,7 @@ export function TLHCalculator() {
                 {!emailDone ? (
                   <div className="sovereign-card rounded p-5">
                     <div className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1">Get quarterly TLH reminders</div>
-                    <p className="text-[13px] text-[var(--color-text-muted)] mb-4">A nudge each quarter to check for harvesting opportunities — when it matters most.</p>
+                    <p className="text-[13px] text-[var(--color-text-muted)] mb-4">A nudge each quarter to check for harvesting opportunities, when it matters most.</p>
                     <form onSubmit={doEmail} className="flex gap-2">
                       <div className="relative flex-1">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
@@ -433,7 +421,7 @@ export function TLHCalculator() {
               >
                 <Link href="/signup"
                   className="flex items-center justify-center gap-2.5 w-full py-4 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded hover:brightness-110 transition-all cursor-pointer">
-                  Start Helm Pro — automate your TLH <ArrowRight className="w-4 h-4" />
+                  Start Helm Pro and automate your TLH <ArrowRight className="w-4 h-4" />
                 </Link>
                 <div className="flex gap-3">
                   <button onClick={() => { setStep('input'); setShowAdvanced(false); }}

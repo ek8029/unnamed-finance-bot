@@ -7,11 +7,11 @@ import { CinematicBg } from '@/components/cinematic-bg';
 import { TLHCalculator } from './tlh-calculator';
 
 export const metadata: Metadata = {
-  title: 'Tax-Loss Harvesting Calculator — Helm Terminal',
+  title: 'Tax-Loss Harvesting Calculator | Helm Terminal',
   description:
-    'Free tax-loss harvesting calculator. Enter your portfolio details to see estimated annual savings. Accounts for federal + state taxes, short-term vs long-term, and the $3,000 deduction.',
+    'Free tax-loss harvesting calculator. Enter your losses and tax bracket to see estimated annual savings, short-term vs long-term, and the $3,000 deduction.',
   openGraph: {
-    title: 'Tax-Loss Harvesting Calculator — Helm Terminal',
+    title: 'Tax-Loss Harvesting Calculator | Helm Terminal',
     description: 'See how much tax-loss harvesting could save you. Free calculator for self-directed investors.',
     url: 'https://helmterminal.dev/tools/tlh-calculator',
     siteName: 'Helm Terminal',
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Tax-Loss Harvesting Calculator — Helm Terminal',
+    title: 'Tax-Loss Harvesting Calculator | Helm Terminal',
     description: 'See how much tax-loss harvesting could save you. Free, no signup required.',
   },
   alternates: { canonical: 'https://helmterminal.dev/tools/tlh-calculator' },
@@ -79,6 +79,23 @@ export default function TLHCalculatorPage() {
 
       {/* Nav */}
       <SiteNav />
+
+      {/* Rendered here, not in the client component: useSearchParams under a
+          bare Suspense boundary keeps that whole subtree out of the server HTML,
+          which is how this page shipped for months with no H1. */}
+      <section className="relative z-10 container mx-auto px-6 pt-16 max-w-xl">
+        <div className="mb-12">
+          <div className="type-eyebrow text-[var(--color-gold)] mb-4">Tax-Loss Harvesting Calculator</div>
+          <h1 className="font-sans font-bold text-[30px] sm:text-[36px] md:text-[44px] tracking-tight leading-[1.08] mb-3">
+            How much could<br />
+            <span className="text-[var(--color-gold)]">tax-loss harvesting</span><br />
+            save you?
+          </h1>
+          <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">
+            30 seconds. Two numbers. Real math.
+          </p>
+        </div>
+      </section>
 
       <Suspense>
         <TLHCalculator />
