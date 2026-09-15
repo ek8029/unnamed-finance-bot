@@ -1,0 +1,105 @@
+---
+title: "How to Calculate Cost Basis on Stocks and Funds"
+description: "Cost basis is what you paid plus the tax code's adjustments: splits, reinvested dividends, wash sales, RSUs, inheritance. The rules, with worked examples."
+date: "2026-09-15"
+author: "Evan Kim"
+tags: ["cost basis", "capital gains", "taxes", "rsu", "dividend reinvestment"]
+published: true
+faq:
+  - q: "How do you calculate cost basis on a stock?"
+    a: "Start with the price paid for the shares plus any commission or fee on the purchase. Then apply the adjustments the tax code requires: divide per-share basis on a split, add the amount of each reinvested dividend as its own lot, subtract return-of-capital distributions, and add any wash sale loss that was disallowed on an earlier sale of the same security. The result is the adjusted basis, and gain or loss is proceeds minus adjusted basis."
+  - q: "What is the cost basis of reinvested dividends?"
+    a: "Each reinvestment is a purchase. The dividend was already taxed as income in the year it was paid, so the shares it bought carry a basis equal to that dividend amount. Leaving reinvested dividends out of basis, which happens when a spreadsheet only records the original purchase, taxes the same dollars twice."
+  - q: "What is the cost basis of RSU shares?"
+    a: "The fair market value of the shares on the vesting date, which is the amount that was reported as wages on the W-2. The shares withheld for taxes at vest are not a sale at a gain. For RSUs that vested before the broker was required to report basis, the 1099-B can show zero, and the correct basis has to be supplied on Form 8949."
+  - q: "What is the cost basis of inherited stock?"
+    a: "Generally the fair market value on the date of death, under IRC section 1014, regardless of what the deceased paid. The holding period is treated as long-term automatically. An alternate valuation date six months after death is available to the estate in some cases, in which case that value is the basis."
+  - q: "Which cost basis method is best: FIFO, specific identification or average cost?"
+    a: "They produce different gains from the same sale, and the choice is the seller's within the rules. FIFO is the broker's default for stocks. Specific identification lets the seller name which lots are sold, which has to be done at the time of sale with the broker's confirmation. Average cost is available for mutual fund shares and dividend reinvestment plan shares, not for individual stocks."
+  - q: "What if the 1099-B shows the wrong cost basis?"
+    a: "The broker's figure is reported to the IRS, so the return has to reconcile with it rather than ignore it. Form 8949 has an adjustment column: the transaction is reported with the broker's basis in the basis column and the correction in column (g) with code B. This is common for noncovered shares, RSUs, and positions transferred between brokers."
+---
+
+Cost basis is what you paid for something, adjusted by the tax code on the way to the sale. Gain or loss is the sale proceeds minus that adjusted basis, so every error in the basis is an error in the tax. The purchase price is the easy part. The adjustments are where returns go wrong, and the most common one, reinvested dividends, taxes the same money twice when it is missed.
+
+This describes the federal rules for individuals. It is not tax advice.
+
+## The starting point
+
+Basis begins as the amount paid to acquire the shares, including any commission or transaction fee. A hundred shares bought at $50 with a $5 commission have a basis of $5,005, or $50.05 a share. Most brokerages charge no commission on stock trades now, so for recent purchases basis and price paid are usually the same number.
+
+From there, five events change it.
+
+## 1. Stock splits divide the per-share basis
+
+A split changes the share count and not the total basis. After a 2-for-1 split, 100 shares with a $5,005 basis become 200 shares with the same $5,005 basis, or $25.025 a share. A 4-for-1 split takes it to 400 shares at $12.5125. A reverse split runs the other way.
+
+Total basis is unchanged. Only the per-share figure moves, and the holding period of the new shares is the holding period of the old ones.
+
+## 2. Reinvested dividends are purchases
+
+This is the adjustment most often missed, and it is expensive.
+
+A dividend is taxed as income in the year it is paid, whether taken in cash or reinvested. When it is reinvested, the shares it buys carry a basis equal to the dividend amount, because that money has already been taxed once. A spreadsheet that records only the original purchase, then treats every reinvested share as free, reports too much gain at the sale and taxes the dividends a second time.
+
+Worked example: 100 shares of a fund bought at $40, basis $4,000. Over five years the fund pays $900 in dividends, all reinvested at prices between $42 and $55, buying 18.6 additional shares. The position is now 118.6 shares. Its basis is $4,900, not $4,000. Sold at $60 for $7,116, the gain is $2,216. Using the $4,000 figure, the gain would be $3,116, an extra $900 of gain on money that was already taxed.
+
+Each reinvestment is its own lot with its own date. A position held five years with quarterly reinvestment has twenty-one lots, and the most recent ones are short-term.
+
+## 3. Return of capital reduces basis
+
+Some distributions are not dividends. A return of capital, common from REITs, master limited partnerships and some funds, is not taxed when received. Instead it reduces the basis of the shares, and the tax arrives later as a larger gain at the sale. Once basis reaches zero, further returns of capital are taxed as capital gain in the year received. The 1099-DIV reports return of capital in box 3 as nondividend distributions.
+
+## 4. A wash sale adds the disallowed loss to the replacement shares
+
+Sell at a loss and buy the same or a substantially identical security within 30 days before or after, and [section 1091](https://www.law.cornell.edu/uscode/text/26/1091) disallows the loss. The loss is not gone: under section 1091(d) it is added to the basis of the replacement shares, and the holding period of the sold shares carries over under section 1223(3).
+
+Sell 100 shares for $4,000 against a $5,000 basis, buy 100 back inside the window for $4,200: the $1,000 loss is disallowed and the new lot's basis is $5,200. The [wash sale rule post](/blog/wash-sale-rule) covers the mechanics, and the [wash sale calculator](/tools/wash-sale-calculator) works the basis for a specific sale.
+
+Brokers adjust basis for wash sales they can see within one account. They cannot see the same security bought in a different account, or in a spouse's account, or in an IRA, so the 1099-B basis can be right for that broker and wrong for the return.
+
+## 5. How the shares arrived
+
+Shares that were not bought on the open market have their own basis rules.
+
+**Restricted stock units.** Basis is the fair market value on the vesting date, which is the same figure that went on the W-2 as wages. If 200 shares vest at $150, $30,000 is wages and the basis of the 200 shares is $30,000. If 70 shares were withheld to cover taxes, the 130 shares delivered have a basis of $19,500, and the 70 withheld were not a sale at a gain. A 1099-B for RSU shares sometimes shows a basis of zero, especially for older grants; reporting that figure without correction treats the whole $30,000 as gain and taxes it twice. The [RSU tax strategies post](/blog/rsu-tax-strategies) covers the vest-to-sale sequence, and the [RSU tax calculator](/tools/rsu-calculator) works the tax due at vest.
+
+**Employee stock purchase plans.** The discount, and in a disqualifying disposition the bargain element, is ordinary income, and the basis is the purchase price plus the amount reported as income. The arithmetic depends on the holding period relative to the offering and purchase dates, and the broker's 1099-B usually shows only the purchase price. Form 3922 from the employer carries the figures needed to reconstruct it.
+
+**Inherited shares.** Basis is the fair market value on the date of death under [section 1014](https://www.law.cornell.edu/uscode/text/26/1014), regardless of what the deceased paid. The holding period is long-term automatically. The estate can elect an alternate valuation date six months later in some circumstances, in which case that value applies.
+
+**Gifted shares.** Basis carries over from the giver under [section 1015](https://www.law.cornell.edu/uscode/text/26/1015), with a dual-basis rule: for computing a loss, the basis is the lesser of the giver's basis and the fair market value at the time of the gift. If the giver paid $10,000 and the shares were worth $6,000 when gifted, a sale at $8,000 produces neither gain (against the $10,000 basis) nor loss (against the $6,000 basis). The giver's holding period tacks on.
+
+**Spin-offs and mergers.** In a tax-free spin-off, the original basis is allocated between the parent and the new company in proportion to their fair market values right after the distribution; the parent company publishes the allocation percentages in a Form 8937. In a stock-for-stock merger, basis generally carries over to the shares received. In a cash-and-stock deal, gain is recognized up to the cash received. Each transaction has its own Form 8937, which is the source.
+
+## Lot identification: which shares were sold
+
+A position bought in several lots at several prices has several bases. Which lots are sold determines the gain.
+
+**FIFO** is the default: the earliest lot goes first. Brokers apply it unless told otherwise.
+
+**Specific identification** lets the seller name the lots. Under the regulations at [section 1.1012-1(c)](https://www.law.cornell.edu/cfr/text/26/1.1012-1), the identification has to be made at the time of the sale and confirmed by the broker in writing, which in practice means selecting the lots in the brokerage interface before the order goes in. It cannot be done afterward at tax time.
+
+**Average cost** is available for mutual fund shares and for shares held in a dividend reinvestment plan. It averages the basis across all shares held and is not available for individual stocks outside a DRIP. Once average cost is used for a fund, the election applies to that fund's shares going forward.
+
+Worked example: three lots of the same stock, 100 shares at $50, 100 at $80, 100 at $120. Selling 100 shares at $100 produces a $5,000 gain under FIFO (the $50 lot), a $2,000 gain if the $80 lot is identified, and a $2,000 loss if the $120 lot is identified. Same sale, three tax outcomes. Which is "best" depends on whether the year has other gains, other losses, and what the holding period of each lot is, and none of that is a matter of basis. Basis just records what each lot cost.
+
+## Covered and noncovered shares
+
+Since 2011 brokers have been required to report cost basis to the IRS on Form 1099-B for "covered" securities: stock acquired in 2011 or later, mutual fund and DRIP shares acquired in 2012 or later, and most options and bonds acquired in 2014 or later. For those, the broker's basis is what the IRS sees, and the return reconciles with it.
+
+For noncovered shares, acquired before those dates or transferred in without basis records, the 1099-B reports proceeds only and the basis column is blank. The taxpayer supplies it. Old confirmations, statements, and the price history on the acquisition date are the sources; where the acquisition date is known and the price is not, the historical price on that date is the accepted reconstruction.
+
+When the broker's figure is wrong, the fix is not to ignore it. Form 8949 reports the transaction with the broker's basis and then an adjustment in column (g) with code B, so the IRS matching sees both the reported figure and the correction.
+
+## What a brokerage feed does and does not carry
+
+I build Helm Terminal. It reads positions from the accounts you connect through Plaid, read-only, and the cost basis it shows is the basis the brokerage reports for each holding. That figure carries whatever the broker knows: it includes the broker's own wash sale adjustments and split adjustments, and it does not include a wash sale triggered in a different account, an RSU basis the broker recorded as zero, or noncovered lots with no basis on file. Helm's tax center uses the broker's basis to find positions at a loss and to estimate what harvesting them is worth; the figure that goes on a return is the adjusted basis, worked as above.
+
+## Related reading
+
+- [Capital Gains vs Capital Losses: A Complete Tax Guide](/blog/capital-gains-vs-losses-explained)
+- [Capital Loss Carryover: How It Works, With the Math](/blog/capital-loss-carryover)
+- [The Wash Sale Rule: What It Actually Disallows](/blog/wash-sale-rule)
+- [RSU Tax Strategies for Tech Employees](/blog/rsu-tax-strategies)
+- [Wash Sale Calculator](/tools/wash-sale-calculator)
