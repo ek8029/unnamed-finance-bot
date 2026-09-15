@@ -1,0 +1,141 @@
+---
+title: "Direct Indexing vs ETFs: Costs, Tax Losses, and Who It Fits"
+description: "Direct indexing owns the index constituents so losses can be harvested lot by lot; an ETF cannot pass losses through. Fees, minimums, and the arithmetic."
+date: "2026-09-15"
+author: "Evan Kim"
+tags: ["direct indexing", "etf", "tax loss harvesting", "taxes"]
+published: true
+faq:
+  - q: "What is direct indexing?"
+    a: "Direct indexing is owning the individual stocks that make up an index inside a separately managed account, instead of owning a fund that tracks the index. The account holds hundreds of positions that together mimic the index. A platform manages the weights, the rebalancing and the trading, usually for an annual advisory fee charged as a percentage of assets."
+  - q: "Why can direct indexing harvest losses when an index ETF cannot?"
+    a: "A fund nets its gains and losses internally and can only distribute gains to shareholders; it cannot distribute a net loss. When an ETF is up for the year, the losers inside it are invisible to the shareholder. In a direct index the shareholder owns each stock as its own tax lot, so a losing stock inside a rising index can be sold, its loss realized, and a similar stock bought in its place."
+  - q: "What are harvested losses actually worth?"
+    a: "They offset realized capital gains first, without limit. Whatever is left offsets up to $3,000 of ordinary income a year under IRC section 1211(b), and the remainder carries forward indefinitely under section 1212(b). The tax value is the loss multiplied by the rate on the gain it offsets, and each harvest lowers the basis of the replacement, so the benefit is a deferral rather than an elimination unless the position is held until death or sold in a lower bracket."
+  - q: "How much does direct indexing cost compared to an ETF?"
+    a: "Checked September 2026: Frec charges 0.09 percent a year for its S&P 500 direct index with a $20,000 minimum, and Wealthfront charges 0.09 percent for S&P 500 Direct with a $5,000 minimum. State Street's SPDR Portfolio S&P 500 ETF lists a gross expense ratio of 0.02 percent with no minimum beyond one share. The gap is small in dollars on a low-cost S&P 500 direct index and wider on platforms or indexes charging more."
+  - q: "Does direct indexing cause wash sale problems?"
+    a: "It can. The wash sale rule is tested across everything one taxpayer owns, so a stock the direct index sells at a loss is disallowed if the same stock is bought within 30 days in any other account, including an IRA, a 401(k) brokerage window or a spouse's account. The platform only sees the accounts it manages. Owning the same names elsewhere, including through employer stock purchases or dividend reinvestment, is the main way a direct index's harvested losses get disallowed."
+  - q: "When does an ETF make more sense than direct indexing?"
+    a: "When the account is small, when there are few realized gains to offset, when simplicity matters, or when the holdings may move to another brokerage. An ETF is one line on a 1099-B, transfers anywhere in kind, and has no minimum. A direct index is hundreds of lots that only the managing platform tracks cleanly, and leaving the platform means either liquidating them or transferring hundreds of positions."
+---
+
+Direct indexing and an index ETF hold the same companies. The difference is who owns the individual stocks. In an ETF the fund owns them and you own a share of the fund. In direct indexing you own the stocks themselves, in a separately managed account, and a platform keeps the weights close to the index. That one difference is the whole case for direct indexing: losses on individual stocks become yours to harvest, which a fund cannot give you. It is also the whole case against it: more cost, more lots, more paperwork, and a harvest that shrinks as the account ages.
+
+This is a description of how the two structures work and what the published numbers say, not tax or investment advice.
+
+## What direct indexing is
+
+An S&P 500 ETF holds roughly 500 stocks at market-cap weights and issues shares against the basket. A direct index of the S&P 500 buys those stocks, or a sample of them, straight into your account. The platform rebalances toward the index, reinvests dividends, and on most platforms runs a tax-loss harvesting program across the individual positions. The output is an account with hundreds of positions and thousands of tax lots over time, all of which belong to you. That ownership creates both the tax opportunity and the administrative weight.
+
+## The tax-loss harvesting argument
+
+A mutual fund or ETF nets its internal gains and losses. Net gains may be distributed to shareholders. Net losses cannot; they stay inside the fund, carried forward against the fund's own future gains. A shareholder in an S&P 500 ETF that rose 10 percent in a year has one position, up 10 percent, with no loss to take. The stocks inside the index that fell that year are invisible on the shareholder's return.
+
+In a direct index those falling stocks are separate positions with their own cost basis. A losing position can be sold, the loss realized, and a different stock with similar characteristics bought in its place so the account keeps tracking the index. The [tax-loss harvesting guide](/blog/tax-loss-harvesting-guide) covers a single harvest. Direct indexing is that mechanic run continuously across hundreds of names, which is the thing the structure does that an ETF cannot.
+
+## What the harvested losses are worth
+
+A harvested loss does not produce cash. It produces a deduction, and the deduction is worth the loss times the rate on whatever it offsets.
+
+The order is fixed by statute. Under [IRC section 1211(b)](https://www.law.cornell.edu/uscode/text/26/1211), capital losses offset capital gains without limit. Whatever remains offsets up to $3,000 of ordinary income a year. Under [section 1212(b)](https://www.law.cornell.edu/uscode/text/26/1212) the rest carries forward indefinitely. The [capital loss carryover post](/blog/capital-loss-carryover) walks through the netting order and why the $3,000 matters less than it looks.
+
+Three consequences follow.
+
+**The value depends on having gains.** A harvested loss against a short-term gain taxed at 24 percent is worth 24 cents on the dollar. Against a long-term gain at 15 percent, 15 cents. Against nothing, it is worth $3,000 a year of ordinary income and a carryover that waits for a gain that may or may not arrive.
+
+**It is a deferral.** Each harvest replaces a high-basis lot with a low-basis lot. The gain that was avoided today is embedded in the replacement and comes due when it is sold, unless the holder dies and the basis steps up, or sells in a year with a lower rate. The [cost basis post](/blog/how-to-calculate-cost-basis) covers how the reset basis is tracked.
+
+**The losses run out.** This is the part vendor material tends to leave for the footnotes. Harvesting only works on lots that sit below their basis. In a market that goes up over time, lots bought early climb above basis and stay there. Every harvest resets a lot's basis lower, which makes it less likely to ever be at a loss again. After a few years without a drawdown, most of an account's lots are above water and the harvest slows to whatever new deposits and new dips provide. Practitioners call this ossification. Wealthfront's [tax-loss harvesting white paper](https://research.wealthfront.com/whitepapers/tax-loss-harvesting/) does not use the word, but it notes that harvesting "can add more value to clients who make regular deposits into their accounts compared to ones who make a single deposit," because deposits create new lots with fresh basis.
+
+There is also tracking error. Every harvest sells one stock and buys a substitute, so the account drifts from the index. Platforms manage this within a band, but a direct index will not match the ETF's return exactly.
+
+## What the published harvest figures say
+
+The most detailed public dataset comes from Wealthfront's white paper, which reports realized harvesting yields for its automated accounts from October 2012 through December 31, 2025. For the most common risk score, the cross-vintage average annualized yield is 4.00 percent of the portfolio, with individual vintages ranging from 2.00 percent (accounts opened in 2012) to 7.82 percent (accounts opened in 2025). The paper attributes the spread to the market: "there is a strong positive correlation between the annualized harvesting yields realized by the different cohorts and both the volatility and the maximum drawdown realized by the market over the corresponding time period."
+
+Two caveats. That figure measures harvesting across ETFs in a diversified automated account, not a direct index of individual stocks, so it is a reference point for the range rather than a measure of stock-level harvesting. And "yield" is losses harvested as a percent of the portfolio, not tax saved. Wealthfront's [S&P 500 Direct page](https://www.wealthfront.com/sp500-direct) uses an illustration that assumes roughly 4 percent harvested annually, with the usual note that actual results vary. The academic paper most often cited on this topic (Chaudhuri, Burnham and Lo, Financial Analysts Journal, 2020) could not be retrieved at the time of writing, so its figures are not quoted here.
+
+## A worked illustration
+
+This is an illustration, not a projection. The assumptions are stated so the arithmetic can be redone with different ones.
+
+A $250,000 taxable account, single filer, 24 percent federal ordinary bracket, 15 percent long-term capital gains rate, no state tax. First-year harvest yield taken as a range of 2 to 8 percent of the account, bracketing the vintage spread in the Wealthfront data above.
+
+| First-year harvest yield | Losses harvested |
+|---|---|
+| 2% | $5,000 |
+| 4% | $10,000 |
+| 8% | $20,000 |
+
+Take the 4 percent case, $10,000 of harvested losses, and vary what it offsets.
+
+| What the $10,000 offsets | Rate | Tax deferred this year | Carried forward |
+|---|---|---|---|
+| $10,000 of short-term gains | 24% | $2,400 | $0 |
+| $10,000 of long-term gains | 15% | $1,500 | $0 |
+| No gains; $3,000 against ordinary income | 24% | $720 | $7,000 |
+
+Against that, the annual cost of the wrapper on $250,000:
+
+| Wrapper | Fee | Annual cost on $250,000 |
+|---|---|---|
+| S&P 500 direct index at 0.09% | 0.09% | $225 |
+| Direct index at the top of Frec's published range | 0.35% | $875 |
+| S&P 500 ETF at 0.02% | 0.02% | $50 |
+
+In the 4 percent case with long-term gains to absorb the loss, the first year defers $1,500 of tax at a cost of $225 for the cheapest direct index, against $50 for the ETF. In the no-gains case the deferral is $720, with $7,000 of carryover waiting for a future gain. At a 2 percent harvest and no gains, the year defers the same $720, since the $3,000 cap binds either way, at a cost of $225 to $875 depending on the platform.
+
+Two things the tables do not show. The fee recurs every year whether or not there is anything to harvest, and the harvest declines as lots rise above basis. The $10,000 of harvested losses also lowered the account's basis by $10,000, so a $10,000 gain is waiting in the replacements. The net benefit over the holding period is the time value of the deferred tax plus any rate difference at the eventual sale, minus cumulative fees, plus or minus tracking error.
+
+## Costs and minimums, checked September 2026
+
+Fees and minimums below were read from the vendor pages linked in the table. Schwab Personalized Indexing and Fidelity Managed FidFolios were also on the list to check, but their product pages could not be retrieved, so they are left out rather than quoted from memory.
+
+| Product | Annual fee | Minimum | Source |
+|---|---|---|---|
+| Frec, S&P 500 direct index | 0.09% | $20,000 | [frec.com/direct-indexing](https://frec.com/direct-indexing) |
+| Frec, other direct index strategies | 0.09% to 0.35% | $20,000 to $50,000, by index | [frec.com/pricing](https://frec.com/pricing) |
+| Wealthfront, S&P 500 Direct | 0.09% | $5,000 | [wealthfront.com/sp500-direct](https://www.wealthfront.com/sp500-direct) |
+| Wealthfront, Automated Investing Account (ETF-based) | 0.25% | not stated on the pricing page | [wealthfront.com/pricing](https://www.wealthfront.com/pricing) |
+| State Street SPDR Portfolio S&P 500 ETF | 0.02% gross expense ratio | one share | [ssga.com](https://www.ssga.com/us/en/intermediary/etfs/spdr-portfolio-sp-500-etf-splg) |
+
+The direct index fee is charged on the whole account. The ETF's expense ratio is deducted inside the fund's price. Both are percentages of assets, so at $250,000 the difference between 0.09 and 0.02 percent is $175 a year, and the difference between 0.35 and 0.02 percent is $825.
+
+## The wash sale interaction
+
+The wash sale rule is tested at the taxpayer level, across every account. A direct indexing platform screens its own trades, so it will not sell a stock at a loss on Monday and buy it back on Tuesday inside the account it manages. It cannot see anything else.
+
+Where this bites: a 401(k) brokerage window, an employer stock purchase plan, dividend reinvestment in an old brokerage account, or a spouse's account. If the direct index sells a stock at a loss and any of those buys the same stock inside the 61-day window, the loss is disallowed. In a taxable account the disallowed amount moves into the replacement shares' basis and comes back later. Inside an IRA it is gone. The [wash sale rule post](/blog/wash-sale-rule) covers both cases and the arithmetic.
+
+A direct index multiplies the surface area for this. An ETF holder who harvests has one ticker to keep clear across other accounts. A direct index holder has hundreds.
+
+## Customization
+
+Owning the constituents means they can be edited. The two common uses are excluding an employer's stock, so that someone with a large RSU position is not adding more of the same company through the index, and applying screens, whether sector, ESG or a single company the holder does not want to own. The [ETF overlap post](/blog/etf-overlap) covers the fund holder's version of this problem: the same dozen companies arriving through several funds, invisible on the statement. A direct index can exclude a name; a fund cannot be edited. Each exclusion adds tracking error. A few cost little; a long list turns the account into an active portfolio with an index label.
+
+## Where the ETF wins
+
+**Simplicity.** One position, one price, one line on the 1099-B. A direct index generates hundreds of lots and a long Form 8949, prepared by the platform but reviewed by the holder or their preparer.
+
+**No minimum.** One share of an S&P 500 ETF is the entry point. Direct indexing platforms set minimums, $5,000 to $50,000 on the pages checked above.
+
+**Portability.** An ETF transfers in kind to any brokerage in a few days. Leaving a direct indexing platform means transferring hundreds of positions to a brokerage that will not manage them, or liquidating and realizing the deferred gains the harvesting built up.
+
+**Fee.** Two basis points against nine or more, every year, on the whole balance.
+
+The ETF loses on one axis, the harvest, and that axis is worth the most in the first few years, in volatile markets, for an account with realized gains and a high bracket. It is worth the least for a small account with no gains, in a market that goes up steadily, held by someone in a low bracket.
+
+## Where Helm fits
+
+I build Helm Terminal. The free [ETF overlap tool](/tools/etf-overlap) shows which companies two funds share and how much of each fund sits in the shared names, which is the fund-holder's version of the concentration question direct indexing solves by editing the constituents. The Pro tax center, $20 a month or $149 a year, lists the lots at a loss in the accounts you connect and screens each against purchases in the prior 30 days across every linked account. That is the manual version of what a direct indexing platform automates, applied to whatever you already hold. The free [tax-loss harvesting calculator](/tools/tlh-calculator) prices a harvest at a stated bracket and gain level.
+
+<CTACard title="Price a harvest with your own numbers" description="The free calculator takes a loss, a bracket and your realized gains, applies the $3,000 cap, and reports what the harvest is worth this year and what carries forward." buttonText="Open the calculator" href="/tools/tlh-calculator" />
+
+## Related reading
+
+- [How to Find Tax-Loss Harvesting Opportunities](/blog/tax-loss-harvesting-guide)
+- [The Wash Sale Rule: What It Actually Disallows](/blog/wash-sale-rule)
+- [ETF Overlap: Why Two Funds Own the Same Companies](/blog/etf-overlap)
+- [Capital Loss Carryover: How It Works, With the Math](/blog/capital-loss-carryover)
+- [How to Calculate Cost Basis on Stocks and Funds](/blog/how-to-calculate-cost-basis)
