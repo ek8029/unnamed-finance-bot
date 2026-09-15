@@ -120,10 +120,10 @@ export function AnalysisGate() {
         {state === 'anon-blocked' ? (
           <>
             <h2 id="analysis-limit-title" className="text-[24px] font-bold tracking-tight text-[var(--color-text-primary)] leading-tight mb-3">
-              You&apos;ve used your free analysis
+              You&apos;ve used today&apos;s free analyses
             </h2>
             <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed mb-8">
-              Create a free Helm account to get 5 AI-powered stock analyses per day. No credit card required.
+              Two a day without an account. A free Helm account gets five, and can show each one against what you hold. No credit card required.
             </p>
             <Link
               href={`/signup?next=${encodeURIComponent(pathname)}`}

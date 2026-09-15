@@ -11,6 +11,7 @@ import { AnalysisTerminal } from './analysis-terminal';
 import { SiteNav } from '@/components/site-nav';
 import { CinematicBg } from '@/components/cinematic-bg';
 import { AnalysisGate } from '@/components/analysis-gate';
+import { AnalyzeSignupCta } from '@/components/analyze/signup-cta';
 
 // Force dynamic rendering — quote prices must be fresh on every request
 export const dynamic = 'force-dynamic';
@@ -267,8 +268,10 @@ export default async function TickerAnalysisPage({ params }: Props) {
         <ThesisPanel ticker={symbol} />
 
         {/* Watch my tickers — no-account email capture, right after the analysis */}
-        <section className="mt-8 max-w-3xl mx-auto">
+        <section className="mt-8 max-w-3xl mx-auto space-y-4">
           <WatchTickersCard ticker={symbol} />
+          {/* Account door after the no-account step: this ticker against the reader's own book */}
+          <AnalyzeSignupCta ticker={symbol} placement="after_watch" />
         </section>
 
         {/* Answer-first Q&A section — extractable by LLMs */}

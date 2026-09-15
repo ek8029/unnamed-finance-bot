@@ -7,6 +7,7 @@ import type { StockAnalysis, AnalysisMetric } from '@/components/analysis/types'
 import type { TickerData, ReportedFinancials } from '@/lib/financial-data';
 import { Search, Loader2, Link2, Check, ChevronRight, Menu, X, Calendar } from 'lucide-react';
 import { FinancialDisclaimer } from '@/components/financial-disclaimer';
+import { AnalyzeSignupCta } from '@/components/analyze/signup-cta';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
 
 // ── Types ──
@@ -1311,19 +1312,8 @@ export function AnalysisTerminal({ analysis, tickerData, ticker, computedAt, dat
 
           {/* CTA — public only */}
           {!isDashboard && (
-            <div className="mt-8 border border-[var(--color-gold)]/20 bg-[var(--color-gold)]/[0.025] rounded-lg p-6 text-center space-y-2.5">
-              <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-                Want AI analysis of your entire portfolio?
-              </p>
-              <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-md mx-auto">
-                Helm Terminal connects to your brokerage, analyzes every holding, and delivers actionable intelligence weekly. Free to start.
-              </p>
-              <a
-                href="/signup"
-                className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] text-[15px] font-semibold rounded-md transition-all"
-              >
-                Get started free
-              </a>
+            <div className="mt-8">
+              <AnalyzeSignupCta ticker={ticker} placement="terminal" />
             </div>
           )}
 
