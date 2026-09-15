@@ -57,7 +57,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 function formatDate(dateStr: string): string {
+  // The frontmatter date is a calendar day. Without the UTC pin, a US visitor
+  // reads every post as published the day before it was.
   return new Date(dateStr).toLocaleDateString('en-US', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
