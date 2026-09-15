@@ -1,0 +1,136 @@
+---
+title: "Best AI for Financial Analysis in 2026: Filings to Models"
+description: "Which AI fits each financial analysis task: statement extraction, ratios, spreadsheet models, transcript metrics, and checking arithmetic. Prices dated."
+date: "2026-09-15"
+author: "Evan Kim"
+tags: ["ai financial analysis", "chatgpt", "claude", "financial modeling", "investing tools"]
+published: true
+faq:
+  - q: "What is the best AI for financial analysis?"
+    a: "It depends on the task. For pulling numbers out of a 10-K or 10-Q, Claude and ChatGPT both accept the filing as a file and work from the text. For building or auditing a model inside a spreadsheet, Copilot in Excel and Gemini in Sheets operate on the cells directly. For pre-structured statements and transcripts across many companies, Fiscal.ai and Perplexity Finance supply the data so the AI is not recalling it from memory. Every answer still gets checked against the filing."
+  - q: "Can ChatGPT or Claude read a 10-K and extract the financial statements?"
+    a: "Yes, when the filing is uploaded as a file. ChatGPT writes and runs Python against uploaded PDFs, CSVs and spreadsheets; Claude accepts PDFs up to 1,000 pages and can execute code to build a table. The output is only as good as the page reference it gives, so a useful prompt asks for the statement, the reporting period, the units, and the page or section each number came from."
+  - q: "Which AI is best for building a DCF model in Excel?"
+    a: "Copilot in Excel and Gemini in Google Sheets are the two that write formulas into the workbook itself, so the model stays live and inspectable. Claude and ChatGPT can generate an .xlsx with formulas for download, which works as a starting template but lives outside the sheet until opened. Microsoft's own Copilot in Excel FAQ says generated formulas can be inaccurate and to review and verify anything Copilot creates; the same applies to all of them."
+  - q: "Why do AI tools get financial numbers wrong?"
+    a: "The most common failure is recall. A model asked for a company's revenue without a source in front of it produces a plausible figure from training data, which may be a different year, a different unit, or an adjusted figure rather than GAAP. When the same model reads the number from a supplied filing or a live data feed, the figure can be traced to a page and checked. The fix is supplying the document, not trusting a more confident model."
+  - q: "How do I check an AI's financial analysis against the filing?"
+    a: "Four things catch most errors: the reporting period (fiscal year versus calendar year, quarter versus trailing twelve months), the units (thousands versus millions), GAAP versus adjusted or non-GAAP figures, and the inputs to any formula. Asking the AI to print each input with its source before computing a ratio makes the arithmetic reproducible. A number with no page reference is a number to look up."
+---
+
+**The best AI for financial analysis in 2026 is the one that reads the document in front of it rather than reciting a number from memory.** For extracting statements from a 10-K, Claude and ChatGPT both work from an uploaded filing. For building or auditing a model in a spreadsheet, Microsoft Copilot in Excel and Gemini in Google Sheets write into the cells themselves. For statements and earnings transcripts that arrive already structured, Fiscal.ai and Perplexity Finance supply the data feed. Prices below were checked on September 15, 2026, and the recurring theme is the same across all six tools: a figure the AI recalled is the failure mode, a figure it read from a supplied source can be checked.
+
+I build Helm Terminal, and it appears once near the end of this post with its limits stated. This is not financial advice.
+
+This post is about financial analysis in the working sense: reading and comparing statements, ratio work, models in a spreadsheet, turning an earnings call into metrics, and checking arithmetic. It is not a comparison of the same tools for stock research, which already exists at [ChatGPT vs Claude vs Gemini vs Perplexity for stock research](/blog/best-ai-for-stock-research), with individual how-to posts for [ChatGPT](/blog/chatgpt-stock-analysis), [Claude](/blog/claude-stock-analysis), [Gemini](/blog/gemini-stock-analysis) and [Perplexity](/blog/perplexity-stock-research).
+
+## Task to tool
+
+| Task | Tool that fits | What it works from | Where it breaks |
+|---|---|---|---|
+| Extract statements from a 10-K or 10-Q | Claude, ChatGPT | The uploaded filing | Unlabeled units and periods |
+| Ratio analysis across periods | ChatGPT data analysis, Claude code execution, Fiscal.ai | A supplied table or a structured data feed | Mixed GAAP and adjusted inputs |
+| Build or audit a model in a spreadsheet | Copilot in Excel, Gemini in Sheets | The workbook's own cells | Formulas that look right and reference the wrong range |
+| Turn an earnings call into metrics | Claude, ChatGPT, Perplexity Finance, Fiscal.ai | The transcript text | Guidance ranges flattened to a single number |
+| Check the arithmetic | ChatGPT data analysis, Claude code execution | Printed inputs and executed code | Correct code on a recalled input |
+
+## Task 1: extracting statements from a filing
+
+The job is to get the income statement, balance sheet and cash flow statement out of a 10-K into a table with the reporting period and units attached to every line.
+
+Claude accepts PDF, DOCX, CSV and XLSX uploads, up to 20 files per chat and 500 MB per file, and PDFs up to 1,000 pages. One detail that matters for filings: Claude analyzes both text and visual elements in PDFs of 100 pages or fewer, and processes text only from 101 to 1,000 pages. A 10-K is usually well over 100 pages, so a table rendered as an image on page 140 may not come through. Splitting the filing at the financial statements section avoids the problem. Source: [Claude's upload documentation](https://support.claude.com/en/articles/8241126-upload-files-to-claude).
+
+ChatGPT's data analysis feature takes uploaded files, including PDFs and spreadsheets, and writes and runs Python to work with them. Files can also come from Google Drive or OneDrive. The free tier is limited to a small number of uploads per day; Plus allows more. Source: [OpenAI's data analysis guide](https://help.openai.com/en/articles/8437071-data-analysis-with-chatgpt) and [the file uploads FAQ](https://help.openai.com/en/articles/8555545-file-uploads-faq).
+
+A prompt that produces checkable output:
+
+> Attached is the 10-K. Extract the consolidated income statement, balance sheet and cash flow statement for every period shown. For each line, give the value, the period end date, the units exactly as the filing states them, and the page number. Do not compute anything. If a line is labeled non-GAAP or adjusted anywhere in the filing, flag it.
+
+The last two sentences do the work. "Do not compute anything" keeps extraction separate from analysis, so a wrong number is a reading error rather than a reading error hidden inside a calculation.
+
+## Task 2: ratio work across periods
+
+Margins, turnover, leverage and coverage ratios are arithmetic on the table from Task 1. The risk is not the division; it is which numbers went into it.
+
+ChatGPT runs the calculation in Python and can show the code. Claude's code execution and file creation feature, available on all plans including Free once toggled on under Settings, does the same and can return an .xlsx. Source: [Claude's file creation documentation](https://support.claude.com/en/articles/12111783-create-and-edit-files-with-claude).
+
+Fiscal.ai (formerly FinChat) approaches the same task from the other direction: the statements are already normalized in its terminal with historical depth that grows by plan, and its copilot answers questions over that data set rather than over a file you upload. That removes the extraction step, and it also means the analysis is bound to Fiscal.ai's normalization choices, which are not always the filing's own line items.
+
+> Using only the table you extracted, compute gross margin, operating margin, free cash flow (operating cash flow minus capital expenditures), net debt to EBITDA, and interest coverage for each period. Before the results, print every input with its page reference. State the formula for each ratio. Where the filing reports both GAAP and adjusted figures, compute both and label them.
+
+## Task 3: building or auditing a model in a spreadsheet
+
+A DCF or scenario model lives in cells with formulas that reference each other. The distinction that matters here is between tools that write into the workbook and tools that hand back a file.
+
+Microsoft Copilot in Excel generates formulas, applies them across sheets, builds charts and PivotTables, and explains formulas on request. It is included in Microsoft 365 Premium at $19.99 a month, and in Personal ($9.99) or Family ($12.99) with an AI credits plan, plus commercial Copilot subscriptions. Microsoft's own FAQ states that Copilot "generates insights and formulas and explains them in fluent, grammatically correct language, but the content can be inaccurate or inappropriate. Review, edit, and verify anything Copilot creates." Sources: [Copilot in Excel FAQ](https://support.microsoft.com/en-US/Excel/copilot/frequently-asked-questions-about-copilot-in-excel), [Microsoft 365 individual plan pricing](https://www.microsoft.com/en-us/microsoft-365-copilot/pricing/individuals).
+
+Gemini in Google Sheets creates formulas, fixes formula errors, builds pivot tables and charts, and runs multi-step operations from a prompt. It requires an eligible Google Workspace or Google AI plan. Google AI Pro is $19.99 a month, with a $4.99 Plus tier and Ultra from $99.99. Sources: [Gemini in Sheets help](https://support.google.com/docs/answer/14218565), [Google AI plans](https://gemini.google/subscriptions/).
+
+Claude and ChatGPT can both produce an .xlsx with live formulas for download. That is a reasonable way to get a scaffold, and the file then becomes an ordinary workbook with no AI attached until it is opened in Excel or Sheets with Copilot or Gemini enabled.
+
+For auditing an existing model, the useful prompt is not "is this right":
+
+> In this workbook, list every formula on the DCF sheet that references a hard-coded number instead of a cell. Then list every cell in the terminal value calculation and the cell each one references. Flag any range that ends before the last projection year.
+
+That turns an opinion into a list that can be checked row by row.
+
+## Task 4: earnings call to metrics
+
+An earnings transcript contains guidance, ranges, one-time items and qualifiers that summaries tend to flatten. The output wanted is a metrics table, not a narrative.
+
+Claude and ChatGPT both take the transcript as an upload. Perplexity Finance includes an earnings hub with a calendar and synthesis of calls, and its finance tooling returns structured financials, transcripts, peer comparisons and analyst estimates; Pro and Max plans add premium sources including S&P Capital IQ. Fiscal.ai carries earnings transcripts alongside the statements in its terminal. Sources: [Perplexity's earnings hub changelog](https://www.perplexity.ai/changelog/what-we-shipped-july-18th), [Perplexity Finance](https://www.perplexity.ai/finance/earnings), [Perplexity's finance data reference](https://docs.perplexity.ai/docs/cookbook/examples/equity-research-brief/README).
+
+> From this transcript, build a table with one row per quantitative statement: the metric, the value or range exactly as spoken, the period it applies to, whether it is guidance or a reported result, and the speaker. Keep ranges as ranges. Mark any figure described as adjusted, excluding, or on a constant-currency basis. Do not add figures that are not in the transcript.
+
+"Keep ranges as ranges" prevents "revenue guidance of $4.1 to $4.3 billion" from becoming "$4.2 billion". "Do not add figures" prevents the model from filling gaps with prior-quarter numbers it remembers.
+
+## Task 5: checking the arithmetic
+
+Every tool above can produce a confident wrong number. Two of them make the error findable.
+
+ChatGPT's data analysis runs Python in a code environment and can display the code and intermediate results. Claude's code execution does the same. Both let a reader see inputs, formula and output as three separate things. A tool that returns only the final ratio has removed the two places where the error usually is.
+
+The check that catches most problems is short:
+
+> Recompute each ratio from scratch. Print the inputs, then the formula with the inputs substituted, then the result. If any input differs from the extracted table, stop and report the difference.
+
+Correct code on a recalled input is still wrong, which is why this step comes after extraction from a supplied document rather than instead of it.
+
+## Prices, checked September 15, 2026
+
+- **ChatGPT**: Free; Go $8 a month; Plus $20 a month. Data analysis and file uploads are available on Free with limits and expanded on paid plans. Sources: [What is ChatGPT Plus](https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus), [What is ChatGPT Go](https://help.openai.com/en/articles/11989085-what-is-chatgpt-go).
+- **Claude**: Free; Pro $20 a month or $17 a month billed annually ($200 up front); Max from $100 a month. Code execution and file creation are on all plans. Source: [claude.com/pricing](https://claude.com/pricing).
+- **Gemini**: Free; Google AI Plus $4.99; Google AI Pro $19.99 with up to 1,500 pages of file uploads; Ultra from $99.99. Deep Research is available on Free with basic access and expanded on paid tiers. Sources: [Google AI plans](https://gemini.google/subscriptions/), [Deep Research overview](https://gemini.google/overview/deep-research/).
+- **Perplexity**: Free; Pro $20 a month; Max $200 a month. Source: [perplexity.ai/hub/pricing](https://www.perplexity.ai/hub/pricing).
+- **Microsoft Copilot in Excel**: Microsoft 365 Premium $19.99 a month; Personal $9.99 and Family $12.99 with an AI credits plan. Source: [Microsoft 365 individual plans](https://www.microsoft.com/en-us/microsoft-365-copilot/pricing/individuals).
+- **Fiscal.ai**: a free tier plus paid Pro and Max tiers with more years of history. The pricing page renders its prices in the browser and could not be captured on the date above, so dollar figures are omitted here; they are on [fiscal.ai/pricing](https://fiscal.ai/pricing/).
+
+Deep Research in Gemini and its equivalents in ChatGPT and Perplexity are web research features. They gather sources and write a report; they do not substitute for the filing itself when the task is a number.
+
+## How to verify the output against the filing
+
+Four checks cover most of what goes wrong, and each takes under a minute with the filing open.
+
+**Reporting period.** Fiscal years do not always end in December. A "2025 revenue" figure might be fiscal 2025 ending in June, calendar 2025, or the trailing twelve months at the last quarter. The AI's table needs a period end date on every row, and that date needs to match the column header in the filing.
+
+**Units.** Statements are presented in thousands or millions, and the header says which. A model that reads "1,234,567" from a statement "in thousands" and reports $1.2 million is off by a factor of a thousand. Ask for the units string exactly as printed.
+
+**GAAP versus adjusted.** Press releases and calls lean on adjusted EBITDA, non-GAAP operating income and constant-currency growth. The 10-K's audited statements are GAAP. A ratio that mixes an adjusted numerator with a GAAP denominator is not a ratio anyone can reproduce. The flag in the Task 1 prompt exists for this.
+
+**Formula inputs.** For any computed figure, the question is not whether the formula is standard but which cells fed it. Free cash flow computed with capex including acquisitions differs from free cash flow without them, and both are defensible; only one matches what the reader expects. Printed inputs with page references settle it.
+
+A number without a page reference is a number to look up.
+
+## Where Helm fits
+
+Helm Terminal's free stock analysis at [/analyze](/analyze) takes a US ticker, reads the live price and SEC EDGAR fundamentals, and writes a narrative with the sources it used. No account is required. It is analysis of a company, not a spreadsheet tool: it does not open a workbook, build a DCF, or replace the model-building tools above. Its use in this workflow is as a second, sourced read on a company you are modelling, so a chatbot's recalled figure can be compared with one that carries a citation. The free tier includes a portfolio dashboard, AI stock analysis, one monitored thesis and a general morning brief; Pro is $20 a month or $149 a year.
+
+<AnalyzeTicker source="blog_ai_financial_analysis" prompt="Run the free analysis on a company you are modelling" />
+
+## Related reading
+
+- [ChatGPT vs Claude vs Gemini vs Perplexity for stock research](/blog/best-ai-for-stock-research)
+- [How to use ChatGPT for stock analysis](/blog/chatgpt-stock-analysis)
+- [How to use Claude for stock analysis](/blog/claude-stock-analysis)
+- [AI stock analysis tools compared](/blog/best-ai-stock-analysis-tools)
+- [AI stock analysis explained](/blog/ai-stock-analysis-explained)

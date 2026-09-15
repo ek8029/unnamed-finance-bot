@@ -1,0 +1,206 @@
+---
+title: "Investment Thesis Examples and a Template You Can Reuse"
+description: "Four investment thesis examples built from filings and earnings, plus a copyable template: claim, evidence, what breaks it, where to look, review cadence."
+date: "2026-09-15"
+author: "Evan Kim"
+tags: ["investment thesis", "thesis template", "thesis examples", "portfolio monitoring"]
+published: true
+faq:
+  - q: "What is an investment thesis?"
+    a: "An investment thesis is the set of reasons a position is held, written as two to four specific claims that can each be checked against evidence later. Each claim, or pillar, carries the fact that supports it today with its date and source, and the observable condition that would show it has failed. It is not a price target and not a narrative about the company."
+  - q: "What goes in an investment thesis template?"
+    a: "Five fields per pillar: the claim in one sentence, the evidence at the time of writing with its source and reporting period, the breaks-if condition with a threshold and a time window, where to look for that condition in future documents, and a review cadence tied to filings and earnings. A log of each review with its date and outcome closes the loop."
+  - q: "How many pillars does an investment thesis need?"
+    a: "Two to four. Fewer than two and the position rests on a single point of failure that has probably not been examined. More than four and the list usually contains one or two real reasons and several rationalizations. Each pillar has to be separable from the others, so that one can break while the rest hold."
+  - q: "Are the examples in this post positions to take?"
+    a: "No. The four examples exist to show the form of a checkable thesis using real, dated, linked figures from company filings and earnings releases. They are not a view on any of the companies, and nothing in the post is financial advice. The figures are correct as of the documents cited and will be out of date after the next reporting period."
+  - q: "How often does an investment thesis get re-read?"
+    a: "Whenever new primary evidence arrives, which for a US-listed company means each earnings release, each 10-Q and 10-K, and any 8-K that touches a pillar. A calendar review with nothing new to read mostly records the price. The template in this post assigns each pillar to the documents that can move it, so the cadence follows the reporting schedule rather than the market."
+---
+
+An investment thesis is the set of reasons a position is held, written so that each reason can be checked against evidence later. It is not a price target and it is not a story about the company. It is two to four specific claims, each paired with the fact that supports it today and the fact that would show it has failed. This post gives a reusable template for that structure, then works through four examples on large US companies using their own filings and earnings releases, with every figure linked to its source and dated.
+
+## What an investment thesis is, and what it is not
+
+A thesis differs from a narrative in three ways.
+
+**It is decomposable.** "Great company, great management" is one indivisible feeling. "Data center is now over 90% of revenue" is a pillar: a single reason that can hold or fail on its own while the others stay intact. A thesis is a short list of pillars, not a paragraph.
+
+**It is falsifiable.** Every pillar carries a breaks-if condition, the observable evidence that would show the pillar has stopped being true, with a threshold and a time window. "Growth slows" is not a condition. "Segment revenue declines quarter over quarter in a reported period" is.
+
+**It is dated.** Each pillar records the evidence that supported it on the day it was written, with the reporting period and a link to the source. Without the date, later evidence gets absorbed into the original claim as if it had always been there.
+
+What a thesis is not:
+
+- **Not a price target.** Price is an output. A stock can rise while every pillar is failing and fall while every pillar holds.
+- **Not a story.** "The AI leader" cannot be checked against a 10-Q. Stories are where pillars come from, but they are not pillars.
+- **Not a valuation model.** A model is downstream of the claims. If the pillars fail, the inputs were wrong, and the output was never the reason.
+
+## The template
+
+Copy this block into a note, one file per position. Each pillar gets the same five fields, and the log at the bottom is where the thesis actually gets tested.
+
+```markdown
+# Thesis: [Company] ([Ticker])
+Written: [date]
+Position opened: [date]
+Next review: [date of next earnings release or filing]
+
+## Pillar 1: [one sentence claim, specific enough to be wrong]
+- Evidence at writing: [figure or quote], [document type], [reporting period], [link]
+- Breaks if: [observable condition, with a threshold and a time window]
+- Where to look: [document and section, or the metric name as the company reports it]
+
+## Pillar 2: [claim]
+- Evidence at writing:
+- Breaks if:
+- Where to look:
+
+## Pillar 3: [claim, optional]
+- Evidence at writing:
+- Breaks if:
+- Where to look:
+
+## Review cadence
+- Every earnings release: check pillars [ ]
+- Every 10-Q and 10-K: check pillars [ ]
+- Between reports: 8-K items and news that touch pillars [ ]
+
+## Log
+| Date | Pillar | What the evidence said | Source | Status (holds / weakened / broken) |
+| --- | --- | --- | --- | --- |
+```
+
+A few notes on the fields.
+
+**The claim** names a quantity or a state the company itself reports. If the company does not disclose it, the pillar cannot be checked from primary sources.
+
+**Evidence at writing** is copied, not summarized: a figure with its unit or a sentence in quotation marks, with the document type, the period it covers, and a link. The reporting period matters more than the publication date. A 10-K filed in October covers a fiscal year that ended in August.
+
+**Breaks if** has three parts: the metric, the threshold, and the window. "Renewal rate below 90% in a 10-K" has all three. "Renewals weaken" has none.
+
+**Where to look** names the document and, ideally, the line. Segment revenue is in the release and the 10-Q segment note. Renewal rates are in the 10-K and on the call. Contract losses are in 8-Ks and news. Writing this down in advance turns a quarterly review into a five-minute check.
+
+**The cadence** follows the reporting schedule, not the calendar. A margin pillar gets checked at every release. A risk-factor pillar gets checked at the 10-K, plus whenever an 8-K lands.
+
+## Four worked examples
+
+The four theses below are built the way the template describes, from documents the companies filed or published between October 2025 and August 2026. They exist to show the form. None of the four is a position to take, and nothing here is financial advice. Every figure will be stale after the next reporting period, which is the point: the pillars are written so the next report can confirm or break them.
+
+### Example 1: NVIDIA, the data-center mix
+
+Source: [NVIDIA second quarter fiscal 2027 results](https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027), quarter ended July 26, 2026, released August 26, 2026.
+
+**Pillar 1: Data center is the business, and it is still growing faster than the whole.**
+- Evidence at writing: "Revenue of $96.2 billion, up 106% from a year ago" and "Data Center revenue of $89.0 billion, up 117% from a year ago." Data Center is roughly 92% of revenue on those two figures.
+- Breaks if: Data Center revenue declines quarter over quarter in a reported period, or the company stops reporting it as a separate line.
+- Where to look: the market-platform revenue breakdown in each quarterly release and the 10-Q.
+
+**Pillar 2: Pricing power shows up as a gross margin in the mid-70s.**
+- Evidence at writing: "For the quarter, GAAP and non-GAAP gross margins were both 75.0%."
+- Breaks if: reported GAAP gross margin comes in below 70% for two consecutive quarters, or the outlook guides below 70%.
+- Where to look: the gross margin line of the release and the outlook paragraph.
+
+**Pillar 3: The company keeps guiding sequential growth and hits the range.**
+- Evidence at writing: "Revenue is expected to be $108.0 billion, plus or minus 2%. GAAP and non-GAAP gross margins are expected to be 74.0%, plus or minus 50 basis points."
+- Breaks if: reported third-quarter revenue lands below the bottom of the guided range, or the following outlook guides a sequential decline.
+- Where to look: the outlook paragraph of each release, and the capital expenditure lines in the largest cloud customers' own releases.
+
+Cadence: all three pillars at every quarterly release. This example illustrates the form and is not a position to take.
+
+### Example 2: Costco, the renewal rate
+
+Sources: [Costco 10-K for fiscal 2025](https://www.sec.gov/Archives/edgar/data/909832/000090983225000101/cost-20250831.htm), fiscal year ended August 31, 2025, filed October 8, 2025; and [Costco third quarter fiscal 2026 results](https://www.sec.gov/Archives/edgar/data/909832/000090983226000046/costex9918-k52826.htm), twelve weeks ended May 10, 2026, filed May 28, 2026.
+
+**Pillar 1: Members renew at a rate above 90% in the home market.**
+- Evidence at writing: "Our member renewal rate was 92.3% in the U.S. and Canada and 89.8% worldwide at the end of 2025." The same 10-K reports 81.0 million paid members and 145.2 million total cardholders, and an annual fee of $65 in the U.S.
+- Breaks if: the U.S. and Canada renewal rate is reported below 90% in a 10-K or on an earnings call.
+- Where to look: the Membership paragraph in Item 1 and in the MD&A of the 10-K; the quarterly earnings call, where the rate is given between filings.
+
+**Pillar 2: Membership fee revenue grows in line with sales.**
+- Evidence at writing: membership fees of $1,373 million for the twelve weeks ended May 10, 2026, against $1,240 million a year earlier, a rise of about 10.7%. In the same release, "Net sales for the quarter increased 11.6 percent, to $69.15 billion, from $61.96 billion last year."
+- Breaks if: membership fee revenue grows below 5% year over year for two consecutive quarters while the warehouse count keeps rising.
+- Where to look: the Membership fees line in the income statement of each quarterly 8-K exhibit.
+
+Cadence: pillar 1 at the 10-K and on each call; pillar 2 at every quarterly release. This example illustrates the form and is not a position to take.
+
+### Example 3: Microsoft, the cloud backlog
+
+Source: [Microsoft fiscal 2026 fourth quarter results](https://www.microsoft.com/en-us/investor/earnings/fy-2026-q4/press-release-webcast), quarter ended June 30, 2026, released July 29, 2026.
+
+**Pillar 1: Azure grows faster than the rest of the company.**
+- Evidence at writing: "Azure and other cloud services revenue increased 43%," inside "Revenue in Intelligent Cloud was $39.3 billion and increased 32% (up 31% in constant currency)." Total company: "Revenue was $90.0 billion and increased 18% (up 17% in constant currency)."
+- Breaks if: Azure growth is reported below 25% for two consecutive quarters, or falls below total company revenue growth in any quarter.
+- Where to look: the Intelligent Cloud paragraph of each release; the segment note in the 10-Q.
+
+**Pillar 2: Contracted backlog covers future cloud revenue.**
+- Evidence at writing: "Microsoft Cloud revenue was $59.3 billion and increased 27%, and commercial remaining performance obligation increased 84% to $678 billion."
+- Breaks if: commercial remaining performance obligation declines quarter over quarter, or a filing discloses a cancellation or modification that removes a material portion of it.
+- Where to look: the same sentence in each release; the revenue note in the 10-Q, which also states how much of the obligation is expected to be recognized within twelve months; any 8-K on a material contract.
+
+Cadence: both pillars at every quarterly release; the twelve-month portion of the backlog at every 10-Q and 10-K. This example illustrates the form and is not a position to take.
+
+### Example 4: Visa, volume and yield
+
+Source: [Visa fiscal third quarter 2026 results](https://www.sec.gov/Archives/edgar/data/1403161/000140316126000103/q32026earningsrelease.htm), quarter ended June 30, 2026, filed July 28, 2026.
+
+**Pillar 1: Payments volume keeps growing at a high single-digit rate or better.**
+- Evidence at writing: payments volume grew 10% in constant dollars, processed transactions grew 10%, and cross-border volume excluding intra-Europe grew 12%.
+- Breaks if: payments volume growth is reported below 5% in constant dollars for two consecutive quarters.
+- Where to look: the operational performance table at the top of each quarterly release.
+
+**Pillar 2: Revenue grows at least as fast as volume, so the yield on volume is holding.**
+- Evidence at writing: "Net revenue of $11.6B, an increase of 14%, or 13% on a constant-dollar basis," against payments volume growth of 10%. By component, "service revenue was $4.9 billion, an increase of 14%," "Data processing revenue rose 17% over the prior year to $6.0 billion," and "International transaction revenue grew 6% over the prior year to $3.9 billion."
+- Breaks if: net revenue growth trails payments volume growth for two consecutive quarters.
+- Where to look: the net revenue sentence and the revenue components paragraph of each release.
+
+**Pillar 3: Client incentives stay contained relative to revenue.**
+- Evidence at writing: "Client incentives were $4.7 billion, up 18% over the prior year." That is faster than the 14% growth in net revenue, so this pillar is already the one to watch, and the log records it that way rather than rounding it up to "holds."
+- Breaks if: client incentive growth exceeds net revenue growth by more than five percentage points for three consecutive quarters.
+- Where to look: the client incentives line in each release and the incentives discussion in the 10-Q.
+
+Cadence: all three pillars at every quarterly release. This example illustrates the form and is not a position to take.
+
+## Common mistakes
+
+The template is simple. The mistakes are consistent.
+
+**Pillars that cannot be falsified.** "Management executes well." "The moat is durable." Nothing the company could report would break these, so they survive every quarter regardless of what happens. If no document could contradict a pillar, it is a belief, not a pillar.
+
+**Price as a pillar.** "The stock is cheap at 20 times earnings" is a statement about the price, and the price is not a reason the business works. When the price changes, this pillar changes with it, so it tells the thesis nothing the ticker did not already say.
+
+**No dates.** A thesis written "at some point last year" cannot be compared against the next report because nobody knows which report it was written against. Every evidence line carries the reporting period. Every log entry carries the day it was written.
+
+**No source.** A figure remembered from a headline cannot be re-checked. If the thesis says the renewal rate is 92.3%, the line under it says which 10-K and links it.
+
+**Never re-reading it.** The most common failure by far. A thesis written once and never opened again is a diary entry. The value is in the log: the row that says, on this date, this document said this, and the pillar holds or does not.
+
+## How a thesis gets checked over time
+
+A thesis is a set of predictions about what the next filings will say. The check is mechanical: when a release, a 10-Q, a 10-K or an 8-K arrives, open the thesis, find the pillars that document can move, and compare what it says against each breaks-if condition. Write the outcome in the log with the date and the source.
+
+Most of the time the answer is "holds," and the row takes thirty seconds. Occasionally a pillar weakens without breaking: growth slows but stays above the threshold, a margin dips for one quarter. That gets logged as weakened, with the figure, so the next review starts from the right baseline.
+
+The failure this guards against has a name. [Thesis drift](/blog/thesis-drift) is what happens when the reasons a position was opened stop being true one filing at a time, while the position stays in the account because nobody was comparing the filings against the reasons. It is rarely a single event. It is a renewal rate that slipped a point a year across three annual reports that were never opened, or a backlog that quietly stopped growing while headline revenue still looked fine. The breaks-if conditions exist so the slip is caught at the report where it crossed the line.
+
+The mechanics of running that loop by hand are in [how to track an investment thesis](/blog/how-to-track-investment-thesis).
+
+## Where Helm fits
+
+I build Helm Terminal. It stores a thesis in the structure above: a position, two to four pillars, and a breaks-if condition on each one. On a schedule, it reads new SEC filings, earnings releases and news against those pillars and reports what it found, with the source document, the quoted line and its date, so the log fills in from primary evidence rather than from memory.
+
+The free tier monitors one thesis. Pro, at $20 a month or $149 a year, extends monitoring across a portfolio. Checks run on a schedule, not continuously, and a finding is not guaranteed: a pillar can weaken in a way the documents do not state plainly, and judging what the evidence means is still the holder's own work.
+
+<CTACard
+  title="Write one thesis in this format"
+  description="Enter a position and its pillars, and Helm checks them against filings, earnings and news on a schedule, with the dated source attached to every finding."
+  buttonText="Start with one thesis"
+  href="/signup"
+/>
+
+## Related reading
+
+- [How to track your investment thesis](/blog/how-to-track-investment-thesis)
+- [Thesis drift: how the reasons you own a stock quietly disappear](/blog/thesis-drift)
+- [Why your investment thesis needs receipts, not just alerts](/blog/investment-thesis-alerts)
+- [Thesis tracking apps: the landscape](/blog/thesis-tracking-apps)

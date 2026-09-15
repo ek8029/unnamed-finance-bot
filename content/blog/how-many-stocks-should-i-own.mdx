@@ -1,0 +1,122 @@
+---
+title: "How Many Stocks Should I Own? What the Research Says"
+description: "The classic studies land between 10 and 40 stocks, the later ones higher. Why the number moves with correlation, weights, funds and employer stock."
+date: "2026-09-15"
+author: "Evan Kim"
+tags: ["diversification", "concentration risk", "portfolio construction", "investing research"]
+published: true
+faq:
+  - q: "How many stocks should I own to be diversified?"
+    a: "The academic answers range from roughly 10 to well over 40, and the spread comes from what each study measured. Evans and Archer in 1968 found the standard deviation of random portfolios flattened within the first handful of holdings, which became the 10-stock rule. Statman in 1987 weighed the benefit against trading costs and found at least 30 to 40. Campbell, Lettau, Malkiel and Xu in 2001 found the count needed for a given level of diversification rose between 1962 and 1997 because stocks became less correlated with each other."
+  - q: "Is 10 stocks enough?"
+    a: "It depends on the measure. In the illustration in this post, with an average pairwise correlation of 0.3, a 10-stock equal-weight portfolio has a standard deviation about 61 percent of a single stock, against a floor of about 55 percent that no amount of adding stocks can go below. The remaining gap is small in variance terms. Bessembinder's 2018 study points at a different problem: most stocks underperform Treasury bills over their lives and the market's gain comes from a small minority, so a 10-stock portfolio can miss the few winners entirely."
+  - q: "Does owning an index fund change the count?"
+    a: "Yes, because a fund is not one position. An S&P 500 fund holds roughly 500 companies at market-cap weights, so a portfolio of 8 stocks plus that fund is 8 direct positions plus several hundred indirect ones, and any of the 8 also held inside the fund is counted twice at its combined weight. The count that describes risk is the look-through count, which is what the free ETF overlap tool at /tools/etf-overlap computes."
+  - q: "Why do regulated funds have to hold so many positions?"
+    a: "Section 851(b)(3) of the Internal Revenue Code requires a regulated investment company, at the close of each quarter, to have at least 50 percent of total assets in cash, government securities, other RIC shares and holdings where no single issuer exceeds 5 percent of assets or 10 percent of that issuer's voting stock, and no more than 25 percent of assets in any one issuer. A fund meeting the 5 percent limit on half its book cannot hold fewer than 10 names in that half. The rule is a tax-status requirement for funds, not a finding about individuals."
+  - q: "Does a 40 percent position in one stock count the same as one stock out of 13?"
+    a: "No. Position weight changes the arithmetic more than the count does. The effective number of positions is 1 divided by the sum of squared weights. Thirteen equal positions give an effective count of 13. One position at 40 percent plus twelve at 5 percent gives an effective count of about 5, so the portfolio behaves like a 5-stock book even though the statement lists 13 lines."
+---
+
+The honest short answer: the classic studies put the number between 10 and 40. [Evans and Archer in 1968](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1540-6261.1968.tb00315.x) built random portfolios and watched the standard deviation flatten within the first handful of stocks, which became the "10 stocks is enough" rule. [Statman in 1987](https://www.cambridge.org/core/journals/journal-of-financial-and-quantitative-analysis/article/abs/how-many-stocks-make-a-diversified-portfolio/CE5CDF2C7225FC1E0EDE3E700A3C66A7) weighed the benefit against the cost and found at least 30 for a borrowing investor and 40 for a lending one. [Campbell, Lettau, Malkiel and Xu in 2001](https://www.nber.org/papers/w7590) found the number needed had risen over 1962 to 1997 because individual stocks had become less correlated with each other. [Bessembinder in 2018](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2900447) reframed the question entirely: most stocks lose to Treasury bills over their lifetimes and the market's gain comes from a small minority, so the risk of a small portfolio is missing the winners, not only volatility. And the number changes with what the stocks are, how they are weighted, what the funds next to them hold, and whether the reader's paycheck already depends on one of them.
+
+This post reports what each study measured and found, and where they disagree. It does not tell anyone what to hold.
+
+## What the studies actually measured
+
+"How many stocks" is really four different questions, and each study answered a different one.
+
+| Study | Year | Method | Number found |
+|---|---|---|---|
+| Evans and Archer, Journal of Finance | 1968 | Random portfolios of 1 to 40 stocks drawn from S&P 500 constituents, repeated 60 times; measured average standard deviation of returns | Dispersion flattened within the first handful of stocks; became the basis of the 10-stock rule |
+| Statman, Journal of Financial and Quantitative Analysis | 1987 | Compared the marginal risk reduction of each added stock against the cost of holding it, benchmarked to an index fund | At least 30 (borrowing investor) to 40 (lending investor) |
+| Campbell, Lettau, Malkiel and Xu, Journal of Finance | 2001 | Decomposed volatility into market, industry and firm-level components, 1962 to 1997 | No fixed number; the count needed for a given level of diversification increased over the period |
+| Bessembinder, Journal of Financial Economics | 2018 | Lifetime buy-and-hold returns of every US common stock in CRSP, 1926 to 2016, against one-month Treasury bills | No count; most stocks underperform T-bills and a small minority produce the net gain |
+| IRC section 851(b)(3) | Current law | Tax-status test for regulated investment companies | 5 percent per issuer on at least half the book, so a minimum of 10 names in that half |
+
+### Evans and Archer, 1968: the origin of "10 stocks"
+
+[Evans and Archer](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1540-6261.1968.tb00315.x) drew random portfolios from S&P 500 constituents, sized from one stock up to 40, repeated the draw 60 times per size, and plotted the average standard deviation of each set. The curve fell steeply at first and then flattened. Their conclusion, that the economic justification for going much beyond about 10 securities was doubtful, is where the 10-stock rule of thumb comes from. The measure was standard deviation of equal-weight portfolios drawn at random, so the result describes blind picking, not a portfolio anyone actually holds.
+
+### Statman, 1987: 30 to 40 once cost enters
+
+[Statman's paper](https://www.cambridge.org/core/journals/journal-of-financial-and-quantitative-analysis/article/abs/how-many-stocks-make-a-diversified-portfolio/CE5CDF2C7225FC1E0EDE3E700A3C66A7) is titled with the exact question and opens by contradicting the 10-stock view. His method was to ask when the marginal reduction in risk from the next stock stops paying for the cost of holding it, using an index fund as the comparison. The abstract states the finding: "a well-diversified portfolio of randomly chosen stocks must include at least 30 stocks for a borrowing investor and 40 stocks for a lending investor." The difference between 10 and 30 is not a disagreement about the shape of the curve. Evans and Archer looked at where the curve flattens visually; Statman priced the remaining gap and found it was still worth closing at 10, 20 and beyond.
+
+### Campbell, Lettau, Malkiel and Xu, 2001: the number is not fixed
+
+[Campbell, Lettau, Malkiel and Xu](https://www.nber.org/papers/w7590) split stock volatility into market, industry and firm-level pieces from 1962 to 1997 and found "a noticeable increase in firm-level volatility relative to market volatility." Because the firm-specific piece is what diversification removes, its growth means more holdings are needed to reach the same level of risk. The abstract puts it directly: "correlations among individual stocks and the explanatory power of the market model for a typical stock have declined, while the number of stocks needed to achieve a given level of diversification has increased." A count that fit 1968 data did not fit 1997 data; the number moves with the correlation structure of the market.
+
+### Bessembinder, 2018: the count is the wrong question
+
+[Bessembinder](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2900447) measured the lifetime buy-and-hold return of every US common stock in the CRSP database from 1926 to 2016 against one-month Treasury bills. Most stocks lost that comparison. The [ASU summary of his work](https://wpcarey.asu.edu/department-finance/faculty-research/do-stocks-outperform-treasury-bills) states that the best-performing 4 percent of listed companies account for the entire net gain of the US stock market since 1926, while "the remaining 96 percent of stocks collectively matched one-month T-bills." The reason the market still beats T-bills is positive skewness: a few enormous winners offset thousands of losers.
+
+This changes what a small portfolio risks. The earlier studies treated risk as variance, and variance falls fast with the first few stocks. Bessembinder's data says the more expensive risk is missing the handful of companies that produced the return, and a 10-stock portfolio drawn from thousands has a real chance of holding none of them. The ASU page draws the same conclusion: "active strategies, which tend to be poorly diversified, most often underperform."
+
+## Why there is no single number
+
+### The measure of risk
+
+Standard deviation, the measure in the classic papers, converges quickly. Drawdown and the chance of missing the winners do not. A portfolio can have a standard deviation close to the market's and still lag it by a wide margin over a decade because it never held the few names that mattered. Which of those two failures the reader cares about decides which literature applies.
+
+### Correlation between the stocks chosen
+
+Here is the arithmetic the studies share, with a worked illustration. For N equal-weight positions, portfolio variance = average variance / N + (1 - 1/N) x average covariance. The first term is the piece that shrinks as stocks are added. The second is the floor.
+
+Illustration, not a measurement of any real market: set every stock's variance to 1 and every pairwise correlation to 0.3, so average covariance is 0.3.
+
+- 1 stock: variance 1.00, standard deviation 100 percent of a single stock
+- 5 stocks: 0.2 + 0.8 x 0.3 = 0.44, standard deviation about 66 percent
+- 10 stocks: 0.1 + 0.9 x 0.3 = 0.37, standard deviation about 61 percent
+- 20 stocks: 0.05 + 0.95 x 0.3 = 0.335, standard deviation about 58 percent
+- 40 stocks: 0.025 + 0.975 x 0.3 = 0.318, standard deviation about 56 percent
+- Floor (infinite N): 0.30, standard deviation about 55 percent
+
+At 10 stocks the gap to the floor is about 6 points; at 40 it is about 1.5 points. That is the Evans and Archer curve, and it is why 10 looks like enough on a chart.
+
+Now drop the correlation to 0.15, which is the direction Campbell and co-authors found the market moving:
+
+- 10 stocks: 0.1 + 0.9 x 0.15 = 0.235, standard deviation about 48 percent
+- 40 stocks: 0.025 + 0.975 x 0.15 = 0.171, standard deviation about 41 percent
+- Floor: 0.15, standard deviation about 39 percent
+
+The gap at 10 stocks is now about 10 points instead of 6. Lower correlation makes diversification more valuable per stock and pushes the count up at the same time. The reverse also holds: ten stocks in one sector, with a pairwise correlation nearer 0.7, sit almost on the floor at 10 because the floor itself is high. The count looks diversified and the portfolio is not. The [diversification guide](/blog/portfolio-diversification-guide) covers correlation across sectors and asset classes in more depth.
+
+### Position weights
+
+Every study above used equal weights. Real portfolios are not equal-weighted, and the effect is larger than the count. With unequal weights, the shrinking term becomes the sum of squared weights instead of 1/N, so the effective number of positions is 1 divided by that sum.
+
+Illustration: 13 equal positions have a sum of squared weights of 1/13, an effective count of 13. One position at 40 percent plus twelve at 5 percent has a sum of 0.16 + 12 x 0.0025 = 0.19, an effective count of about 5.3. The statement lists 13 lines; the portfolio behaves like a 5-stock book, and its drawdown is dominated by one name. The [concentration problem post](/blog/portfolio-concentration-problem) works through the same weight math using the Herfindahl index, which is this sum of squared weights under another name.
+
+### What the funds next to the stocks hold
+
+A portfolio of 8 stocks plus an S&P 500 fund is not 8 positions. The fund holds roughly 500 companies at market-cap weights, so the look-through count is in the hundreds, and any of the 8 direct holdings that is also a large index constituent is owned twice, with the two weights adding. The same look-through cuts the other way with several funds: an S&P 500 fund, a total-market fund and a Nasdaq-100 fund share their largest names, so three fund lines can amount to one bet on the same ten companies. The [ETF overlap post](/blog/etf-overlap) covers how that duplication is measured, and it is why the stock count alone says little about a portfolio that also holds funds.
+
+<CTACard title="Count the positions the funds are hiding" description="Enter the ETFs you hold and see the shared underlying companies and their combined weight. Free, no account needed." buttonText="Run the ETF overlap tool" href="/tools/etf-overlap" />
+
+### Employer stock and RSUs
+
+The last variable is outside the brokerage account. An investor whose salary comes from the same company as a large vested RSU position holds that company twice: once as equity and once as income. A layoff and a stock decline at that company tend to arrive together, a correlation no count of other stocks addresses. For many people in tech the employer is the single largest position, often well above the 40 percent in the illustration, and it raises the sum of squared weights more than anything else in the book. The [RSU tax post](/blog/rsu-tax-strategies) covers the tax side of that position.
+
+## The one place the number is written down
+
+Regulated investment companies, the legal form of most mutual funds and ETFs, do have a minimum. [Section 851(b)(3) of the Internal Revenue Code](https://www.law.cornell.edu/uscode/text/26/851) requires that at the close of each quarter "at least 50 percent of the value of its total assets is represented by" cash, government securities, other RIC shares and other securities "limited, in respect of any one issuer, to an amount not greater in value than 5 percent of the value of the total assets" and "not more than 10 percent of the outstanding voting securities of such issuer." A second clause caps any single issuer at 25 percent of total assets. Arithmetically, the 5 percent limit means the tested half of the book cannot hold fewer than 10 issuers, and in practice funds hold far more.
+
+This is a tax-status test for funds, not a research finding about individuals. What is notable is that when a number had to be written down, it was a weight cap, not a count: no one issuer above 5 percent on half the assets.
+
+## Where that leaves the question
+
+The studies agree on the shape and disagree on the number because they measured different things. Variance flattens within about 10 to 20 equal-weight stocks and keeps improving slowly to 40 and beyond, faster when correlations are low and barely at all when the stocks share a sector. Priced against trading costs, the improvement was still worth paying for at 30 to 40 in 1987. The count needed rose through the 1990s as firm-specific volatility grew. And the return distribution is skewed enough that the expensive risk of a small portfolio is not its volatility but the winners it never held.
+
+Every one of those findings assumes directly held, equal-weight, randomly drawn stocks and nothing else. Real portfolios have a 40 percent position, three overlapping index funds and an employer's stock. For those, the ticker count is the least informative number on the statement; the look-through weight per company is the one that describes the risk.
+
+## Seeing the count with the funds included
+
+I build Helm Terminal. It reads the positions in connected brokerage accounts, read-only, or positions typed in by hand, and reports concentration by position, by sector and by the companies shared across funds, so the count includes what the funds hold rather than the number of lines on the statement. For the fund look-through question on its own, the [ETF overlap tool](/tools/etf-overlap) is free and needs no account. The free tier includes the portfolio dashboard, AI stock analysis, one monitored thesis and the general morning brief. Pro is $20 a month or $149 a year. None of this is financial advice, and Helm does not tell anyone how many stocks to own; it shows the weights so the reader can see what the number actually is.
+
+## Related reading
+
+- [The Concentration Problem: Why Your Portfolio Probably Has a Single Point of Failure](/blog/portfolio-concentration-problem)
+- [Portfolio Diversification Is Broken (Here's What Actually Works in 2026)](/blog/portfolio-diversification-guide)
+- [ETF Overlap: Why Two Funds Own the Same Companies](/blog/etf-overlap)
+- [Your Portfolio Is More Concentrated Than You Think](/blog/portfolio-concentration-leveraged-etfs)
+- [RSU Tax Strategies: A Complete Guide for Tech Employees](/blog/rsu-tax-strategies)
