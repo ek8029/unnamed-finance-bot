@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { WrappedLanding } from '@/components/wrapped/wrapped-landing';
 
 export const metadata: Metadata = {
-  title: 'Spotify Wrapped for Your Portfolio — Helm Wrapped | Free Investment Year in Review',
+  title: 'Helm Wrapped: Spotify Wrapped for Your Portfolio',
   description:
-    'Spotify Wrapped but for investing. See your real portfolio return vs the S&P 500, best and worst trades, investor personality type, and more. Free. Connect any brokerage in 30 seconds.',
+    'Spotify Wrapped, for investing: your real return against the S&P 500, best and worst trades, and your investor personality type. Free, any brokerage.',
   keywords: [
     'Spotify Wrapped for stocks',
     'Spotify Wrapped for investing',

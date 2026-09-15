@@ -16,7 +16,7 @@ import HomeContent from '@/components/homepage/helm-home';
 export const metadata: Metadata = {
   title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
   description:
-    'An agent that reads every filing, earnings call and release touching a position you hold, then hands you what changed with the document it came from. Exposure, taxes, earnings and thesis monitoring across all your accounts. Free AI stock analysis, no account needed.',
+    'An agent reads every filing touching a position you hold and hands you what changed, with its source. Free to start. Stock analysis needs no account.',
   alternates: { canonical: 'https://helmterminal.dev' },
   openGraph: {
     title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',

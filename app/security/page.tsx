@@ -2,7 +2,7 @@ import { LegalPageLayout } from '@/components/legal-page-layout';
 
 export const metadata = {
   title: 'Security - Helm',
-  description: 'How Helm protects your financial data and account security.',
+  description: 'How Helm protects your data: encryption, multi-factor authentication, data isolation, read-only Plaid access, and how to report a vulnerability.',
   alternates: { canonical: 'https://helmterminal.dev/security' },
 };
 

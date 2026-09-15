@@ -2,7 +2,7 @@ import { LegalPageLayout } from '@/components/legal-page-layout';
 
 export const metadata = {
   title: 'Data Deletion - Helm',
-  description: 'How to delete your Helm account and associated financial data.',
+  description: 'How to delete your Helm account and the financial data tied to it: what deletion removes, what stays separate, retention timing, and how to ask by email.',
   // Without its own canonical this page inherits the root layout's, which is
   // hardcoded to the homepage, so the page sat in the sitemap while telling
   // Google it was a duplicate of /. Apple links here from the App Store
