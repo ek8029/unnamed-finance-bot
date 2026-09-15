@@ -1,0 +1,83 @@
+---
+title: "The Wash Sale Rule: What It Actually Disallows"
+description: "The wash sale rule does not delete your loss in most cases, it moves it. Here is the 61-day window, the proportional math, the basis add-back, and the one version where the deduction really is gone."
+date: "2026-09-11"
+author: "Evan Kim"
+tags: ["wash sale rule", "wash sale", "tax loss harvesting", "capital losses", "cost basis"]
+published: true
+faq:
+  - q: "What is the wash sale rule?"
+    a: "IRC §1091 disallows a loss on a sale of stock or securities if you acquire the same or a substantially identical security within 30 days before or 30 days after that sale. Counting the sale date, that is a 61-day window. In the ordinary case the loss is not cancelled: §1091(d) adds the disallowed amount to the basis of the replacement shares, so the deduction arrives when those shares are sold instead."
+  - q: "How long is the wash sale window?"
+    a: "61 days. Thirty days before the sale, the day of the sale, and thirty days after. It runs in both directions, which surprises people: a purchase you made three weeks before deciding to sell at a loss triggers the rule just as a repurchase afterwards does."
+  - q: "How much of the loss does a wash sale disallow?"
+    a: "It is proportional to the shares replaced. Sell 100 shares at a $1,000 loss and buy 40 back inside the window, and $400 is disallowed while $600 stays deductible. Buy all 100 back and the whole $1,000 is disallowed. Buying more than you sold does not disallow more than the loss, and only the first shares acquired, up to the count sold, are treated as replacement property."
+  - q: "Does a wash sale mean I lose the deduction?"
+    a: "Usually no. The disallowed amount is added to the cost basis of the replacement shares under §1091(d), so it reduces your gain or increases your loss when you sell them. The deduction is delayed, not destroyed. The exception is a purchase inside an IRA or Roth IRA, where Rev. Rul. 2008-5 disallows the loss and restores no basis anywhere, so the deduction really is gone."
+  - q: "Do dividend reinvestments trigger wash sales?"
+    a: "Yes. A reinvestment is a purchase, and §1091 does not care whether you meant to make it. An automatic reinvestment a week after a loss sale disallows part of the loss, sized to the shares the reinvestment bought. This is one of the most common ways a wash sale happens without anyone deciding to buy anything."
+  - q: "Does the wash sale rule apply across different accounts?"
+    a: "Yes. The rule is tested at the taxpayer level, not per account. A loss sale in a taxable brokerage account and a purchase in a different brokerage, or in an IRA, or by a spouse, are the same taxpayer for this purpose. Your broker only reports wash sales it can see within the accounts it holds, so a 1099-B can be correct for that broker and still incomplete for your return."
+  - q: "What counts as substantially identical?"
+    a: "The IRS has never defined the term for funds. Stock of the same company is clearly identical. Two different index funds tracking the same index have never been ruled on, and the position sits in an area where practice is settled by convention rather than by authority. Nothing automated can resolve it for you, and any tool claiming to has decided something the IRS has not."
+---
+
+The wash sale rule gets described as a punishment. Sell at a loss, buy it back too soon, lose the deduction. That is wrong in most cases, and the accurate version is more useful: the rule moves the deduction rather than removing it.
+
+Getting the difference right matters because the two versions call for completely different reactions. If a wash sale destroyed your loss, triggering one would be a real cost. If it defers it, triggering one is usually a bookkeeping event, and the thing worth tracking is where the basis went.
+
+## The window is 61 days, and it runs backwards too
+
+IRC §1091 disallows a loss when you acquire the same or a substantially identical security within 30 days before or 30 days after the sale. With the sale date itself, that is 61 days.
+
+The backward half is the part that catches people. Buying more of a position and then selling a different lot at a loss two weeks later triggers the rule exactly as buying it back afterwards does. Nothing about the sequence matters. The statute asks whether an acquisition sits inside the window, and a purchase that preceded the decision to sell is still an acquisition inside the window.
+
+Holding shares you bought before the window opened is not a wash sale. §1091 turns on acquiring, not on owning. If you bought a position two years ago, sell part of it at a loss, and buy nothing during the 61 days, there is no wash sale no matter how much of the position you still hold.
+
+## The math is proportional
+
+The disallowed amount scales with how much of the sold position you replaced.
+
+Sell 100 shares for $4,000 against a $5,000 basis. That is a $1,000 loss. Now:
+
+- Buy 100 shares back inside the window and the full $1,000 is disallowed.
+- Buy 40 back and $400 is disallowed, leaving $600 deductible.
+- Buy 150 back and $1,000 is disallowed, not $1,500. The disallowance is capped at the loss, and only 100 shares count as replacement property.
+
+When you bought back more than you sold, Reg. §1.1091-1(b) and (c) match the shares in order of acquisition. The earliest purchases inside the window become the replacement shares, up to the number sold. The rest carry their own basis untouched.
+
+One thing the proportional shorthand hides: it is exact only when every share sold came from the same lot at the same price. A sale drawn from two lots bought years apart is matched share by share, and which shares you identified as sold changes the answer, sometimes from the whole loss to none of it.
+
+The [wash sale calculator](/tools/wash-sale-calculator) runs this for any combination of purchases, including several lots at different dates.
+
+## Where the disallowed loss goes
+
+§1091(d) adds the disallowed amount to the basis of the replacement shares.
+
+Take the full-disallowance case above. You sold for $4,000 against a $5,000 basis and bought 100 shares back for $4,200. The $1,000 loss is disallowed, and the new lot's basis is not $4,200. It is $5,200. Sell that lot later for $4,800 and you have a $400 loss rather than a $600 gain.
+
+The deduction moved. It did not disappear. That is the whole difference between the rule as it is written and the rule as it is usually described.
+
+There is a second transfer alongside it. Under IRC §1223(3) the replacement shares inherit the holding period of the shares you sold. A lot bought last week can already be long term if the position it replaced had been held for three years. Brokerage statements generally display the purchase date rather than the tacked holding period, so this one gets missed in both directions.
+
+## The one case where the loss is actually gone
+
+Buy the replacement inside an IRA or Roth IRA and the deferral stops working.
+
+Rev. Rul. 2008-5 holds that the loss on the taxable sale is disallowed and your basis in the IRA is not increased. There is no lot anywhere carrying the disallowed amount, so nothing brings the deduction back. The loss is permanently lost.
+
+This does not require a deliberate repurchase. An automatic monthly contribution landing on the same fund inside a retirement account does it, and so does a dividend reinvestment there. Nobody makes a decision and the deduction is gone.
+
+## Two things a calculator cannot resolve
+
+**What counts as substantially identical.** For stock of the same company the answer is obvious. For funds it is genuinely unsettled: the IRS has never defined the term for them, and two different providers' funds tracking the same index have not been ruled on. Any tool that tells you a specific pair is or is not substantially identical has decided a question the IRS has left open.
+
+**What you actually bought.** §1091 is tested across everything one taxpayer owns. A purchase in a different brokerage, in a retirement account, or by a spouse counts the same as a repurchase in the account where you sold. Your broker reports wash sales it can see inside the accounts it holds, which means a 1099-B can be accurate for that broker and still incomplete for your return. Reconciling that is manual work, and it is the part where the arithmetic stops being the hard bit.
+
+## The measurement problem underneath
+
+Every calculation here depends on a complete list of purchases in a 61-day window across every account one person controls. That list is the actual difficulty. The math takes seconds once you have it.
+
+Helm approaches it from the transaction side. It reads the transactions in the accounts you connect, finds positions carrying a loss, and screens each against purchases in the previous 30 days across every linked account, retirement accounts included, which is where the version that destroys the deduction comes from. Two limits sit on the result rather than in a footnote: the forward half of the window is unknowable because those purchases have not happened yet, and any account you have not connected stays invisible. That screening is part of the Pro tax center. The [wash sale calculator](/tools/wash-sale-calculator) and the [tax-loss harvesting calculator](/tools/tlh-calculator) are free and need no account.
+
+A clear screen is never a clearance. It means nothing was found in the half of the window that can be seen, in the accounts that were looked at.

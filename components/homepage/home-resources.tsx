@@ -31,6 +31,9 @@ export function HomeResources() { return <>
               { title: 'TLH Calculator', desc: 'Estimate annual tax savings from loss harvesting', href: '/tools/tlh-calculator' },
               { title: 'RSU Vesting Calculator', desc: 'Vesting timeline, tax liability, concentration risk', href: '/tools/rsu-calculator' },
               { title: 'Earnings Concentration Risk', desc: 'When 40% of your portfolio reports in one week', href: '/blog/portfolio-earnings-concentration-risk' },
+              { title: 'Wash Sale Calculator', desc: 'How much of a loss is disallowed, and the new basis', href: '/tools/wash-sale-calculator' },
+              { title: 'ETF Overlap Tool', desc: 'The companies two funds both hold, and at what weight', href: '/tools/etf-overlap' },
+              { title: 'The Wash Sale Rule', desc: 'The 61-day window, the basis add-back, the IRA trap', href: '/blog/wash-sale-rule' },
             ].map((item) => (
               <Link key={item.href} href={item.href} className="group p-5 border border-[var(--color-border-subtle)] rounded-md hover:border-[var(--color-gold-border)] transition-colors">
                 <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors mb-1 m-0">{item.title}</h3>
@@ -83,7 +86,7 @@ export function HomeFooter() { return <>
             </div>
             <div>
               <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Tools</h3>
-              {[['TLH Calculator', '/tools/tlh-calculator'], ['RSU Calculator', '/tools/rsu-calculator'], ['Compare', '/compare']].map(([l, h]) => (
+              {[['TLH Calculator', '/tools/tlh-calculator'], ['Wash Sale Calculator', '/tools/wash-sale-calculator'], ['RSU Calculator', '/tools/rsu-calculator'], ['ETF Overlap', '/tools/etf-overlap'], ['Compare', '/compare']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>
