@@ -1,0 +1,101 @@
+---
+title: "How to Backtest a Portfolio"
+description: "What a portfolio backtest measures, the four inputs it needs, the outputs it reports, and four specific ways the results can mislead you."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["backtesting", "portfolio construction", "asset allocation", "investing tools"]
+published: true
+faq:
+  - q: "What is a portfolio backtest?"
+    a: "A backtest applies a fixed allocation and rebalancing rule to historical market data and reports what that combination would have returned over a chosen period. It is a simulation of a rule applied to the past, not a record of an account that existed and not a forecast of what happens next."
+  - q: "What is a good CAGR for a backtest?"
+    a: "There is no single good number because CAGR depends on the asset mix, the period tested, and how much volatility the investor is willing to hold through. A higher CAGR in a backtest usually comes paired with a deeper drawdown and higher standard deviation, so the CAGR figure on its own says little without those two numbers next to it."
+  - q: "Can a backtest predict future returns?"
+    a: "No. A backtest describes what a specific rule did over a specific historical window. Changing the start date, the end date, or the exact tickers used as stand-ins for an asset class can change the reported CAGR, drawdown, and volatility meaningfully, which is why the same allocation tested over different windows produces different headline numbers."
+  - q: "Does a backtest account for taxes?"
+    a: "Most free backtesting tools report pre-tax total return using fund or index level data. They do not subtract capital gains taxes an investor would owe on distributions or on rebalancing trades in a taxable account, so a backtested return is higher than what a taxable investor would have kept after taxes and after any trading costs."
+  - q: "What is survivorship bias in a backtest?"
+    a: "Survivorship bias happens when a backtest or a fund performance study only includes funds, tickers, or index members that still exist today, leaving out the ones that closed or were removed for poor performance. This flatters the historical numbers because the failures are missing from the sample."
+  - q: "Is Portfolio Visualizer free?"
+    a: "Portfolio Visualizer offers backtesting features without a paid account, alongside more advanced tools that require sign-in or a paid tier. Feature availability changes, so the tool's own site is the source for what is currently free versus gated."
+---
+
+A backtest takes a fixed set of holdings, a rule for rebalancing them, a start date, and runs that combination against historical prices to see what it would have returned. That is the whole mechanism. It is a simulation of a rule applied to the past, not a record of a real account and not a forecast of what the same rule does going forward. The distinction matters because a backtest can be built correctly and still produce a number that has nothing to do with a real investor's outcome, depending on what went into it and what got left out.
+
+This covers what a backtest needs as input, what it reports as output, four specific ways the reported numbers mislead people who do not know to check for them, a worked comparison of two real fund allocations over the last decade, and a table of free tools that run this analysis without a subscription.
+
+## What a backtest is, and is not
+
+A backtest is arithmetic, not evidence about the future. Feed it an allocation (60% stocks, 40% bonds, for instance), a rebalancing rule, a start date, and historical price series for the assets involved, and it will tell you the growth rate, the volatility, and the worst decline that combination produced over that specific window. It cannot tell you whether that window was representative of markets in general, whether the assets tested are still investable in the same form today, or what the same allocation will do over the next ten years. It also cannot see a portfolio that has never existed in that exact shape before, since it has no history to run against.
+
+## The four inputs
+
+**Allocation.** The percentage split across asset classes or specific tickers. This is usually expressed as target weights (60/40, or 70% US stock, 20% international stock, 10% bonds) rather than dollar amounts, since the backtest reinvests and rebalances proportionally.
+
+**Rebalancing rule.** How often the portfolio gets reset back to target weights: never, annually, quarterly, or by a drift threshold ("rebalance when an asset moves 5 percentage points off target"). This choice alone changes the reported return, because rebalancing sells winners and buys laggards on a schedule, which behaves differently depending on whether markets are trending or mean-reverting during the test window. The mechanics of that choice are covered in [what portfolio rebalancing does](/blog/what-is-portfolio-rebalancing).
+
+**Start date.** The date the simulation begins. This sounds trivial and is actually one of the biggest hidden levers in the whole exercise, covered below.
+
+**Contributions.** Whether the test assumes a lump sum at the start, regular additions, or withdrawals. A backtest with monthly contributions is answering a different question than one with a single starting balance, because it changes when money is exposed to which part of the historical sequence of returns. This is also where the reported CAGR starts to diverge from what any real contributor experienced, since CAGR is a time-weighted figure that assumes a static pool of money, not the money-weighted experience of contributing along the way. The difference between those two ways of measuring a return is its own topic, covered in [time-weighted versus money-weighted return](/blog/time-weighted-vs-money-weighted-return).
+
+## The outputs
+
+**CAGR (compound annual growth rate).** The single smoothed annual rate that would carry the starting balance to the ending balance. It hides the path, which is why it is never reported alone in a serious backtest.
+
+**Max drawdown.** The largest peak-to-trough decline during the tested window, measured at whatever frequency the tool uses (daily or monthly). This is different from the worst calendar year, which only looks at January-to-December buckets and can miss a decline that started in November and bottomed the following June.
+
+**Volatility.** The standard deviation of periodic returns, usually annualized. Two portfolios with the same CAGR can have very different volatility, and volatility is the number that determines how much of the CAGR an investor actually gets to keep, since panic-selling during a drawdown converts a paper loss into a permanent one.
+
+**Sharpe ratio.** Excess return over a risk-free rate divided by volatility, a single number meant to answer "how much return per unit of risk." It rewards smoother paths, not just higher returns, and a full explanation of what counts as a reasonable Sharpe ratio for a given asset mix is in [what is a good Sharpe ratio](/blog/what-is-a-good-sharpe-ratio).
+
+**Worst year.** The single worst calendar year in the tested period. Useful as a plain-language gut check, cruder than max drawdown, and worth reporting alongside it rather than instead of it.
+
+## Four ways a backtest misleads
+
+**Survivorship bias.** A backtest built from today's list of funds, ETFs, or index members and run backward in time is quietly excluding everything that failed and disappeared along the way. Wikipedia's summary of the problem in fund data is direct: "Many losing funds are closed and merged into other funds to hide poor performance," to the point that "70% of extant funds could truthfully claim to have performance in the first quartile of their peers if the peer group includes funds that have closed." A 1996 study by Elton, Gruber, and Blake, cited in the same entry, put the resulting bias in US mutual fund performance studies at [0.9% a year](https://en.wikipedia.org/wiki/Survivorship_bias). The same article notes the fix for index backtests: use the actual historical membership of the index with entry and exit dates, not today's roster projected backward.
+
+**Lookback bias, or start-date sensitivity.** The same allocation tested from two different start dates a few months apart can produce meaningfully different CAGR, drawdown, and Sharpe numbers, simply because the window catches or misses a specific crash or rally near the edge. Portfolio Charts builds a metric for exactly this into its own [Portfolio Matrix tool](https://portfoliocharts.com/portfolio/portfolio-matrix/), reporting "Start Date Sensitivity" alongside CAGR and drawdown for each allocation it tracks, described as a measure of how much the reported numbers swing depending on where the test happens to begin. A backtest run over one arbitrary window and presented as the answer, rather than one data point among many possible start dates, is a lookback-biased result whether or not anyone chose the window deliberately.
+
+**Overfitting.** Test enough variations of an allocation, a rebalancing threshold, or an asset substitution against the same historical data, and some combination will look excellent purely by chance. This is the same statistical trap known outside of finance as data dredging: "when large numbers of tests are performed, some produce false results ... hence 5% of randomly chosen hypotheses might be (erroneously) reported to be statistically significant at the 5% significance level ... by chance alone," per [Wikipedia's summary of the mechanism](https://en.wikipedia.org/wiki/Data_dredging). A portfolio backtest tuned across dozens of rebalancing bands and asset weightings until the curve looks best is running the identical risk: the winning combination may be fit to noise in that one dataset rather than to anything durable.
+
+**Ignoring costs and taxes.** A backtest run on index-level or fund-level total return data is already showing a return net of that fund's own expense ratio, but nothing else. It is not showing brokerage costs from actually executing the rebalancing trades, and it is not showing the taxes an investor in a taxable account owes on capital gains distributions or on gains realized by the rebalancing itself. Wikipedia's entry on the [expense ratio](https://en.wikipedia.org/wiki/Expense_ratio) is a reminder of just the first layer of this gap: "An expense ratio of 1% per annum means that each year 1% of the fund's total assets will be used to cover expenses," compounding away from the gross return every year the money stays invested. Taxes owed on distributions in a taxable account sit on top of that and a backtest built on fund total return figures does not model them at all.
+
+## A worked example: 60/40 versus 100% equities
+
+iShares publishes fact sheets for two ETFs that make a clean stand-in for this comparison: [AOR](https://www.ishares.com/us/literature/fact-sheet/aor-ishares-core-60-40-balanced-allocation-etf-fund-fact-sheet-en-us.pdf), the iShares Core 60/40 Balanced Allocation ETF, and [IVV](https://www.ishares.com/us/literature/fact-sheet/ivv-ishares-core-s-p-500-etf-fund-fact-sheet-en-us.pdf), the iShares Core S&P 500 ETF. Both fact sheets are dated June 30, 2026.
+
+AOR's 10-year annualized NAV return is 8.40%, with a 3-year standard deviation of 8.81%. IVV's 10-year annualized NAV return is 15.47%, with a 3-year standard deviation of 13.05%, about 48% higher than AOR's.
+
+Compounding $10,000 at each rate for 10 years, using (1 + CAGR)^10:
+
+- 60/40 (AOR): $10,000 x (1.0840)^10 ≈ $10,000 x 2.240 ≈ **$22,400**
+- 100% equities (IVV): $10,000 x (1.1547)^10 ≈ $10,000 x 4.214 ≈ **$42,100**
+
+The gap, roughly $19,700 on a $10,000 start, is the reward for carrying more volatility, and the fact sheets show the other side of that trade in their calendar-year tables. Both funds had their worst of the five calendar years shown in 2022: AOR's NAV fell 15.30% that year, IVV's fell 18.13%, a difference of 2.83 percentage points in the down year. That is the bond sleeve doing its job.
+
+Two limits on this example are worth stating directly. A fund fact sheet reports calendar-year returns and an annualized CAGR, not the peak-to-trough max drawdown a real backtest tool computes from daily data, so the true worst decline inside either fund's 10-year window was almost certainly larger than the 2022 calendar-year figure. And both return numbers are pre-tax NAV total returns net of each fund's own expense ratio (0.15% net for AOR, 0.03% for IVV) but before any investor-level taxes, exactly the gap described above.
+
+## Free backtesting tools
+
+Feature sets checked directly on each site during the week of September 16, 2026.
+
+| Tool | What it does | Notable inputs | Cost |
+|---|---|---|---|
+| [Portfolio Visualizer](https://www.portfoliovisualizer.com/backtest-portfolio) | Backtests up to 10 assets per portfolio against benchmarks, 1985 to present | Rebalancing (none, monthly, quarterly, semi-annual, annual), contributions or withdrawals, optional leverage | Core backtesting available without a paid account; more advanced tools require sign-in or a paid tier |
+| [testfol.io](https://testfol.io/) | Browser backtester for ETFs, funds and stocks; the app renders client-side, so its feature list was not readable at draft time and is not summarized here | See the site | Not verified here |
+| [Backtest by Curvo](https://curvo.eu/backtest/en) | Backtester for European-listed ETFs in euros; its own article on the tool describes rebalancing and fee simulation | Rebalancing and broker fee simulation, per the fetched Curvo article | Free per that article; the site page wins |
+| [Portfolio Matrix by Portfolio Charts](https://portfoliocharts.com/portfolio/portfolio-matrix/) | Ranks 21 named allocations (Golden Butterfly, Permanent Portfolio, and others) across return, drawdown, and start-date sensitivity metrics, 1970 to present | Sortable by CAGR, standard deviation, Ulcer Index, deepest drawdown, and start-date sensitivity | Free, with optional paid support through the site's shop |
+
+## Where this fits next to a live book
+
+I build Helm Terminal, a portfolio intelligence terminal, so weigh this next paragraph accordingly. Helm does not backtest. It reads a live book: the positions actually held across connected brokerages today, not a hypothetical allocation run against history. A backtest answers "what would 60/40 have done since 2016." Helm answers "what is this specific set of holdings exposed to right now," which is a different question with a different kind of usefulness. Someone deciding on a target allocation is better served by the tools above; someone who already holds a mix of accounts and wants to see the concentration and exposure sitting inside it is closer to what Helm does.
+
+<CTACard title="See what your actual book is exposed to" description="Helm reads the positions across your connected brokerages and shows concentration, overlap, and exposure today, not a backtested hypothetical." buttonText="Open the terminal" href="/signup" />
+
+## Related reading
+
+- [What Is a Good Sharpe Ratio?](/blog/what-is-a-good-sharpe-ratio)
+- [Time-Weighted vs Money-Weighted Return](/blog/time-weighted-vs-money-weighted-return)
+- [Portfolio Diversification Guide](/blog/portfolio-diversification-guide)
+- [What Is Portfolio Rebalancing?](/blog/what-is-portfolio-rebalancing)
+- [Free ETF Overlap Tool](/tools/etf-overlap)
