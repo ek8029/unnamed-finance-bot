@@ -1,0 +1,100 @@
+---
+title: "Dividend Income Calculator: How the Compounding Works"
+description: "How a dividend income calculator compounds reinvestment, why yield on cost misleads, growth versus starting yield, and the tax step it leaves out."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["dividends", "dividend investing", "calculator", "reinvestment", "yield on cost"]
+published: true
+faq:
+  - q: "How do you calculate projected dividend income?"
+    a: "Multiply the dividend yield by the value of the position to get one year's income. To project several years, that income is added back to the value if it is reinvested, price growth is applied on top, and the yield itself is allowed to change if the dividend is expected to grow at a different rate than the price. Each year's income is the yield for that year times the value at the start of that year."
+  - q: "Is dividend reinvestment worth doing?"
+    a: "It depends on whether the cash is needed now. Reinvesting buys more shares, which earn their own dividends the next year, so the income and the value both compound faster than they would with the dividend paid out. Someone who needs the cash for living expenses is not wrong to take it as income instead; that is a spending decision, not a return the reinvestment forgoes for free."
+  - q: "What is yield on cost and why is it misleading?"
+    a: "Yield on cost divides the current dividend by the price originally paid, so it climbs every time the dividend is raised even if nothing else about the investment has changed. It describes a return relative to a purchase price from years ago, not the return the money is earning today. The current yield, dividend divided by today's value, is the comparable figure to any other yield quoted today."
+  - q: "Is a high starting yield or a high dividend growth rate better?"
+    a: "Over a short holding period, the higher starting yield usually pays more. Over a long enough horizon, a materially higher growth rate can overtake it in both annual income and ending value, because growth compounds on top of itself while a flat yield does not. Which one actually happens depends on the specific yield and growth numbers, not a rule that growth always wins."
+  - q: "Are dividends taxed the same as capital gains?"
+    a: "Some are and some are not. A dividend that meets the qualified dividend tests is taxed at the same 0, 15, and 20 percent rates as long-term capital gains. A dividend that does not meet those tests is an ordinary dividend, taxed at the same rates as wages. The distinction is on the 1099-DIV, and it is not something a dividend income calculator can determine from a yield and a growth rate alone."
+  - q: "Does a dividend income calculator account for dividend cuts?"
+    a: "No. It projects forward from a yield and a growth rate held constant for every year entered, and a real payer can cut, suspend, or raise its dividend at any time for reasons the projection has no way to see coming. The output is what the assumptions imply, not a forecast of what a specific holding will do."
+---
+
+A dividend income calculator takes four numbers, a starting investment, a yield, a growth rate, and a number of years, and turns them into a year-by-year projection of income and portfolio value. The arithmetic behind it is simple enough to do by hand for a few years at a time, and doing it by hand once is the fastest way to see what the calculator is actually assuming, and where those assumptions can make the output misleading.
+
+This post works through the mechanics with a hypothetical example, not a real security, then covers the two places dividend projections most often go wrong: mistaking yield on cost for a real return, and assuming a higher starting yield is automatically the better choice over a growing one.
+
+## How the compounding works
+
+Three things change every year in a dividend reinvestment projection: the portfolio's value, the dividend it pays, and, if the dividend is reinvested, the number of dollars that value represents going forward.
+
+The order matters. In each year: the dividend for that year is the current yield times the value at the start of the year, the value then grows by the price growth rate, and if dividends are reinvested, that year's dividend is added back at year end. The yield used is not fixed either. If the dividend is expected to grow at its own rate, separate from the share price, the yield used the following year is higher or lower depending on which grew faster.
+
+Here is a hypothetical $10,000 investment with a 4 percent starting yield, a 6 percent annual dividend growth rate, and a 5 percent annual share price growth rate, with dividends reinvested. These are assumptions for illustration, not a forecast for any real holding.
+
+**Year 1:** the yield is 4 percent, so the dividend is 4% x $10,000 = $400. The value grows 5 percent to $10,500, and the $400 is added back: $10,900.
+
+**Year 2:** the yield is now 4% x 1.06 = 4.24 percent, since the dividend grew 6 percent while the price grew only 5. The dividend is 4.24% x $10,900 = $462.16. The value grows 5 percent to $11,445, plus the dividend: $11,907.16.
+
+Carried out for ten years, the same three steps every year, the projection looks like this:
+
+| Year | Yield used | Dividend income | Cumulative dividends | Ending value |
+|---|---|---|---|---|
+| 1 | 4.00% | $400.00 | $400.00 | $10,900.00 |
+| 2 | 4.24% | $462.16 | $862.16 | $11,907.16 |
+| 3 | 4.49% | $535.16 | $1,397.32 | $13,037.68 |
+| 4 | 4.76% | $621.12 | $2,018.44 | $14,310.68 |
+| 5 | 5.05% | $722.68 | $2,741.12 | $15,748.89 |
+| 6 | 5.35% | $843.02 | $3,584.14 | $17,379.35 |
+| 7 | 5.67% | $986.12 | $4,570.26 | $19,234.44 |
+| 8 | 6.01% | $1,156.86 | $5,727.12 | $21,353.02 |
+| 9 | 6.38% | $1,361.34 | $7,088.46 | $23,782.01 |
+| 10 | 6.76% | $1,607.17 | $8,695.63 | $26,578.28 |
+
+Two things happen at once here. The yield used climbs from 4.00 to 6.76 percent because the dividend is compounding faster than the price. And the dividend income more than quadruples, from $400 to $1,607, which is a combination of the yield climbing and the value it is applied to climbing at the same time. Neither effect alone explains the year 10 number; both are doing work.
+
+The free [dividend income calculator](/tools/dividend-income-calculator) runs this same math for any starting investment, yield, growth rate, and horizon up to 50 years, with an option to add a fixed annual contribution and to see the result with dividends paid out instead of reinvested.
+
+## Why yield on cost misleads
+
+Yield on cost divides the current dividend by the price originally paid for the position, not by what the position is worth today. In the example above, the year 10 dividend is $1,607.17 and the original investment was $10,000, so the yield on cost is 16.07 percent. That is a real number, and it is not wrong, but it is not the yield anyone is earning in year 10.
+
+The position is not worth $10,000 anymore. It is worth $26,578.28. Dividing the same $1,607.17 by that current value gives 6.05 percent, which is close to the 6.76 percent current yield the calculator actually used that year (the small gap is because the current-value figure divides by the year-end value rather than the start-of-year value the dividend was paid on). Either way, the number in the 5 to 7 percent range is what the money is earning today. The 16 percent figure is a statement about how far the position has come from a purchase made a decade ago, which is a legitimate thing to track, but it is not comparable to any other yield quoted today, including the yield on a brand new position in the same security.
+
+The practical effect is that yield on cost always looks better than current yield for a position that has been held and has grown, and it looks better by a wider margin the longer it has been held and the more it has grown. A holding with a flat, never-raised dividend and a rising price will show a falling yield on cost's counterpart, current yield, over time even though yield on cost cannot fall on a position that has never cut its dividend. Comparing two positions by yield on cost mostly measures how long ago and how cheaply each was bought, not which one pays more today.
+
+## Dividend growth versus starting yield
+
+A common decision in building dividend income is choosing between a holding with a high starting yield and flat or slow growth, and one with a lower starting yield but faster growth. Running both through the same calculator with the same horizon shows why this is not a decision with a fixed answer.
+
+Two hypothetical $10,000 positions, both growing 5 percent a year in price with dividends reinvested, run for 20 years:
+
+**Position A:** 6 percent starting yield, 0 percent dividend growth.
+**Position B:** 3 percent starting yield, 8 percent dividend growth.
+
+| | Year 1 income | Year 20 income | Year 20 value |
+|---|---|---|---|
+| Position A | $600.00 | $4,358.01 | $80,623.20 |
+| Position B | $300.00 | $10,262.27 | $93,488.48 |
+
+Position A pays twice as much in year 1, and it keeps paying more for a while. Position B's annual income overtakes it by year 12 ($1,891.06 versus $1,904.71), and its portfolio value overtakes Position A's by year 18. By year 20, Position B pays more than double the income and is worth about $12,900 more.
+
+None of that makes Position B the better choice in general. It only shows what these two specific sets of numbers do over this specific horizon. A shorter holding period favors the higher starting yield, since the crossover in this example does not happen until year 12 for income and year 18 for value. A dividend growth rate is also a projection assumption, not a guarantee; nothing about entering 8 percent into a calculator makes a real payer raise its dividend at that rate for 20 years. The comparison is only useful for seeing how sensitive the outcome is to the growth assumption, and the [dividend income calculator](/tools/dividend-income-calculator) makes it possible to run a specific holding's own numbers instead of these two hypotheticals.
+
+## The tax step this does not do
+
+Everything above is pre-tax. A dividend income calculator has no filing status, no other income, and no information about whether a specific payer's dividends meet the qualified dividend tests, so it cannot compute what is actually owed on any of these figures.
+
+What is owed depends on a distinction the projection cannot see: whether the dividend is qualified or ordinary. A qualified dividend gets the same 0, 15, and 20 percent rates as a long-term capital gain. An ordinary dividend, which includes most REIT distributions and dividends on stock that was not held long enough around the ex-dividend date, is taxed at the same rates as wages. The [qualified vs ordinary dividends post](/blog/qualified-vs-ordinary-dividends) covers the holding period rule and where the split shows up on the 1099-DIV, and the [capital gains tax calculator](/tools/capital-gains-calculator) works the 0, 15, and 20 percent brackets against a specific taxable income figure.
+
+I build Helm Terminal. It reads the dividend income actually paid across the accounts you connect, read-only, rather than projecting it, and shows current yield alongside the position, not yield on cost.
+
+<CTACard title="See your real dividend income" description="Helm reads the dividends actually paid across every account you connect, read-only, at current yield rather than yield on cost." buttonText="Open the terminal free" href="/signup" />
+
+## Related reading
+
+- [Dividend Income Calculator](/tools/dividend-income-calculator)
+- [Qualified vs Ordinary Dividends: The Tax Difference](/blog/qualified-vs-ordinary-dividends)
+- [Capital Gains vs Capital Losses: A Complete Tax Guide](/blog/capital-gains-vs-losses-explained)
+- [Capital Gains Tax Calculator](/tools/capital-gains-calculator)
+- [ETF Overlap Tool](/tools/etf-overlap)

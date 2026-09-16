@@ -1,0 +1,94 @@
+---
+title: "How to Calculate Portfolio Beta, With a Worked Example"
+description: "Portfolio beta is the weighted average of each holding's beta. The formula, the shortcut, a five holding worked example, and where the numbers differ."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["portfolio beta", "beta", "risk", "diversification", "portfolio management"]
+published: true
+faq:
+  - q: "How do you calculate portfolio beta?"
+    a: "Multiply each holding's weight, its market value divided by the total portfolio value, by that holding's beta, then add the results across every holding. The weighted sum is the portfolio beta. Cash and cash equivalents are treated as a beta of zero because they do not move with the market."
+  - q: "What is a good portfolio beta?"
+    a: "There is no fixed good number, because it depends on what a person wants the portfolio to do. A beta near 1.0 tracks the broad market. A lower beta dampens both the downside and the upside relative to the index. A higher beta amplifies both. The right figure is the one that matches the risk a person is choosing to carry, not a target to hit for its own sake."
+  - q: "Can a portfolio have a negative beta?"
+    a: "Yes. A negative portfolio beta means the book has historically moved opposite the benchmark on average, which happens when short positions or inverse funds carry enough weight to outweigh the long, positive-beta holdings. It describes a historical relationship, not a promise that the same pattern repeats in every market."
+  - q: "Does portfolio beta account for diversification benefit?"
+    a: "No. The weighted average only tracks each holding's relationship to the market index, not the holdings' relationships to each other. Two portfolios can post the identical weighted-average beta while one is spread across a dozen unrelated industries and the other is concentrated in a handful of correlated stocks, and beta alone will not tell them apart."
+  - q: "Why does the same stock show a different beta on two different sites?"
+    a: "Beta is a regression output, and the regression depends on choices the source makes: which benchmark index stands in for the market, how far back the lookback window runs, and whether the return interval is daily, weekly or monthly. Bloomberg's default setting, for one example, regresses weekly returns against the S&P 500 over a two year window. A site using five years of monthly data against the same index will not produce the same number for the same stock."
+---
+
+Portfolio beta answers one narrow question: for a given move in a benchmark index, how much should this specific mix of holdings move. The number itself is simple to compute once every holding's beta is known. The harder part, and the part that makes two sources disagree about the same stock, is where those individual betas came from in the first place.
+
+## What beta measures
+
+Beta measures how a security's returns have moved relative to a benchmark, usually a broad market index. The formal definition, from [Corporate Finance Institute's explanation of the beta coefficient](https://www.corporatefinanceinstitute.com/resources/valuation/beta-coefficient/), is to "divide the covariance of the excess asset returns and excess market returns by the variance of the excess market returns," which can be written as:
+
+**Beta = Covariance(asset returns, market returns) ÷ Variance(market returns)**
+
+Covariance captures how two return series move together: positive when they tend to rise and fall in the same direction, negative when they tend to move opposite each other. Dividing by the market's own variance scales that co-movement into a single number relative to the market's own volatility. A beta of 1.0 means the asset has moved, on average, in line with the index. A beta of 1.5 means it moved roughly 50 percent more than the index in both directions. A beta of 0.5 means roughly half the index's move. A negative beta means the asset tended to move opposite the index.
+
+Nobody runs that regression by hand for a whole portfolio. What gets used instead is a shortcut.
+
+## The weighted-average shortcut
+
+[Wall Street Prep's explanation of portfolio beta](https://www.wallstreetprep.com/knowledge/portfolio-beta/) states the shortcut plainly: portfolio beta is "the weighted average of the beta coefficient of all individual securities in the portfolio," calculated as the sum, across every holding, of that holding's portfolio weight times its beta:
+
+**Portfolio beta = Σ (weight of holding × beta of holding)**
+
+Weight is a holding's market value divided by the total portfolio value, including cash. Cash carries a beta of zero, since a dollar sitting in a money market fund does not move with the index at all, so it dilutes the weighted average toward zero as its share of the portfolio rises.
+
+This is a shortcut and not the exact definition because it skips the regression entirely. Running the true calculation would mean building the portfolio's own historical return series, day by day or month by month, and regressing that series against the index. The weighted average approximates the same answer without that step, and it is a close approximation as long as each individual beta was computed against the same benchmark over a comparable period. Mixing a beta sourced against the S&P 500 with a beta sourced against the Nasdaq 100 for another holding, then averaging them as if they measured the same thing, is where the shortcut quietly breaks down.
+
+## Worked example: five holdings
+
+A $100,000 portfolio, split across five positions.
+
+| Holding | Market value | Weight | Beta | Contribution |
+|---|---|---|---|---|
+| VOO (S&P 500 fund) | $50,000 | 50% | 1.00 | 0.50 |
+| QQQ (Nasdaq 100 fund) | $20,000 | 20% | 1.20 | 0.24 |
+| A growth stock | $10,000 | 10% | 1.80 | 0.18 |
+| A utility stock | $10,000 | 10% | 0.40 | 0.04 |
+| Cash | $10,000 | 10% | 0.00 | 0.00 |
+| **Total** | **$100,000** | **100%** | | **0.96** |
+
+Each contribution is weight times beta: the growth stock's 10 percent weight times its 1.80 beta contributes 0.18 to the total. Adding the five contributions, 0.50 + 0.24 + 0.18 + 0.04 + 0.00, gives a portfolio beta of 0.96.
+
+That figure implies the portfolio should move about 0.96 percent for every 1 percent move in the index it was measured against, and about 4.8 percent for a 5 percent index move. It is worth noticing where that 0.96 comes from: the S&P 500 fund and the Nasdaq 100 fund together supply 0.74 of the 0.96, about 77 percent of the total, even though they are only 70 percent of the portfolio's dollars. The two index funds are not just the biggest positions here, they are also the biggest lever on the portfolio-level number, because their beta sits above the growth stock's dollar-weighted but lower-beta drag and well above the utility stock and cash.
+
+Swap the utility stock for a second growth stock at the same 1.80 beta and the total contribution from that row rises from 0.04 to 0.18, moving the portfolio beta from 0.96 to 1.10, a change driven entirely by one position's dollar size and its beta, nothing else.
+
+## Where the beta figures come from, and why they disagree
+
+Nothing above works without a beta figure for each holding, and that figure is not one universal constant. It is the output of a regression, and different sources make different choices about what goes into that regression.
+
+Benchmark index: a beta computed against the S&P 500 is not measuring the same thing as one computed against the Nasdaq 100 or the Russell 2000. A stock's relationship to a tech-heavy index and its relationship to a broad, diversified index are different numbers, and mixing sources that used different benchmarks for different holdings in the same weighted average compares mismatched quantities as if they were the same.
+
+Lookback window and return frequency: a [University of Utah library guide to using the Bloomberg Terminal](https://campusguides.lib.utah.edu/c.php?g=160745&p=1052911) describes Bloomberg's default setting this way: "Using the default settings, Bloomberg performs a regression of the historical trading prices of the stock against the S&P 500 (SPX) using weekly data over a two-year period." A different provider running the same regression over five years of monthly returns, instead of two years of weekly returns, is very likely to produce a different beta for the same stock, particularly for a company whose volatility relative to the market has shifted recently. Neither window is the correct one; they are different measurements of a relationship that itself moves over time.
+
+This is the reason a portfolio beta calculator has to treat beta as an input, not something it looks up. The number typed in for a given ticker should come from one consistent source and, ideally, one consistent benchmark and lookback, rather than pasted together from whatever page came up first for each holding.
+
+## What portfolio beta misses
+
+A single number describing co-movement with an index leaves out several things that matter for actually holding the portfolio.
+
+**Idiosyncratic risk.** Beta only measures the part of a return that moves with the market. It says nothing about the part that does not: a product recall, a lost contract, an accounting restatement, a lawsuit. A low-beta stock can still be a large source of company-specific risk that has nothing to do with the index at all, and the weighted average has no way to see it.
+
+**Non-linearity.** The weighted average treats the relationship between the portfolio and the index as a straight line at every point, a 1 percent index move producing exactly beta percent in the portfolio whether the index is up 1 percent or down 1 percent. Real relationships are not always that symmetric, and options, convertible bonds and some structured positions behave very differently on the way down than on the way up, a pattern a single beta figure cannot represent.
+
+**Regime change.** Betas estimated during a calm market and applied to a stressed one can be badly wrong. A well-documented pattern in sharp, broad market declines is that correlations across assets rise together, individual betas tending to compress toward the market's own beta of 1.0 regardless of what a two-year lookback said beforehand. A weighted average built from ordinary-market betas is not a reliable guide to how a portfolio behaves during the next unusual one.
+
+None of this makes the weighted average useless. It is a fast, transparent way to see which holdings are doing the most to move a portfolio, and the worked example above is exactly that kind of read: two funds supplying most of the number, one stock adding a little, one subtracting a little, cash doing nothing. It is a starting description, not a complete risk model.
+
+I build Helm Terminal. It reads the holdings in the accounts a person connects, read-only, and shows exposure and concentration by position and by sector for that connected book. It does not publish a beta for any holding or for the portfolio as a whole, since that would mean picking a benchmark and a lookback on someone else's behalf and presenting the result as if it were the only right answer.
+
+<CTACard title="Weight your own portfolio's beta" description="Type in each holding's market value and beta to see the weighted portfolio beta, the top contributors, and the implied index move." buttonText="Try the calculator" href="/tools/portfolio-beta-calculator" />
+
+## Related reading
+
+- [The Portfolio Concentration Problem](/blog/portfolio-concentration-problem)
+- [Portfolio Diversification Guide](/blog/portfolio-diversification-guide)
+- [How Many Stocks Should I Own?](/blog/how-many-stocks-should-i-own)
+- [What Is Portfolio Rebalancing?](/blog/what-is-portfolio-rebalancing)
+- [ETF Overlap Tool](/tools/etf-overlap)

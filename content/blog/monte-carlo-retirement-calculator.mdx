@@ -1,0 +1,130 @@
+---
+title: "Monte Carlo Retirement Calculator: What the Number Means"
+description: "What a Monte Carlo retirement calculator simulates, why its success rate is not a probability, which inputs move it most, and where the model breaks down."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["monte carlo", "retirement", "sequence of returns", "volatility", "calculators"]
+published: true
+faq:
+  - q: "What is a Monte Carlo retirement calculator?"
+    a: "A calculator that runs a retirement plan many times, drawing a different random return for each year of each run instead of assuming one fixed return. The runs share the same balance, contributions and withdrawals but each gets its own sequence of annual returns. The output is the spread of outcomes across all the runs, summarized as a success rate and percentile balances."
+  - q: "What does a Monte Carlo success rate mean?"
+    a: "The share of simulated paths whose balance never reached zero before the end of the plan. An 83 percent success rate means 83 of every 100 simulated paths stayed above zero under the assumed return distribution and withdrawal schedule. It measures the simulation, not the world, and it changes whenever the inputs do."
+  - q: "What is sequence of returns risk?"
+    a: "The effect of the order in which returns arrive once money is being withdrawn. Two paths with the same returns in a different order end at the same balance with no withdrawals, but with withdrawals the path that suffers its bad year first ends lower, because the withdrawal takes a bigger share of a smaller balance and the recovery compounds on less. Monte Carlo simulation captures this because each path has its own order."
+  - q: "Which inputs move a Monte Carlo result the most?"
+    a: "The withdrawal relative to the balance, the expected return, and the volatility. In the runs in this post, raising the withdrawal from 60,000 to 80,000 dollars cut the success rate from 83 to 66 percent, lowering the expected return from 8.41 to 6 percent cut it to 44 percent, and raising volatility from 12.94 to 20 percent cut it to 61 percent, with everything else unchanged."
+  - q: "What does a Monte Carlo retirement calculator leave out?"
+    a: "The common version, including the one on this site, assumes every year's return is independent of every other, drawn from a lognormal distribution, with no fees, no taxes, no other income and no change in spending. Real markets have fatter tails, some mean reversion and costs. The result is a property of those assumptions, not a forecast."
+---
+
+A Monte Carlo retirement calculator answers a narrow question: if annual returns were random draws from a distribution with a given average and spread, and a plan were run thousands of times under that assumption, what share of the runs would keep a positive balance to the end. The answer is a percentage, and it is useful, but it is a percentage of simulated paths. It is not the chance the money lasts.
+
+This post explains what the simulation does, why the success rate is a property of the model rather than a probability of anything real, which inputs move it most (with two runs of the [free calculator](/tools/monte-carlo-retirement-calculator) on this site), and where the model stops describing markets. Every figure from the calculator below is reproducible, because its random draws are seeded.
+
+## What a Monte Carlo simulation is
+
+A deterministic projection assumes one return, say 7 percent, in every year. A Monte Carlo simulation replaces that single number with a distribution. Each simulated path draws its own return for year one, then for year two, and so on, and applies contributions and withdrawals along the way. Run 2,000 of those paths and the result is 2,000 ending balances, which can be sorted and read off at any rank: the 10th percentile is the balance that nine paths in ten finished above, the median is the middle, the 90th is the balance only one path in ten exceeded.
+
+The distribution most calculators use, including the one here, is lognormal: the logarithm of the gross return, ln(1 + R), is normal. That choice keeps a simulated return from falling below negative 100 percent and gives the right shape for compounding. The two numbers that define it are the arithmetic mean of the annual return and its standard deviation. On this site the defaults are 8.41 percent and 12.94 percent, the average annual NAV total return since May 2000 and the three-year standard deviation printed on the [iShares Core S&P 500 ETF product page](https://www.ishares.com/us/products/239726/ishares-core-sp-500-etf) as of September 2026. Both fields are editable, and the volatility one deserves editing: three years is a short and recently calm window, and a longer history of the same index has a wider spread.
+
+The mechanics of each path, on this site's version:
+
+1. During accumulation, the balance earns the year's drawn return, then the annual contribution is added.
+2. At retirement, contributions stop. Each year the withdrawal comes out first, then the remainder earns the year's return.
+3. The withdrawal is entered in today's dollars and inflated every year from today at the entered inflation rate, whose default is the [Federal Reserve's 2 percent longer-run objective](https://www.federalreserve.gov/faqs/economy_14400.htm). So the first retirement withdrawal is already larger than the typed figure, and the last one is larger still.
+4. A balance that reaches zero stays there, and the path counts as a failure.
+
+Nothing else is in the model. No fees, no taxes, no Social Security, no pension, no cut in spending after a bad year, and no relationship between one year's return and the next.
+
+## Why the success rate is not a probability of anything real
+
+The success rate is the fraction of simulated paths that never reached zero. Read that sentence literally and the limits follow.
+
+It is conditional on the distribution. Change the mean from 8.41 to 6 percent and the same plan's success rate changes from 83 percent to 44 percent, with nothing about the plan or the market altered. The number is a statement about what the entered distribution implies, and the entered distribution is a guess dressed as two decimals.
+
+It is conditional on the model's shape. Independent lognormal years are a modeling convenience. If real returns have fatter tails, the simulation undercounts the bad paths. If they mean-revert, it overcounts the very long runs of bad luck and the very long runs of good luck. Either way, the percentage is a property of the assumptions, and no amount of extra paths fixes that. Running 10,000 paths instead of 2,000 makes the percentiles steadier; it does not make them truer.
+
+It says nothing about the size of a failure. A path that runs out in year 44 of a 45-year plan and a path that runs out in year 20 are both failures, counted once each. The calculator reports the median depletion year among failed paths for that reason, and the percentile table shows where the balance sits along the way, which carries more information than the single percentage.
+
+And the number is not calibrated against anything. A weather forecast that says 80 percent is checked against days it rained. There is no equivalent check for a retirement simulation, because the plan runs once and the distribution it was drawn from is unknown. The honest reading of "83 percent" is: under these assumptions, 17 percent of simulated paths failed, and that is a lot of paths.
+
+## The inputs that move it most
+
+Two runs of the calculator, with the summary numbers as it prints them. Both use the site's seeded generator, so the same inputs reproduce the same results.
+
+**Run one, the defaults.** A $500,000 starting balance, $20,000 added at the end of each of 15 years, then 30 years of withdrawals starting at $60,000 in today's dollars, 2 percent inflation, an 8.41 percent expected return with 12.94 percent volatility, 2,000 paths.
+
+- Success rate: 83.1 percent. 1,662 paths stayed above zero; 338 did not.
+- Median balance at retirement: $2,052,628. The 10th percentile was $1,233,456 and the 90th was $3,517,653.
+- First-year withdrawal: $80,752, which is $60,000 after 15 years of 2 percent inflation.
+- At the end of the 45 years, the median path held $7,252,053 in nominal dollars, and the 10th percentile path held nothing. Among the failed paths, the median ran out in year 37, which is 22 years into retirement.
+
+**Run two, a larger withdrawal.** Everything the same, except $80,000 a year in today's dollars instead of $60,000.
+
+- Success rate: 65.6 percent.
+- Median balance at retirement: $2,054,117, effectively unchanged, because the accumulation phase does not know what the withdrawal will be.
+- First-year withdrawal: $107,669.
+- Both the 10th and the 25th percentile paths finished at zero. Among failed paths, the median ran out in year 34.
+
+Raising the withdrawal by a third cut the success rate by 17.5 points. That is the pattern across every input that touches retirement: the withdrawal as a share of the balance dominates. Some other single changes to run one, each with everything else held at the defaults:
+
+| Change from the defaults | Success rate |
+| --- | --- |
+| None | 83.1% |
+| Withdrawal $80,000 instead of $60,000 | 65.6% |
+| Expected return 6% instead of 8.41% | 44.1% |
+| Volatility 20% instead of 12.94% | 61.3% |
+| Inflation 3% instead of 2% | 67.1% |
+| Contribution $30,000 instead of $20,000 | 88.6% |
+
+The volatility row is the one people find surprising. The mean return did not change, and the success rate still dropped 22 points. The reason is the subject of the next section.
+
+## Sequence-of-returns risk, worked by hand
+
+With no withdrawals, the order of returns does not matter. A million dollars that earns +20 percent, then 0, then minus 20 percent ends at $1,000,000 x 1.2 x 1.0 x 0.8 = $960,000. Reverse the order and the product is the same $960,000. Multiplication commutes.
+
+Withdrawals break that. Take the same two orderings, with $50,000 withdrawn at the start of each year:
+
+| Year | Path A return | Path A balance at year end | Path B return | Path B balance at year end |
+| --- | --- | --- | --- | --- |
+| Start | | $1,000,000 | | $1,000,000 |
+| 1 | +20% | ($1,000,000 - $50,000) x 1.20 = $1,140,000 | -20% | ($1,000,000 - $50,000) x 0.80 = $760,000 |
+| 2 | 0% | ($1,140,000 - $50,000) x 1.00 = $1,090,000 | 0% | ($760,000 - $50,000) x 1.00 = $710,000 |
+| 3 | -20% | ($1,090,000 - $50,000) x 0.80 = $832,000 | +20% | ($710,000 - $50,000) x 1.20 = $792,000 |
+
+Same three returns, same $150,000 withdrawn, and path B ends $40,000 lower. The bad year in path B arrived when the balance was largest and took the most dollars, and then the fixed $50,000 came out of a smaller pile, so the good year at the end compounded on less. Over three years the gap is $40,000. Over thirty years of retirement, with the same withdrawals and the same set of returns in a different order, it can be the difference between a path that finishes with millions and one that hits zero.
+
+This is why volatility hurts even when the mean is held fixed. Higher volatility means more paths that draw their bad years early, and under withdrawals those paths do not recover the way an untouched balance would. It is also why the accumulation percentiles in the two runs above barely moved while the ending percentiles moved a lot: during accumulation the plan is adding money, and a bad early year buys cheaper; during retirement it is removing money, and a bad early year sells cheaper.
+
+There is a second, quieter effect in the same arithmetic. The average of +20 and minus 20 is zero, but $1,000,000 x 1.2 x 0.8 = $960,000, a loss of 2 percent over two years. The arithmetic mean of returns overstates the compound growth rate, by roughly half the variance. A lognormal simulation handles this correctly, which is why entering an arithmetic mean of 8.41 percent produces a median path that grows slower than 8.41 percent a year. The calculator's one-year median gross return is (1 + 0.0841) divided by the square root of (1 + 0.1294 squared over 1.0841 squared), which is about 1.0765, or 7.65 percent, not 8.41.
+
+## Where the model stops describing markets
+
+Four things the standard model leaves out, in the order they matter for a retirement plan.
+
+**Fat tails.** The lognormal distribution puts very little weight on extreme years. Real equity returns have produced losses that a normal distribution with a 13 to 20 percent standard deviation would call several-standard-deviation events far more often than that distribution allows. A simulation with a thin-tailed distribution reports too few of the paths that matter most, the ones with a large early loss. Raising the entered volatility is a blunt way to compensate; it widens the whole distribution, including the good side, rather than thickening the bad tail.
+
+**Mean reversion and regimes.** The model draws every year independently. If a bad decade is somewhat more likely to be followed by a better one, or if returns cluster into high-volatility and low-volatility stretches, then independent draws produce both more extreme long runs and a wrong shape for the middle. The direction of the error depends on which effect dominates, and the evidence for either is weaker than it is usually presented, but the assumption of independence is a choice, not a fact.
+
+**Fees.** Everything in the calculator is gross. An expense ratio, an advisory fee, or trading costs reduce the effective return every year, and a fixed percentage fee acts like a permanent haircut on the mean. A 1 percent annual fee against an 8.41 percent expected return is a 7.41 percent input, and the table above shows what a lower mean does to the success rate.
+
+**Taxes.** Withdrawals from a traditional retirement account are ordinary income; withdrawals from a taxable account trigger capital gains on the appreciated portion; a Roth is neither. The calculator withdraws nominal dollars from an untaxed balance, so a plan that has to fund $60,000 of spending from a pre-tax account is withdrawing more than $60,000. The [capital gains calculator](/tools/capital-gains-calculator) on this site prices the taxable-account version of one year's withdrawal, and the gap between the two is the part the simulation does not see.
+
+There is a fifth omission that is not a market fact at all: the model assumes spending does not respond to the balance. A person whose portfolio fell 30 percent in the first year of retirement would, in most cases, not withdraw the full inflated amount the next year. Fixed withdrawals are the harshest assumption, and they are what most calculators, including this one, use, because a spending rule adds a second set of parameters to argue about.
+
+## What the number is for
+
+I build Helm Terminal, and the calculator this post describes is a free page on the site with none of the terminal's account data behind it; it draws returns for a single balance and knows nothing about what that balance holds. The success rate it prints is a summary of the assumptions the reader typed, and its best use is comparative: the same plan under two withdrawal amounts, two return assumptions, two volatilities. The differences between runs are meaningful in a way the level of any single run is not, because the modeling errors above affect every run in the same direction and largely cancel in the comparison.
+
+The level, on its own, is a number from a model. The reader who treats 83 percent as a probability and the reader who treats it as "17 percent of simulated paths failed under these assumptions" are looking at the same output, and only the second one is reading it correctly.
+
+<CTACard title="Run the simulation on your own numbers" description="The free Monte Carlo retirement calculator: seeded paths, a success rate, percentile balances at retirement and at the end, and the band every five years. No signup." buttonText="Open the calculator" href="/tools/monte-carlo-retirement-calculator" />
+
+## Related reading
+
+- [What Is a Good Sharpe Ratio?](/blog/what-is-a-good-sharpe-ratio)
+- [Time-Weighted vs Money-Weighted Return](/blog/time-weighted-vs-money-weighted-return)
+- [Portfolio Diversification Guide](/blog/portfolio-diversification-guide)
+- [What Is Portfolio Rebalancing?](/blog/what-is-portfolio-rebalancing)
+- [Capital Gains Tax Calculator](/tools/capital-gains-calculator)
