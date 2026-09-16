@@ -1,0 +1,146 @@
+---
+title: "Capital Gains Tax Calculator: How the 2026 Math Works"
+description: "How a capital gains tax calculator gets its number: 2026 federal brackets, stacking, the 3.8 percent NIIT, loss netting, and the state tax it leaves out."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["capital gains", "taxes", "calculator", "niit", "tax brackets"]
+published: true
+faq:
+  - q: "How is capital gains tax calculated?"
+    a: "Short-term and long-term results are netted first. A short-term gain is added to ordinary income and taxed at the ordinary brackets. A long-term gain is stacked on top of all other taxable income and taxed at 0, 15 or 20 percent depending on where the total lands against the thresholds for the filing status. A 3.8 percent net investment income tax applies to the part of the gain that sits above the statutory income threshold."
+  - q: "What are the 2026 capital gains tax brackets?"
+    a: "For 2026, long-term gains are taxed at 0 percent up to $49,450 of taxable income for single filers and $98,900 for married filing jointly, at 15 percent up to $545,500 single and $613,700 joint, and at 20 percent above that. Head of household thresholds are $66,200 and $579,600. Married filing separately thresholds are $49,450 and $306,850. The figures come from Rev. Proc. 2025-32."
+  - q: "Does a capital gain push my salary into a higher tax bracket?"
+    a: "No. Ordinary income fills the brackets first, and the long-term gain stacks on top. The gain itself can cross from the 0 percent band into 15 percent, or from 15 into 20, but the rate on wages does not change. A short-term gain is different because it is ordinary income and shares the ordinary brackets with wages."
+  - q: "What is the net investment income tax on capital gains?"
+    a: "A separate 3.8 percent tax under section 1411 on the lesser of net investment income and the amount by which modified adjusted gross income exceeds $200,000 for single and head of household filers, $250,000 for married filing jointly, or $125,000 for married filing separately. Capital gains count as net investment income. The thresholds are fixed in the statute and do not rise with inflation."
+  - q: "Do capital gains tax calculators include state tax?"
+    a: "Most free calculators, including the one this post describes, compute federal tax only. State treatment varies widely: some states have no income tax, some tax gains at ordinary rates, and some apply their own preferential rates. The state figure has to be worked separately from the federal one."
+---
+
+A capital gains tax calculator does three things in a fixed order: it nets this year's short-term and long-term results against each other, it stacks whatever gain survives on top of ordinary income, and it reads the tax off the brackets for the filing status. The number it prints is only as good as the reader's understanding of those three steps, because the same $50,000 gain can be taxed at 0 percent, at 23.8 percent, or anywhere between, depending on what sits underneath it.
+
+This post walks through the arithmetic with the 2026 federal figures, the same ones behind the free [capital gains tax calculator](/tools/capital-gains-calculator) on this site. Every bracket figure below is from the IRS's own publication of the 2026 inflation adjustments, [Rev. Proc. 2025-32](https://www.irs.gov/pub/irs-drop/rp-25-32.pdf), and the [IRS news release](https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill) that summarizes it.
+
+This describes the federal rules for individuals. It is not tax advice.
+
+## What the calculation needs
+
+Four inputs, and the reason each one matters.
+
+**Filing status.** Every threshold in the calculation is set per filing status: single, married filing jointly, married filing separately, or head of household. The joint thresholds are not always double the single ones, so the status has to be right before anything else is.
+
+**Taxable ordinary income before the gain.** Wages, interest, and other ordinary income after the standard or itemized deduction, with no capital gain in it. This is the floor the gain stacks on. The 2026 standard deduction is $16,100 for single filers and married filing separately, $32,200 for married filing jointly, and $24,150 for heads of household, per the [IRS release](https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill), so taxable income is usually well below gross income.
+
+**Short-term gain or loss.** Under [section 1222](https://www.law.cornell.edu/uscode/text/26/1222), a gain on a capital asset "held for not more than 1 year" is short-term. It is ordinary income for rate purposes.
+
+**Long-term gain or loss.** A gain on an asset "held for more than 1 year" is long-term and gets the 0, 15 and 20 percent rates. One year plus one day is the line, and the [cost basis post](/blog/how-to-calculate-cost-basis) covers the cases where the holding period is not simply the purchase date.
+
+## Step 1: net short-term against long-term
+
+Before any rate applies, the year's short-term results are combined into one figure and the long-term results into another. Then, if one is a loss and the other a gain, they offset. A $5,000 short-term loss against a $20,000 long-term gain leaves a $15,000 long-term gain and nothing short-term. A $30,000 long-term loss against a $10,000 short-term gain leaves a $20,000 net loss, and under [section 1212(b)](https://www.law.cornell.edu/uscode/text/26/1212) that loss keeps the character of the larger side, long-term in this case.
+
+When the year nets to a loss, [section 1211(b)](https://www.law.cornell.edu/uscode/text/26/1211) allows "$3,000 ($1,500 in the case of a married individual filing a separate return)" of it against ordinary income, and the rest carries forward. Section 1212(b)(2) treats the allowed amount as a short-term gain for the carryover computation, which is why the deduction is absorbed by short-term loss before long-term loss. The [capital loss carryover post](/blog/capital-loss-carryover) works those figures across several years.
+
+## Step 2: the short-term gain at ordinary rates
+
+Whatever short-term gain survives netting is added to ordinary income and taxed at the ordinary brackets. For 2026, the single and joint brackets from [Rev. Proc. 2025-32](https://www.irs.gov/pub/irs-drop/rp-25-32.pdf) section 3.01 are:
+
+| Rate | Single, up to | Married filing jointly, up to |
+|---|---|---|
+| 10% | $12,400 | $24,800 |
+| 12% | $50,400 | $100,800 |
+| 22% | $105,700 | $211,400 |
+| 24% | $201,775 | $403,550 |
+| 32% | $256,225 | $512,450 |
+| 35% | $640,600 | $768,700 |
+| 37% | above $640,600 | above $768,700 |
+
+Head of household and married filing separately have their own tables in the same section. The short-term gain does not get its own bracket ladder. It starts wherever ordinary income left off, so a $10,000 short-term gain on top of $10,000 of taxable income is taxed partly at 10 percent and partly at 12 percent, while the same gain on top of $300,000 is taxed at 35 percent.
+
+## Step 3: the long-term gain across 0, 15 and 20 percent
+
+The long-term gain is stacked on top of ordinary income and the short-term gain, and the three rates apply to slices of it as total taxable income crosses two thresholds. Section 3.03 of Rev. Proc. 2025-32 sets them for 2026:
+
+| Filing status | 0% up to | 15% up to | 20% above |
+|---|---|---|---|
+| Single | $49,450 | $545,500 | $545,500 |
+| Married filing jointly | $98,900 | $613,700 | $613,700 |
+| Married filing separately | $49,450 | $306,850 | $306,850 |
+| Head of household | $66,200 | $579,600 | $579,600 |
+
+The point that trips people up is that the thresholds are measured against total taxable income, not against the gain. A single filer with $30,000 of taxable income has $19,450 of room left in the 0 percent band. The first $19,450 of a long-term gain is taxed at nothing; the next dollar is taxed at 15 percent. A single filer with $60,000 of taxable income has no room at all, and the whole gain starts at 15 percent.
+
+It also runs the other way. Ordinary income is taxed first, so a long-term gain never raises the rate on wages. The gain can move part of itself from one band to the next, and that is the only bracket effect it has.
+
+## Step 4: the 3.8 percent net investment income tax
+
+On top of the income tax, [section 1411](https://www.law.cornell.edu/uscode/text/26/1411) imposes "3.8 percent of the lesser of" net investment income and the excess of modified adjusted gross income over a threshold: $250,000 for married filing jointly, $200,000 for everyone else, and half the joint figure, $125,000, for married filing separately. [IRS Topic 559](https://www.irs.gov/taxtopics/tc559) lists the same thresholds and confirms that "net gains from the disposition of property such as stocks, bonds, mutual funds, and real estate" count as net investment income.
+
+Two things follow. First, the thresholds are in the statute rather than the annual revenue procedure, so they have not moved since the tax started and do not move for 2026. Second, the tax applies to the smaller of two figures, so someone with $300,000 of wages and a $5,000 gain pays 3.8 percent on $5,000, while someone with $195,000 of wages and a $50,000 gain pays it on $45,000, the amount by which their total crosses the line.
+
+The calculator has no adjusted gross income figure to work from, so it uses taxable income plus the gain as a stand-in for modified adjusted gross income. Real MAGI is usually higher, because it sits above the standard deduction, which means the tool can show the 3.8 percent starting later than a return would.
+
+## Worked example 1: a gain that straddles 0 and 15 percent
+
+Single filer. Taxable income before the gain: $40,000. Long-term gain: $30,000. No short-term activity.
+
+Step 1: nothing to net.
+
+Step 2: no short-term gain.
+
+Step 3: the 0 percent band runs to $49,450. Ordinary income of $40,000 leaves $9,450 of it. So $9,450 of the gain is taxed at 0 percent, and the remaining $20,550 is taxed at 15 percent:
+
+$20,550 x 0.15 = $3,082.50
+
+Step 4: taxable income plus gain is $70,000, under the $200,000 threshold. No net investment income tax.
+
+Federal tax on the gain: $3,082.50, an effective rate of 10.3 percent on $30,000. For context, the $40,000 of ordinary income on its own carries $4,552 of tax on the 2026 brackets: $1,240 on the first $12,400 plus 12 percent of the remaining $27,600, which is $3,312. That figure does not change because of the gain.
+
+## Worked example 2: two gains, two rates, and the NIIT
+
+Married filing jointly. Taxable income before the gains: $230,000. Short-term gain: $10,000. Long-term gain: $60,000.
+
+Step 1: both are gains, so nothing nets.
+
+Step 2: $230,000 sits in the joint 24 percent bracket, which runs from $211,400 to $403,550. Adding $10,000 keeps it inside that bracket:
+
+$10,000 x 0.24 = $2,400
+
+Step 3: the long-term gain stacks on $240,000. The joint 0 percent band ended at $98,900, and the 15 percent band runs to $613,700, so all $60,000 is at 15 percent:
+
+$60,000 x 0.15 = $9,000
+
+Step 4: taxable income plus gains is $300,000, which is $50,000 over the joint $250,000 threshold. Net investment income is $70,000. The tax applies to the lesser, $50,000:
+
+$50,000 x 0.038 = $1,900
+
+Federal tax on the gains: $2,400 + $9,000 + $1,900 = $13,300, an effective rate of 19 percent on $70,000. The short-term $10,000 cost $2,400; had it been held past one year it would have been taxed at 15 percent, $1,500, a difference of $900 on the timing alone.
+
+## A loss year, briefly
+
+Single filer, taxable income $100,000, a $4,000 short-term gain and a $20,000 long-term loss. Netting leaves a $16,000 net long-term loss. Section 1211(b) allows $3,000 of it against ordinary income; $100,000 sits in the 22 percent bracket, so that removes $660 of tax. The remaining $13,000 carries to the next year as a long-term loss. No capital gains tax and no net investment income tax is owed, because there is no net gain to tax.
+
+## The missing piece: state tax
+
+Everything above is federal. Most capital gains tax calculators, including the one on this site, stop there, and the omission is the largest single reason a calculator's figure and a tax bill differ.
+
+State treatment is not uniform. Depending on the state, a capital gain may be taxed at the state's ordinary income rates with no long-term preference, taxed at a reduced rate or with a partial exclusion, or not taxed at all where there is no state income tax. Local income taxes exist in some cities as well. A gain that reads as 15 percent federally can carry a total rate well above that once the state's share is added, and the state's figure has to be worked from that state's own tables, which this post does not attempt.
+
+Two other things a federal calculator does not carry: [IRS Topic 409](https://www.irs.gov/taxtopics/tc409) notes that some gains have their own rates, such as collectibles and unrecaptured section 1250 gain on depreciated real estate, and a large gain can change adjusted gross income in ways that affect other parts of the return, from the medical expense floor to Medicare premiums two years later. Those interactions are outside what any single-purpose calculator computes.
+
+## What the calculator cannot know
+
+A capital gains tax calculator prices a gain the reader already knows the size of. The harder input is that size: which lots are sitting at a gain across several accounts, which of them crossed the one-year line and when, and what selling one would do to the figures above. Brokerages report holding periods and unrealized gains per account, and none of them shows the whole picture when the positions live in three places.
+
+I build Helm Terminal, which reads holdings from connected brokerage accounts, read-only, and shows each position's unrealized gain, its holding period, and the harvestable losses screened against the wash sale window. It does not compute the tax on a hypothetical sale; that is what the calculator on this site is for, and the two are meant to be used together.
+
+<CTACard title="Price a gain with the 2026 brackets" description="Enter a filing status, taxable income, and this year's short-term and long-term results. The free calculator shows the federal tax slice by slice, where the gain lands against the 0, 15 and 20 percent thresholds, and whether the 3.8 percent applies." buttonText="Open the capital gains calculator" href="/tools/capital-gains-calculator" />
+
+## Related reading
+
+- [Capital Gains vs Capital Losses: A Complete Tax Guide](/blog/capital-gains-vs-losses-explained)
+- [Capital Loss Carryover: How It Works, With the Math](/blog/capital-loss-carryover)
+- [Tax-Loss Harvesting Guide](/blog/tax-loss-harvesting-guide)
+- [How to Calculate Cost Basis on Stocks and Funds](/blog/how-to-calculate-cost-basis)
+- [Wash Sale Calculator](/tools/wash-sale-calculator)

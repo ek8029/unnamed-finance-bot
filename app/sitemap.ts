@@ -71,6 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/tools/rsu-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/tools/etf-overlap`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/tools/wash-sale-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/tools/capital-gains-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/engineers`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/founders`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/investors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
