@@ -7,10 +7,14 @@ import { getPublishedUpdates } from '@/lib/content/weekly-updates';
 const SERIF = 'var(--font-newsreader), Georgia, serif';
 
 export const metadata: Metadata = {
-  title: 'This Week at Helm — weekly updates from the terminal',
+  title: 'This Week at Helm: weekly updates from the terminal',
   description:
     'What changed at Helm and what moved across the theses it watches, every week. Founder notes plus a broader market update.',
   alternates: { canonical: '/this-week' },
+  // Noindex until the first issue is published: the crawler sees an 85-word
+  // placeholder today. Flip to index: true and restore the sitemap entry with
+  // the first issue.
+  robots: { index: false, follow: true },
 };
 
 export const dynamic = 'force-dynamic';
