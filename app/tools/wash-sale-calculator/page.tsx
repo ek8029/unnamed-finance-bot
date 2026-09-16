@@ -5,7 +5,7 @@ import { CinematicBg } from '@/components/cinematic-bg';
 import { WashSaleTool } from './wash-sale-tool';
 
 const DESCRIPTION =
-  'Free wash sale calculator. Enter a sale at a loss and the purchases around it to see how much of the loss IRC §1091 disallows, how much stays deductible, and what the replacement shares’ basis becomes. No signup.';
+  'Free wash sale calculator. Enter a sale at a loss and the purchases around it to see how much IRC 1091 disallows and the new replacement-share basis.';
 
 export const metadata: Metadata = {
   title: 'Wash Sale Calculator: Disallowed Loss | Helm Terminal',

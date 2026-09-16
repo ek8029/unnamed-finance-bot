@@ -42,7 +42,7 @@ export default function AnalyzePage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            "name": "Free AI Stock Analysis Tool — Analyze 150+ US Stocks",
+            "name": "Free AI Stock Analysis Tool: Analyze 500+ US Stocks",
             "description": "Get free AI-powered analysis for any US stock. Real-time prices, financial metrics, and intelligent insights for AAPL, TSLA, MSFT, and 150+ more tickers.",
             "url": "https://helmterminal.dev/analyze",
             "isPartOf": { "@type": "WebSite", "name": "Helm Terminal", "url": "https://helmterminal.dev" },
@@ -85,6 +85,24 @@ export default function AnalyzePage() {
                 <div><strong>{ticker}</strong><span>{name}</span></div><ArrowUpRight size={18} />
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="helm-discovery-next" aria-labelledby="what-you-get-title">
+          <div>
+            <p className="helm-kicker">WHAT ONE ANALYSIS COVERS</p>
+            <h2 id="what-you-get-title">A full read on one ticker, not a quote.</h2>
+            <p>
+              Each page opens with a written summary of where the company stands, then a bull case and a bear case
+              built from current fundamentals, recent price action and analyst consensus, the key metrics behind them
+              (market capitalization, price to earnings, price to sales, revenue and earnings growth), recent headlines
+              with their sources, and a set of common questions answered from the same data. Every page names the data
+              sources and the pipeline version it was computed with.
+            </p>
+            <p>
+              Anyone can read two analyses a day without an account. A free account raises that to five and lets you
+              see the same ticker against the rest of what you hold. Nothing here is investment advice.
+            </p>
           </div>
         </section>
 

@@ -263,9 +263,9 @@ export function CTACard({
 }) {
   return (
     <div className="my-8 bg-[var(--color-bg-elevated)] border border-[var(--color-gold-border)] rounded-sm p-6">
-      <h4 className="font-sans font-semibold text-[1.125rem] text-[var(--color-text-primary)] mb-2">
+      <p className="font-sans font-semibold text-[1.125rem] text-[var(--color-text-primary)] mb-2">
         {title}
-      </h4>
+      </p>
       <p className="text-[0.9375rem] text-[var(--color-text-secondary)] mb-4">{description}</p>
       <a
         href={href}

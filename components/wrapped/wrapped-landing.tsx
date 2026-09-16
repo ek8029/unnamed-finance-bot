@@ -681,6 +681,28 @@ export function WrappedLanding() {
         </div>
       </section>
 
+      {/* What Wrapped shows. Server-rendered copy so the landing carries more than a headline and three steps. */}
+      <section className="py-24 md:py-32 border-t border-white/[0.06]">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+          <p className="font-semibold text-[13px] tracking-[0.18em] text-[var(--color-gold)] uppercase mb-10" style={MONO}>
+            What Wrapped shows
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 text-[17px] text-white/50 leading-relaxed">
+            <p>
+              Seven slides built from your own brokerage history: what you held, what moved your year, your best and
+              worst positions, how concentrated you were, the trades you made most often, and the investor personality
+              your behavior matches, one of nine. It ends with a card sized for sharing, with the dollar figures kept
+              off it unless you choose to show them.
+            </p>
+            <p>
+              Helm reads the accounts you connect through Plaid, read-only, so it can never trade or move money. Wrapped
+              is free and stays free. If you connect more than one brokerage, the year in review covers all of them
+              together rather than one account at a time.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════════════════════════════════
           HOW IT WORKS — big numbers
           ══════════════════════════════════════ */}
@@ -697,7 +719,7 @@ export function WrappedLanding() {
             ].map((step) => (
               <div key={step.n} className="border-t border-white/[0.08] pt-10">
                 <p className="text-[40px] md:text-[56px] text-[var(--color-gold)] font-bold mb-5 tabular-nums leading-none" style={MONO}>{step.n}</p>
-                <h3 className="text-[24px] md:text-[28px] font-bold tracking-[-0.02em] mb-4">{step.title}</h3>
+                <h2 className="text-[24px] md:text-[28px] font-bold tracking-[-0.02em] mb-4">{step.title}</h2>
                 <p className="text-[17px] text-white/50 leading-relaxed">{step.desc}</p>
               </div>
             ))}
