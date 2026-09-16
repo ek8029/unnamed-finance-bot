@@ -1,0 +1,138 @@
+---
+title: "What Is a Good Sharpe Ratio? Why the Number Needs Context"
+description: "The Sharpe ratio has no fixed good value. The formula, Sharpe's own 1966 and 1994 papers, the S&P 500's long-run number, and a worked example."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["sharpe ratio", "risk-adjusted return", "portfolio risk", "volatility", "investing metrics"]
+published: true
+faq:
+  - q: "What is considered a good Sharpe ratio?"
+    a: "There is no fixed threshold. A Sharpe ratio above 1 is commonly called good and above 2 is called excellent, but those labels came from later market commentary, not from Sharpe's own papers, and the number moves with the time period measured, the return frequency used, and the risk free rate subtracted. A ratio measured over three strong years and one measured over a ten year span that includes a downturn are not comparable, even for the same fund."
+  - q: "How is the Sharpe ratio calculated?"
+    a: "Subtract the risk free rate from the portfolio's average return to get the excess return, then divide that excess return by the standard deviation of the portfolio's returns over the same period. The result measures return earned per unit of volatility, not the amount of money made."
+  - q: "What is a good Sharpe ratio for the S&P 500?"
+    a: "Using the S&P 500's long run arithmetic average annual return of about 11.4 percent, a standard deviation near 19.7 percent, and an average three month Treasury bill return of about 3.3 percent, all measured since 1928, the long run Sharpe ratio works out to roughly 0.41. That sits close to the 0.40 figure William Sharpe used as an illustration for the stock market in his own 1994 paper."
+  - q: "How do you annualize a monthly Sharpe ratio?"
+    a: "Multiply the Sharpe ratio calculated from monthly returns by the square root of 12. A daily Sharpe ratio is annualized by multiplying by the square root of the approximate number of trading days in a year, around 252. This works because standard deviation scales with the square root of time while average return scales linearly, an assumption that holds only if returns from one period to the next are independent."
+  - q: "Why can two funds with the same Sharpe ratio be different investments?"
+    a: "The Sharpe ratio treats all deviation from the average as equally undesirable, so a fund with frequent small losses and a fund with a rare large loss can post the same ratio. It also assumes returns are close to normally distributed, which breaks down for strategies with smoothed or infrequently priced holdings, where the reported standard deviation understates the real risk."
+  - q: "Is a negative Sharpe ratio meaningful to compare?"
+    a: "Not in the usual direction. Dividing a negative excess return by a smaller standard deviation makes the ratio more negative, and dividing it by a larger standard deviation makes it less negative, so a more volatile losing portfolio can show a less negative Sharpe ratio than a steadier losing one. That is backwards from what the ratio is supposed to reward."
+---
+
+A Sharpe ratio of 1.2 sounds like a verdict. It is not one until three questions get answered: over what period, using what frequency of returns, and against what risk free rate. Change any one of the three and the same portfolio's Sharpe ratio moves, sometimes by several tenths of a point, without a single position changing.
+
+The ratio itself is one of the older ideas in finance, and it is arithmetically plain. What is not plain is which number counts as good, and that is the part that gets flattened into folklore.
+
+## The formula
+
+The Sharpe ratio is excess return divided by volatility:
+
+**Sharpe ratio = (portfolio return − risk free rate) ÷ standard deviation of portfolio return**
+
+The numerator is what the portfolio earned above a safe alternative, usually a Treasury bill rate matched to the same period. The denominator is the standard deviation of the portfolio's own returns over that period, a measure of how much those returns bounced around their average. A higher ratio means more excess return for each unit of bounce. It says nothing about the size of the return itself: a portfolio up 4% with almost no volatility can post a higher Sharpe ratio than one up 20% with a rough ride getting there.
+
+## Where the ratio came from
+
+William Sharpe introduced the measure in a 1966 paper, "Mutual Fund Performance," published in the *Journal of Business*, volume 39, pages 119 to 138, where he called it the reward-to-variability ratio; the name "Sharpe ratio" came later, from other economists citing the paper, according to the summary of the paper's history on its [Wikipedia entry](https://en.wikipedia.org/wiki/Sharpe_ratio). The original version compared a fund's excess return over a risk free rate to the standard deviation of that excess return, applied to 34 mutual funds over 1954 to 1963.
+
+Sharpe revisited the measure almost thirty years later in ["The Sharpe Ratio,"](https://web.stanford.edu/~wfsharpe/art/sr/sr.htm) reprinted from the *Journal of Portfolio Management*, Fall 1994. The 1994 paper generalized the formula to compare a portfolio against any chosen benchmark, not just a risk free rate, and it says directly that "the Sharpe Ratio is not independent of the time period over which it is measured," recommending that ratios calculated from short-period data be annualized before comparison. In that paper Sharpe also worked an illustration: "typical estimates of the annual excess return on the stock market in a developed country might include a mean of 6% per year and a standard deviation of 15%," producing an excess return Sharpe ratio of about 0.40. He offered that as an example of a plausible market-level figure, not as a bar to clear.
+
+## What the S&P 500's own long-run Sharpe ratio has been
+
+The 0.40 figure above was Sharpe's illustration, not a measurement, so it is worth checking against the market's actual history. Since 1928, the S&P 500's mean annual return has been about 11.42% with a standard deviation of about 19.7%, according to a historical returns breakdown from [Marshall & Stevens](https://marshall-stevens.com/insights-center/the-sp-500-returns-a-historical-perspective-part-2/). Over roughly the same stretch, three-month Treasury bills have averaged about 3.3% a year, per a historical data summary from [FinanceWonk](https://www.financewonk.com/references/historical-returns).
+
+Excess return: 11.42% − 3.3% = 8.12%
+Sharpe ratio: 8.12 ÷ 19.7 = **0.41**
+
+That lands almost exactly on Sharpe's own 0.40 illustration. It also depends on using the arithmetic average return rather than the compound annual growth rate. The same FinanceWonk source puts the S&P 500's compound annual return since 1928 at about 10.0%. Swapping that figure in:
+
+(10.0% − 3.3%) ÷ 19.7% = **0.34**
+
+Same index, same span of history, same risk free rate and volatility figure, and the ratio moves from 0.41 to 0.34 depending on which return convention gets used. Neither number is wrong. Neither is "the" Sharpe ratio of the stock market.
+
+## Why "above 1 is good" is folklore
+
+The idea that a Sharpe ratio above 1 is good and above 2 is excellent shows up constantly in fund marketing and finance forums, but it does not come from either of Sharpe's papers. It is a convention that grew up around the number, and conventions do not travel well across the three variables that actually set it.
+
+**Period.** A Sharpe ratio calculated over a strong three-year run and one calculated over ten years spanning a recession describe different stretches of history, even for the identical fund. The long-run S&P 500 example above averages nearly a century of expansions, crashes, and everything between; a ratio taken from 2019 through 2021 alone would look nothing like it.
+
+**Frequency.** A ratio built from monthly returns is not directly comparable to one built from annual returns until both are annualized. The standard scaling rule, described on the Sharpe ratio's [Wikipedia entry](https://en.wikipedia.org/wiki/Sharpe_ratio), multiplies a Sharpe ratio computed from monthly data by the square root of 12, and one computed from daily data by roughly the square root of 252, the approximate number of trading days in a year. This works because standard deviation grows with the square root of time while average return grows linearly, an assumption that requires returns to be roughly independent from one period to the next.
+
+**Risk free rate.** The risk free rate subtracted in the numerator has ranged from near zero to well above 4% depending on the year. A portfolio's Sharpe ratio calculated during a near-zero rate environment and the same portfolio's ratio calculated during a higher rate environment will differ even if its returns and volatility are unchanged, purely because the number being subtracted changed.
+
+A single ratio, reported without its period, frequency, and risk free assumption, is a number with the units stripped off.
+
+## Where the ratio breaks down
+
+Even measured consistently, the Sharpe ratio has known failure modes.
+
+### Non-normal returns
+
+The ratio treats standard deviation as a complete description of risk, which assumes returns are close to normally distributed. Strategies with option positions, credit exposure, or other asymmetric payoffs can show low volatility most of the time and a large loss occasionally, a shape standard deviation does not capture well.
+
+### Smoothing and illiquid pricing
+
+Assets that are priced infrequently or by appraisal rather than by a continuous market, common in some private funds and real estate vehicles, produce return series that look smoother than the underlying asset actually is. A smoother return series understates standard deviation, which inflates the Sharpe ratio without the fund's actual risk having changed, a distortion noted in the discussion of the ratio's limitations on its [Wikipedia entry](https://en.wikipedia.org/wiki/Sharpe_ratio).
+
+### Short windows
+
+A ratio built from a handful of months carries a standard deviation estimated from very few data points, and small samples produce unstable estimates. The worked example later in this post shows how far a Sharpe ratio can swing when it is built from just twelve months of returns.
+
+### Negative Sharpe ratio comparisons
+
+When the numerator is negative, the arithmetic runs backwards. Dividing a negative excess return by a larger standard deviation produces a ratio closer to zero, and dividing it by a smaller standard deviation produces a more negative ratio. That means a more volatile losing portfolio can show a "better," less negative Sharpe ratio than a steadier losing one, the opposite of what the ratio is supposed to reward. Two portfolios with negative Sharpe ratios should not be ranked by which number is higher without checking the sign problem first.
+
+## Sortino and Calmar: the ratio's siblings
+
+Two related measures were built to answer the two objections raised most often against the Sharpe ratio.
+
+The **Sortino ratio** divides excess return by downside deviation instead of total standard deviation, penalizing only returns that fall below a target rate rather than penalizing upside and downside movement equally, a distinction described on the ratio's [Wikipedia entry](https://en.wikipedia.org/wiki/Sortino_ratio). A fund with volatile gains and steady losses can look worse under the Sortino ratio than under the Sharpe ratio, because the Sharpe ratio would have credited that upside volatility against it.
+
+The **Calmar ratio** replaces standard deviation entirely, dividing the average annual return over a trailing 36-month window by the maximum drawdown over that same window, according to the ratio's [Wikipedia entry](https://en.wikipedia.org/wiki/Calmar_ratio). It answers a narrower question: how much return came per unit of the worst peak-to-trough loss actually experienced, over a fixed recent stretch, rather than per unit of average volatility over the ratio's whole history.
+
+Neither ratio removes the period, frequency, and benchmark dependence that runs through the Sharpe ratio. They change which shape of risk gets penalized.
+
+## A worked example: Sharpe ratio from twelve months of returns
+
+Here is a hypothetical portfolio's monthly returns for one year:
+
+| Month | Return |
+|---|---|
+| 1 | 3.0% |
+| 2 | -2.1% |
+| 3 | 4.5% |
+| 4 | 1.2% |
+| 5 | -1.8% |
+| 6 | 2.9% |
+| 7 | 0.5% |
+| 8 | -3.4% |
+| 9 | 5.1% |
+| 10 | 1.0% |
+| 11 | -0.7% |
+| 12 | 2.3% |
+
+Sum the twelve returns: 3.0 − 2.1 + 4.5 + 1.2 − 1.8 + 2.9 + 0.5 − 3.4 + 5.1 + 1.0 − 0.7 + 2.3 = 12.5. Divide by 12 for the average monthly return: 12.5 ÷ 12 = 1.04%.
+
+The sample standard deviation of the same twelve values, computed from each month's squared deviation from that 1.04% average, works out to about 2.67%.
+
+Using the 3.3% long-run Treasury bill average from above as the annual risk free rate, the monthly risk free rate is roughly 3.3% ÷ 12 = 0.275%.
+
+Monthly excess return: 1.04% − 0.275% = 0.77%
+Monthly Sharpe ratio: 0.77 ÷ 2.67 = 0.29
+Annualized Sharpe ratio: 0.29 × √12 = 0.29 × 3.46 = **about 1.0**
+
+That lands right at the "good" threshold the folklore uses, and it came from one made-up year of returns with two losing months in a row and a nearly 9-percentage-point swing between the worst and best month. A different set of twelve months, still plausible for the same portfolio, could easily land the ratio at 0.6 or 1.4. That instability is the point: a Sharpe ratio built from a single year of monthly data is a rough estimate, not a verdict, however precisely the final digit gets printed.
+
+## What a connected book shows instead of one number
+
+I build Helm Terminal, a portfolio intelligence terminal that reads brokerage accounts read-only through Plaid. For a connected book, it shows exposure by sector and position, concentration in single names, and tax-loss harvesting opportunities across accounts. It does not compute or publish a Sharpe ratio for that book. Every figure in this post shows why: the ratio's usefulness depends on which period, which return frequency, and which risk free rate get chosen, decisions that change the answer enough that a single default number would mislead more than it would inform. Exposure and concentration answer a more concrete question: what is actually sitting in the book right now, and how much of it depends on one position or one sector.
+
+<CTACard title="See what's concentrated in your book" description="Helm reads connected accounts and shows exposure and concentration by position and sector, the detail a single Sharpe ratio compresses away." buttonText="Open the terminal" href="/signup" />
+
+## Related reading
+
+- [Portfolio Diversification: A Practical Guide](/blog/portfolio-diversification-guide)
+- [How Many Stocks Should I Own?](/blog/how-many-stocks-should-i-own)
+- [The Portfolio Concentration Problem](/blog/portfolio-concentration-problem)
+- [What Is Portfolio Rebalancing?](/blog/what-is-portfolio-rebalancing)

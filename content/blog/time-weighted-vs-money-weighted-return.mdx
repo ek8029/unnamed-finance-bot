@@ -1,0 +1,138 @@
+---
+title: "Time-Weighted vs Money-Weighted Return, Explained"
+description: "What time-weighted and money-weighted return measure, the formulas behind each, which one brokerages show you, and a worked example with the arithmetic."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["time-weighted return", "money-weighted return", "portfolio performance", "personal rate of return"]
+published: true
+faq:
+  - q: "What is the difference between time-weighted and money-weighted return?"
+    a: "Time-weighted return measures how the underlying investments performed, chain-linking the return of each period between cash flows so that deposits and withdrawals do not change the number. Money-weighted return measures how an individual account performed, factoring in the size and timing of every deposit and withdrawal. The two can differ substantially for the same account over the same stretch of time."
+  - q: "Why does my brokerage show a different return than the fund it tracks reports?"
+    a: "A fund publishes a time-weighted return, which assumes a single investment held for the whole period with nothing added or removed. An account rarely works that way: money goes in and out on its own schedule. The account's personal return reflects that schedule, so it moves independently of the fund's published number even when both hold the same investments."
+  - q: "Which return should I look at to judge my own results?"
+    a: "Money-weighted return, sometimes labeled personal rate of return, answers how the money actually did, including the effect of when it was added or pulled out. Time-weighted return answers how the strategy or manager did, independent of the account holder's decisions. Neither is more correct; they answer different questions."
+  - q: "Does adding money before a market decline always lower money-weighted return?"
+    a: "It lowers money-weighted return relative to time-weighted return whenever the added money is proportionally larger during the decline than during the recovery. The underlying time-weighted return of the investments does not change, because it is computed period by period regardless of account size. The money-weighted return changes because more dollars were exposed to the loss."
+  - q: "What is the Modified Dietz method?"
+    a: "Modified Dietz is a way to approximate money-weighted return without solving the internal rate of return equation directly. It weights each cash flow by the fraction of the period it was invested, so a deposit made partway through a period counts proportionally less than one made on day one. It is an approximation, not the exact internal rate of return, but it is close enough that some brokerages use it as their personal-return calculation."
+  - q: "Does Helm Terminal calculate time-weighted or money-weighted return?"
+    a: "Neither, today. The month-over-month figure on Helm's overview is the percentage change in total portfolio value between the start and end of the selected period, and the year-in-review return in Wrapped is the year's unrealized gain divided by cost basis. Both are portfolio value changes, not a chain-linked time-weighted return and not an internal-rate-of-return-based money-weighted return."
+---
+
+Two accounts can hold the identical fund, over the identical year, and report two different returns. Neither number is wrong. They are answering different questions: how did the investment perform, and how did the money in this specific account perform. Time-weighted return answers the first. Money-weighted return answers the second.
+
+The gap between them is not a rounding difference. It can run into double digits when a deposit or withdrawal lands at the wrong moment relative to a market move, and it is one of the more common sources of "why does my return not match what I read about the market" confusion.
+
+## What each one measures
+
+**Time-weighted return (TWR)** measures the return of the investments themselves, stripped of the effect of when money moved in or out. It treats every sub-period between cash flows as its own self-contained return, then chains those sub-period returns together. If a dollar was added the day before a rally, TWR does not care: that dollar's presence does not inflate the reported return of the strategy, because TWR is measuring the strategy, not the dollar.
+
+**Money-weighted return (MWR)**, also called dollar-weighted return or personal rate of return, measures the return actually experienced by the capital in the account, including the size and timing of every contribution and withdrawal. Money added right before a strong period counts for more than money added right before a weak one, because more dollars were exposed to whichever period followed. MWR is the number that reconciles "I put in $X over time and now have $Y."
+
+The distinction shows up constantly in retirement and brokerage accounts, where money arrives on its own schedule (a paycheck contribution, a bonus, a lump-sum rollover) that has nothing to do with market timing, yet still changes the personal return relative to the return of the funds held.
+
+## The formulas
+
+**Time-weighted return** revalues the portfolio at each external cash flow, computes the return for each resulting sub-period, then geometrically links them:
+
+```
+TWR = [(1 + R1) x (1 + R2) x ... x (1 + Rn)] - 1
+```
+
+where each sub-period return R is (ending value − beginning value − cash flow) / beginning value, measured between one cash flow and the next. Chain-linking means a period's return compounds on the prior one; it is not an average.
+
+**Money-weighted return** is the internal rate of return (IRR) of the account's cash flows: the single discount rate that makes the present value of every contribution, withdrawal and the ending balance equal zero. Written as a net present value equation with the beginning value and ending value treated as cash flows themselves:
+
+```
+0 = -BV - CF1/(1+r)^t1 - CF2/(1+r)^t2 - ... + EV/(1+r)^T
+```
+
+Solving for `r` generally takes iteration; there is no closed-form solution once there is more than one cash flow. In practice, many platforms use the **Modified Dietz method** as an approximation instead of solving IRR directly. Modified Dietz weights each cash flow by the fraction of the period it was invested:
+
+```
+R = (EV - BV - CF) / (BV + sum(CFi x Wi))
+```
+
+where `Wi` is the fraction of the period remaining after cash flow `i` occurred. It is linear rather than compounding, so it is not exact IRR, but it is close over short periods and does not require iteration.
+
+## Which one brokerages actually show you
+
+This is not settled by convention; it depends on the vendor and sometimes the account.
+
+Fidelity's own help page states plainly that on personal account pages, "your return was calculated using the Personal Rate of Return (money-weighted) calculation," and explains that the money-weighted number "considers the impact of the relative amount and timing of the additions and withdrawals that the customer makes," while the time-weighted method used for its funds "seeks to eliminate or minimize" that same effect. The page also states customers cannot switch methodologies for the personal figure. Source: [Fidelity.com Help, Performance Reporting](https://www.fidelity.com/webcontent/ap002390-mlo-content/19.09/help/learn_performancereporting.shtml).
+
+Schwab's personal performance help page states, in its own words, "your personal rate of return was calculated using the time-weighted rate of return 'Modified Dietz' method where inflows and outflows are averaged for the entire period (no monthly chaining)." That label is worth noting carefully: Modified Dietz is the linear cash-flow-weighted approximation described above, which most of the industry classifies as an approximation of money-weighted return rather than a chain-linked time-weighted return. Schwab's page calls its own Modified Dietz calculation "time-weighted," which shows the terminology is not applied consistently even among major brokerages. Source: [Schwab, Personal Performance Help](https://content.schwabplan.com/download/misc/PersonalPerformanceHelp.htm).
+
+Vanguard's investor education page explains the underlying reason personal and fund returns diverge without naming a formula: "Investment companies report performance assuming someone made a lump-sum investment on the first day of the reporting period and then did nothing until the end of the period. But that might not match with your experience," going on to note that "timing of your investments, fees, and taxes" are what separates a personal return from a published fund return. Source: [Vanguard, Checking Your Portfolio Performance](https://investor.vanguard.com/investor-resources-education/portfolio-management/performance-details).
+
+The pattern across all three: what a fund or index reports is time-weighted, and what a brokerage shows for a personal account is usually some form of money-weighted return, though the exact calculation and its label vary by vendor.
+
+## Why managers are graded on time-weighted return
+
+The [Global Investment Performance Standards (GIPS)](https://www.cfainstitute.org/insights/professional-learning/refresher-readings/2026/overview-of-the-global-investment-performance-standards), maintained by CFA Institute, set the rules investment firms follow to claim GIPS compliance when presenting performance to prospective clients. Per that page, "time-weighted returns are required for all portfolios except portfolios meeting certain criteria," and the stated reason is that TWR "removes the effects of cash flows, which are generally client-driven." A firm is only permitted to substitute money-weighted return instead when it controls the timing of external cash flows into the portfolio and the portfolio is closed-end, has a fixed life or fixed commitment structure, or invests significantly in illiquid assets.
+
+The logic follows from what each measure is for. A manager does not control when a client adds or withdraws money. Grading the manager on money-weighted return would let a client's bad timing show up as a bad manager, or a client's good timing show up as manager skill that was not earned. Time-weighted return isolates the one thing the manager actually controls: what happened to a dollar invested for the duration it was invested.
+
+## Why money added before a decline drags money-weighted return down
+
+Time-weighted return does not know how much money was in the account during any given sub-period, only what the percentage return was. Money-weighted return knows exactly how much was there, because it is solving for the rate that reconciles every dollar amount with the ending balance.
+
+That means a deposit made right before a decline is treated by MWR as capital that was fully exposed to that decline, in proportion to its size relative to the rest of the account. If the deposit is large relative to the existing balance, the account's overall dollar-weighted result tilts more heavily toward whatever happened after the deposit landed, even though the underlying investments' time-weighted return for that same stretch has not changed at all. TWR reports the strategy's return either way; MWR reports what actually happened to the money, deposit timing included.
+
+## Worked example: same portfolio, two deposit timings
+
+Take a portfolio that starts the year at $10,000, gains 5% in the first half, and loses 20% in the second half. Chain-linking those two sub-period returns gives the time-weighted return for the full year regardless of anything else that happens with contributions:
+
+```
+TWR = (1.05 x 0.80) - 1 = 0.84 - 1 = -16.0%
+```
+
+That figure does not change in either scenario below, because TWR is computed from the sub-period returns alone.
+
+**Timing A: an extra $10,000 is deposited at the start of the year**, invested alongside the original $10,000 from day one.
+
+| Step | Calculation | Result |
+|---|---|---|
+| Beginning value (BV) | $10,000 + $10,000 deposit | $20,000 |
+| End of H1 (+5%) | $20,000 x 1.05 | $21,000 |
+| End of H2 (-20%) | $21,000 x 0.80 | $16,800 |
+| Money-weighted return | ($16,800 - $20,000) / $20,000 | -16.0% |
+
+With the deposit made at the very start, alongside the original capital, MWR matches TWR exactly: -16.0%. Both chunks of capital were exposed to the same two sub-periods in the same proportion, so timing added no distortion.
+
+**Timing B: the same $10,000 deposit instead arrives at the midpoint of the year**, right before the second-half decline, using the Modified Dietz approximation with a weight of 0.5 for a cash flow landing exactly halfway through the period.
+
+| Step | Calculation | Result |
+|---|---|---|
+| Beginning value (BV) | Original capital only | $10,000 |
+| End of H1 (+5%), before deposit | $10,000 x 1.05 | $10,500 |
+| Deposit (CF) at midpoint | $10,500 + $10,000 | $20,500 |
+| End of H2 (-20%) | $20,500 x 0.80 | $16,400 (EV) |
+| Modified Dietz return | ($16,400 - $10,000 - $10,000) / ($10,000 + $10,000 x 0.5) | -24.0% |
+
+Same portfolio, same two sub-period returns, same $20,000 total contributed. The only variable that changed is when the second $10,000 arrived. Depositing it at the very start produced a money-weighted return equal to the -16.0% time-weighted return. Depositing the identical amount right before the decline dragged the money-weighted return to -24.0%, eight points worse, because that money was proportionally larger relative to the account precisely when the loss occurred.
+
+## Which number answers the question being asked
+
+"How did my manager do" and "how did my money do" are different questions with different correct answers from the same account.
+
+Time-weighted return answers the first. It is the number to reach for when comparing a fund, an advisor, or a strategy against a benchmark or against another manager, because it holds cash-flow timing constant and isolates investment decisions.
+
+Money-weighted return answers the second. It is the number that reconciles with a personal outcome: what was put in, what was taken out, and what is left. It is also the number that makes a portfolio's own history hard to compare against a benchmark's published return, since the benchmark is time-weighted by convention and the account usually is not.
+
+Neither number is the "real" one. A published TWR of 12% for a fund and a personal MWR of 4% in an account holding that same fund are both accurate answers to different questions, and the gap between them is explained entirely by when money moved.
+
+I build Helm Terminal, a portfolio intelligence terminal that reads brokerage accounts read-only through Plaid. The month-over-month figure on Helm's overview is the percentage change in total portfolio value from the start to the end of the selected range, and the return shown in Wrapped's year-in-review is the year's unrealized gain divided by cost basis. Both are portfolio value changes: neither is chain-linked the way a time-weighted return is, and neither solves an internal rate of return the way a formal money-weighted return does. A deposit or withdrawal during the period moves both figures the same direction it would move a raw account balance, the same distortion money-weighted return is built to describe deliberately, just without the IRR calculation behind it.
+
+<CTACard title="See portfolio value change alongside allocation and exposure" description="Connect brokerage accounts read-only through Plaid and see month-over-month change next to what is actually driving it." buttonText="Open Helm free" href="/signup" />
+
+Tracking the raw number is one piece of following a portfolio; the [net worth tracking](/blog/how-to-track-net-worth) and [portfolio tracker](/blog/best-portfolio-trackers) posts cover the rest of what a tracking setup needs, and [portfolio diversification](/blog/portfolio-diversification-guide) covers what tends to move that number around.
+
+## Related reading
+
+- [Best Portfolio Trackers, Compared](/blog/best-portfolio-trackers)
+- [How to Track Net Worth](/blog/how-to-track-net-worth)
+- [Portfolio Diversification Guide](/blog/portfolio-diversification-guide)
+- [What Is Portfolio Rebalancing](/blog/what-is-portfolio-rebalancing)
+- [The Portfolio Concentration Problem](/blog/portfolio-concentration-problem)

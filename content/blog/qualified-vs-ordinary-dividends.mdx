@@ -1,0 +1,97 @@
+---
+title: "Qualified vs Ordinary Dividends: The Tax Difference"
+description: "What makes a dividend qualified under IRC 1(h)(11), the holding period rule, 2026 tax rate brackets, the 1099-DIV boxes, and a worked example."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["dividends", "qualified dividends", "taxes", "1099-div", "capital gains"]
+published: true
+faq:
+  - q: "What is the difference between a qualified and an ordinary dividend?"
+    a: "An ordinary dividend is taxed at the same rates as wages and interest income. A qualified dividend is a subset of ordinary dividends that meets the payer and holding period tests in the tax code, and it is instead taxed at the same 0, 15, or 20 percent rates that apply to long-term capital gains. Every qualified dividend is also an ordinary dividend for reporting purposes; the qualified amount is the piece of it that gets the lower rate."
+  - q: "How long do shares have to be held for a dividend to be qualified?"
+    a: "The stock has to be held for more than 60 days during the 121-day period that starts 60 days before the ex-dividend date, which works out to a minimum holding period of 61 days somewhere inside that window. For preferred stock dividends attributable to periods over 366 days, the requirement is more than 90 days during a 181-day period. Holding a put, buying a call, or shorting the same or a substantially identical position during that window can interrupt the count."
+  - q: "Are REIT and MLP distributions qualified dividends?"
+    a: "REIT distributions are generally not qualified dividends because REITs deduct the dividends they pay and are not themselves paying corporate tax on that income, so the tax code does not extend the reduced rate to it. MLP payouts are usually not dividends at all, since MLPs are structured as partnerships and their payments to unitholders are partnership distributions, often treated largely as a return of capital. Both can still include a qualified portion in some years depending on the entity's underlying earnings."
+  - q: "What is the 2026 tax rate on qualified dividends?"
+    a: "For 2026, qualified dividends and long-term capital gains are taxed at 0 percent, 15 percent, or 20 percent depending on total taxable income. The brackets are indexed for inflation each year, so the dollar thresholds move even though the three rates stay the same."
+  - q: "Does the net investment income tax apply to dividends?"
+    a: "Yes. Both qualified and ordinary dividends count as net investment income, and a 3.8 percent tax applies on top of the regular income tax once modified adjusted gross income crosses the statutory threshold for the filer's status. The 3.8 percent applies the same way regardless of whether the dividend was qualified or ordinary; it does not change which rate bracket the dividend itself falls into."
+  - q: "Where do I find out if my dividends were qualified?"
+    a: "The 1099-DIV from each payer reports the answer. Box 1a shows total ordinary dividends and box 1b shows the portion of that total that is qualified. The qualified figure in box 1b is what the broker has already determined meets the payer and holding period tests, and it flows to a different line on Form 1040 than the rest of box 1a."
+---
+
+A dividend showing up in a brokerage account looks like one number. The 1099-DIV that arrives in January splits it into two, and the split changes the tax rate on the money by a lot. This describes the federal rules for individuals. It is not tax advice.
+
+## What makes a dividend qualified
+
+The lower rate for qualified dividends comes from [26 U.S.C. section 1(h)(11)](https://www.law.cornell.edu/uscode/text/26/1), which defines qualified dividend income as dividends received from domestic corporations and from qualified foreign corporations, and then folds that income into the calculation of net capital gain so it picks up the same 0, 15, and 20 percent rates as long-term gains instead of ordinary income rates.
+
+Two conditions have to be met.
+
+**The payer has to be the right kind of corporation.** A domestic C corporation qualifies. A foreign corporation qualifies if its stock is readily tradable on an established U.S. securities market, or if the corporation is eligible for benefits under a comprehensive income tax treaty with the United States that the Treasury Department has identified as satisfactory for this purpose. A controlled foreign corporation, a passive foreign investment company, and most closely held foreign issuers do not qualify.
+
+**The holding period has to be met.** Section 1(h)(11)(B)(iii) cross-references the holding period test in [section 246(c)](https://www.law.cornell.edu/uscode/text/26/246), substituting 60 days for 45 and a 121-day period for the 91-day period used elsewhere in that section. In practice that means the stock has to be held for more than 60 days within the 121-day window that begins 60 days before the ex-dividend date, which is a minimum holding period of 61 days somewhere in that window. Preferred stock dividends attributable to a period longer than 366 days use a longer test: more than 90 days during a 181-day period starting 90 days before the ex-dividend date. According to [IRS Publication 550](https://www.irs.gov/publications/p550), the day the shares are sold counts toward the holding period but the day they were acquired does not.
+
+The holding period test has a second half that matters for anyone using options against a position. Publication 550 describes the count as interrupted for any period in which the risk of loss on the stock is diminished, which includes holding a put on the same shares, having sold a call, or holding a short position in substantially identical stock during the window. A dividend that would otherwise qualify does not if the position was hedged through most of the 121-day period, even though the shares were technically held the whole time.
+
+## Which payers do not qualify
+
+Some of the most common income-producing holdings pay dividends that never clear the payer test, no matter how long they are held. Publication 550 lists REIT dividends and money market fund dividends among the categories that are not qualified. Interest-bearing accounts labeled "dividends" by credit unions and mutual savings institutions are interest income, not dividend income, regardless of the label on the statement.
+
+| Payer or distribution type | Typically qualified? |
+|---|---|
+| Domestic C-corporation common or preferred stock | Yes, if the holding period is met |
+| Foreign corporation, readily tradable on a US exchange or ADR | Yes, if the holding period is met |
+| Foreign corporation, not tradable in the US and no qualifying treaty | No |
+| REIT distributions | Generally no |
+| MLP distributions to unitholders | Generally not a dividend at all (partnership distribution) |
+| Money market fund dividends | No |
+| Credit union and savings bank "dividends" | No (taxed as interest) |
+| Distributions from a tax-exempt organization or cooperative | No |
+
+Even where the payer qualifies, the amount can be split. A REIT that also holds a taxable REIT subsidiary paying corporate tax on part of its income can pass through a small qualified portion alongside a larger nonqualified one, and a fund holding a mix of qualifying and nonqualifying securities reports a blended figure. The 1099-DIV, not the ticker, is the record of how any individual distribution was actually classified.
+
+## How the 1099-DIV reports it
+
+Every broker and fund that pays dividends issues a Form 1099-DIV. [Box 1a reports total ordinary dividends](https://www.irs.gov/faqs/interest-dividends-other-types-of-income/1099-div-dividend-income/1099-div-dividend-income), which includes every taxable dividend paid during the year, qualified or not, plus certain short-term capital gain distributions from funds. Box 1b reports the portion of the box 1a total that is qualified. Box 1a flows to the ordinary dividends line of Form 1040; box 1b flows to the qualified dividends line, which is where the return picks up the lower rate on that portion.
+
+A holding that paid $4,000 in dividends during the year, of which $3,400 met the payer and holding period tests, shows $4,000 in box 1a and $3,400 in box 1b. The remaining $600 is taxed as ordinary income even though it came from the same position, usually because some of it represents a short-term capital gain distribution from a fund or because part of the holding period fell short of 61 days after a sale and repurchase.
+
+## The 2026 rate brackets
+
+For 2026, qualified dividends and long-term capital gains share the same three-rate structure, with income thresholds set in [Revenue Procedure 2025-32](https://www.irs.gov/irb/2025-45_IRB):
+
+| Filing status | 0% rate | 15% rate | 20% rate |
+|---|---|---|---|
+| Single | Taxable income up to $49,450 | $49,450 to $545,500 | Above $545,500 |
+| Married filing jointly | Up to $98,900 | $98,900 to $613,700 | Above $613,700 |
+
+Ordinary dividends, by contrast, stack on top of wages and other income and are taxed at the regular 2026 brackets, which for a single filer run from 10 percent up through 37 percent, with the same Revenue Procedure 2025-32 putting the 24 percent bracket at taxable income between $105,700 and $201,775.
+
+## The 3.8 percent net investment income tax
+
+A separate tax applies on top of whichever rate the dividend falls into. Under the [net investment income tax](https://www.irs.gov/individuals/net-investment-income-tax), a 3.8 percent tax applies to the lesser of net investment income or the amount by which modified adjusted gross income exceeds a threshold: $200,000 for single and head of household filers, $250,000 for married filing jointly and qualifying widow(er)s, and $125,000 for married filing separately. The IRS lists dividends, interest, capital gains, and rental and royalty income among the categories that count as net investment income, and these thresholds are not indexed for inflation, so they have stayed the same since the tax took effect. The 3.8 percent applies identically to qualified and ordinary dividends; it adds to whichever income tax rate already applies rather than changing which bracket the dividend sits in.
+
+## A $10,000 dividend, taxed both ways
+
+Take a single filer with $115,000 of other taxable income for the year who also receives $10,000 in dividends from a taxable brokerage account, bringing total taxable income to $125,000.
+
+**If none of it is qualified** (box 1a shows $10,000, box 1b shows $0): the $10,000 stacks on top of the $115,000 of other income. Since $115,000 already exceeds the $105,700 floor of the 24 percent bracket, the entire $10,000 falls inside that bracket. Tax on the dividend: $10,000 x 24% = $2,400.
+
+**If all of it is qualified** (box 1a and box 1b both show $10,000): qualified dividends are taxed using the capital gains brackets after ordinary income is accounted for. The filer's $115,000 of other income already exceeds the $49,450 zero-rate ceiling, and the total of $125,000 stays well under the $545,500 top of the 15 percent band, so the full $10,000 is taxed at 15 percent. Tax on the dividend: $10,000 x 15% = $1,500.
+
+The difference on the same $10,000 distribution is $900, purely from which box the broker put it in.
+
+Neither figure above includes the net investment income tax, because $125,000 of taxable income is below the $200,000 single-filer threshold. For a filer whose modified adjusted gross income already exceeds that threshold, the same $10,000 adds another $10,000 x 3.8% = $380 regardless of which box it landed in, making the totals $2,780 (ordinary, with NIIT) versus $1,880 (qualified, with NIIT). The $900 gap from the rate difference stays the same; the NIIT is a flat addition on top of it.
+
+I build Helm Terminal, a portfolio intelligence platform that reads accounts across brokerages through a read-only Plaid connection. It shows dividend income per holding as it comes in from the brokerage feed, which is useful for seeing where income is concentrated across accounts, but it does not classify which portion is qualified. The 1099-DIV from each payer is the record that does that, and it is the figure a return has to match.
+
+<CTACard title="See dividend income across every account" description="Connect brokerages to track dividend and distribution income by holding in one place. The 1099-DIV from each payer still determines what's qualified." buttonText="Open the terminal" href="/signup" />
+
+## Related reading
+
+- [Capital Gains vs Capital Losses: A Complete Tax Guide](/blog/capital-gains-vs-losses-explained)
+- [How to Calculate Cost Basis on Stocks and Funds](/blog/how-to-calculate-cost-basis)
+- [Capital Loss Carryover: How It Works, With the Math](/blog/capital-loss-carryover)
+- [The Wash Sale Rule: What It Actually Disallows](/blog/wash-sale-rule)
+- [RSU Tax Strategies for Tech Employees](/blog/rsu-tax-strategies)

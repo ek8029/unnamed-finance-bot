@@ -1,0 +1,92 @@
+---
+title: "ESPP Taxes: Qualifying vs Disqualifying Sales"
+description: "ESPP shares split into ordinary income and capital gain differently depending on when they're sold. The holding period rules and the arithmetic."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["espp taxes", "employee stock purchase plan", "cost basis", "capital gains", "taxes"]
+published: true
+faq:
+  - q: "What is the difference between a qualifying and disqualifying disposition of ESPP stock?"
+    a: "A qualifying disposition holds the stock at least two years from the date the option was granted and at least one year from the date it was purchased. A disqualifying disposition sells before either of those dates passes. The split between ordinary income and capital gain, and which year the ordinary income lands in, depends on which one applies."
+  - q: "How is the ESPP discount taxed?"
+    a: "In a qualified plan under IRC section 423, part of the gain is ordinary income and the rest is capital gain, and the formula for the ordinary income portion is different for a qualifying disposition than a disqualifying one. In a non-qualified ESPP, the discount is ordinary income at purchase regardless of how long the shares are held afterward."
+  - q: "What is the lookback provision in an ESPP?"
+    a: "A lookback prices the purchase off the lower of the stock's fair market value on the offering date or on the purchase date, then applies the plan's discount to that lower figure. It is optional under section 423, not every plan includes it, and the plan document states whether it applies."
+  - q: "Does my broker's 1099-B show the correct cost basis for ESPP shares?"
+    a: "Usually not. Brokers typically report the price paid for the shares as the basis and leave out the ordinary income portion that was already taxed through payroll or reported on the return. The corrected basis has to be entered on Form 8949 using adjustment code B."
+  - q: "What is the $25,000 ESPP limit?"
+    a: "Section 423 caps how much stock purchase right an employee can accrue under all of an employer's qualified plans at $25,000 of fair market value, measured on the grant date, for each calendar year the option is outstanding. It limits the size of the option, not the amount actually paid for the shares."
+  - q: "What is Form 3922 used for?"
+    a: "The employer files Form 3922 for each transfer of stock under a qualified employee stock purchase plan and furnishes a copy to the employee. It records the grant date, the purchase date, the fair market value on each of those dates, and the price paid, which is the information needed to compute the ordinary income split at sale."
+---
+
+An ESPP discount is not free money at tax time. Part of it is ordinary income no matter what, and depending on how long the shares are held after purchase, another part can be ordinary income too, or capital gain, or both, in proportions that a brokerage statement does not compute.
+
+This describes the federal rules for individuals. It is not tax advice.
+
+## Qualified plans and everything else
+
+A plan that meets [IRC section 423](https://www.law.cornell.edu/uscode/text/26/423) gets favorable treatment: no tax at purchase, and at sale the gain splits between ordinary income and capital gain under rules that reward holding the stock. A plan that does not meet section 423, sometimes offered to contractors or in jurisdictions where a 423 plan is not practical, is taxed the way a nonstatutory option is: the discount is ordinary income at purchase, and everything from there is capital gain or loss on the usual schedule. Nothing below applies to a non-qualified plan except the mechanics of what basis becomes after the ordinary income is taxed.
+
+To qualify under section 423, the plan has to meet several conditions, and two of them shape the tax math: the option price cannot be less than the lesser of 85 percent of the stock's fair market value at grant or 85 percent of its fair market value at exercise, and no employee can accrue rights to purchase more than $25,000 of stock, measured at grant-date fair market value, per calendar year the option is outstanding.
+
+## The discount and the lookback
+
+The discount is the gap between what the plan charges and what the stock is worth. Section 423 caps it at 15 percent under either measurement point in the rule above. A plan that uses a lookback prices the purchase off the lower of the fair market value on the offering date or the fair market value on the purchase date, then takes the discount off that lower number. If a stock opens an offering period at $20 and closes it at $28, a lookback plan with a 15 percent discount prices the purchase at 85 percent of $20, or $17, not 85 percent of $28. The lookback is where most of an ESPP's value comes from when the stock has risen over the offering period, and it is optional under the statute, so the plan document is what confirms whether a given plan has one.
+
+## The holding period: qualifying vs disqualifying
+
+A sale is a qualifying disposition if it happens at least two years after the option was granted (the start of the offering period) and at least one year after the shares were purchased. [Section 423(a)](https://www.law.cornell.edu/uscode/text/26/423) sets both clocks: "no disposition of such share is made by him within 2 years after the date of the granting of the option nor within 1 year after the transfer of such share to him." Both conditions have to be met. Selling one day short of either date makes it a disqualifying disposition, and the two dates rarely line up, since the grant date is set by the offering period and the purchase date is usually six months into it.
+
+## Disqualifying disposition: ordinary income is the discount actually received
+
+Sell before satisfying the holding period and [section 421(b)](https://www.law.cornell.edu/uscode/text/26/421) pulls the sale out of the favorable regime: the ordinary income is recognized in the year of the disposition, not the year of purchase. The amount is set by [Treasury Regulation 1.421-2(b)](https://www.law.cornell.edu/cfr/text/26/1.421-2): the fair market value of the stock on the purchase date minus the price actually paid, which is the discount that was actually received, independent of the 15 percent cap or the lookback formula. Anything beyond that, from the purchase-date price to the sale price, is capital gain or loss, and it is short-term if the shares were held a year or less from purchase.
+
+**Worked example.** An offering opens with the stock at $20 and a plan that uses a lookback and a 15 percent discount. Six months later the purchase date arrives with the stock at $25; the lookback uses the lower of $20 and $25, so the purchase price is 85 percent of $20, or $17 a share. Eleven months after purchase, inside both the one-year and two-year windows, 100 shares are sold at $30.
+
+- Purchase price: 100 x $17 = $1,700
+- Fair market value at purchase: 100 x $25 = $2,500
+- Ordinary income (disqualifying): $2,500 - $1,700 = $800
+- Sale proceeds: 100 x $30 = $3,000
+- Capital gain, short-term: $3,000 - ($1,700 + $800) = $500
+
+The $800 is wages, reported through payroll or added to the W-2 the way the employer's plan administrator handles it. The $500 is a short-term capital gain reported on the return. Total income recognized across both pieces, $1,300, equals the full economic gain from purchase price to sale price, $3,000 minus $1,700.
+
+## Qualifying disposition: ordinary income is capped at the grant-date discount
+
+Hold past both dates and [section 423(c)](https://www.law.cornell.edu/uscode/text/26/423) applies a different, smaller formula: ordinary income is "the lesser of (1) the excess of the fair market value of the share at the time of such disposition ... over the amount paid for the share under the option, or (2) the excess of the fair market value of the share at the time the option was granted over the option price." The second branch is fixed at grant, so no matter how far the stock runs after purchase, the ordinary income portion cannot exceed the discount that would have applied on the grant-date price. Everything above that is long-term capital gain, since the qualifying holding period guarantees more than a year has passed since purchase.
+
+**Worked example.** Same plan: offering opens at $20, 15 percent discount, lookback, purchase price $17 a share. This time the 100 shares are held past both the two-year and one-year marks and sold at $34.
+
+- Amount 1, disposition-based: $34 - $17 = $17 a share
+- Amount 2, grant-based: $20 - $17 = $3 a share (the discount on the $20 grant-date price)
+- Ordinary income is the lesser: $3 x 100 = $300
+- Capital gain, long-term: ($34 x 100) - ($1,700 + $300) = $3,400 - $2,000 = $1,400
+
+The $300 is wages in the year of sale. The $1,400 is a long-term capital gain. The same stock, same purchase price, sold for $4 more a share and held past the qualifying dates, produced $500 less ordinary income and moved the rest into the lower long-term rate instead of short-term.
+
+| | Ordinary income | Capital gain |
+|---|---|---|
+| Disqualifying disposition | FMV at purchase minus price paid; taxed in the year of sale | Sale price minus FMV at purchase; short-term if sold within a year of purchase |
+| Qualifying disposition | Lesser of (sale price minus price paid) or (grant-date FMV minus price paid); taxed in the year of sale | Remainder of the gain; always long-term |
+
+## Form 3922 is the record, not the broker
+
+The employer files [Form 3922](https://www.irs.gov/instructions/i3921) for every transfer of stock under a qualified plan and sends a copy to the employee. It carries the grant date, the purchase date, the fair market value per share on each of those dates, and the price paid per share, which is every input the formulas above need. It is not itself a tax form to attach to a return; it is the source document, and it is the reason to keep every year's copy rather than reconstruct the numbers from memory or a brokerage app screenshot later.
+
+## Why the broker's basis is usually wrong
+
+A 1099-B for ESPP shares typically reports the price actually paid as the cost basis, because that is what the broker's books show as the purchase transaction. It does not include the ordinary income portion, since the broker has no reason to know it. Left uncorrected, the return taxes that portion twice: once as wages and again as capital gain at sale.
+
+The [Form 8949 instructions](https://www.irs.gov/instructions/i8949) cover this under adjustment code B, used when "the basis shown in box 1e on Form 1099-B ... is incorrect": the broker's basis is entered in column (e) as reported, code B goes in column (f), and the correction, the amount of ordinary income added to basis, goes in column (g). In the disqualifying example above, the corrected basis is $1,700 plus $800, or $2,500. In the qualifying example, it is $1,700 plus $300, or $2,000. Filing with the broker's $1,700 figure in either case overstates the capital gain by exactly the amount already taxed as wages.
+
+I build Helm Terminal, a portfolio intelligence terminal that reads brokerage accounts through Plaid. For ESPP positions, Helm shows the cost basis the broker reports, which is usually the purchase price, the same figure the 1099-B carries. The adjustment above, adding the ordinary income to basis, still has to be made on the return; a brokerage feed, Helm's included, reflects what the broker's books show, not the correction Form 8949 requires.
+
+<CTACard title="Track ESPP shares alongside everything else" description="See ESPP positions next to the rest of a portfolio, with the cost basis the brokerage reports." buttonText="Open Helm" href="/signup" />
+
+## Related reading
+
+- [How to Calculate Cost Basis on Stocks and Funds](/blog/how-to-calculate-cost-basis)
+- [RSU Tax Strategies for Tech Employees](/blog/rsu-tax-strategies)
+- [Capital Gains vs Capital Losses: A Complete Tax Guide](/blog/capital-gains-vs-losses-explained)
+- [RSU Tax Calculator](/tools/rsu-calculator)

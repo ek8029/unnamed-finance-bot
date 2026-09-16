@@ -1,0 +1,112 @@
+---
+title: "RSU vs Stock Options: How Each One Is Taxed"
+description: "RSUs are taxed as wages at vest and always have some value. Options are taxed differently and can be worth zero. The rules, with worked math."
+date: "2026-09-16"
+author: "Evan Kim"
+tags: ["RSU", "stock options", "ISO", "NSO", "equity compensation", "taxes"]
+published: true
+faq:
+  - q: "What is the difference between RSUs and stock options?"
+    a: "A restricted stock unit is a promise from the employer to deliver a set number of shares once vesting conditions are met, and it converts to stock with no purchase required. A stock option is a right to buy shares at a fixed exercise price, and it only has value once the stock trades above that price. Both convert into actual shares only after vesting or exercise, and both are typically granted on a multi-year schedule."
+  - q: "How are RSUs taxed when they vest?"
+    a: "The fair market value of the shares on the vesting date is added to wages and taxed as ordinary income, the same as a paycheck. That same value becomes the cost basis of the shares, so a later sale is taxed only on the change in value since vesting. Employers typically withhold at a flat supplemental wage rate rather than the employee's actual marginal rate, which can leave a balance due at filing."
+  - q: "How are nonqualified stock options taxed?"
+    a: "There is generally no tax at grant. At exercise, the spread between the stock's fair market value and the exercise price paid is ordinary income, reported through payroll the same way RSU vesting is. The shares then carry a basis equal to the fair market value at exercise, so a later sale is taxed only on gains above that point."
+  - q: "How are incentive stock options taxed?"
+    a: "There is no regular income tax at exercise, only at the eventual sale of the shares if that sale qualifies. The spread at exercise is a preference item for the alternative minimum tax, so exercising a large incentive stock option grant can trigger AMT liability in the exercise year even though no shares were sold and no cash came in from the stock. A qualifying disposition requires holding the shares more than two years from the grant date and more than one year from the exercise date."
+  - q: "What is the $100,000 ISO limit?"
+    a: "Federal law caps the value of options that can receive incentive stock option treatment at $100,000 per employee per calendar year, measured by the stock's fair market value at grant for the options that first become exercisable in that year. Any amount granted above that threshold is automatically treated as a nonqualified stock option instead, regardless of what the grant paperwork calls it."
+  - q: "Can stock options end up worth less than RSUs from the same employer?"
+    a: "Yes, and by a wide margin. An RSU keeps some value as long as the stock price is above zero, since it converts into a share outright with no price to clear. A stock option only has value once the stock trades above its exercise price, so a decline that leaves the stock below the strike price can leave every option from that grant worth nothing while RSU shares issued in the same year still carry real value."
+---
+
+RSUs and stock options show up in the same offer letter and get taxed by two different sets of rules. A restricted stock unit is stock, promised on a schedule. A stock option is the right to buy stock at a fixed price, and that price is the whole story. The difference shows up first at vesting or exercise, when the IRS decides how much of the grant counts as wages, and again years later if the stock falls, when one type of grant can still be worth something and the other can be worth exactly zero.
+
+This describes the federal rules for individuals. It is not tax advice.
+
+## What each one actually is
+
+A restricted stock unit (RSU) is a company's promise to deliver a set number of shares once conditions, usually continued employment over time, are satisfied. There is no purchase and no price to pay. Until vesting, the employee owns nothing, only the promise.
+
+A stock option is a right to purchase shares at a fixed exercise price, generally set at the stock's fair market value on the date of grant. Getting from an option to a share takes an extra step that RSUs skip entirely: the holder has to exercise it, meaning pay the exercise price, before the shares exist. Employee stock options come in two forms with different tax code sections behind them: nonqualified stock options (NSOs), the default and the only kind available to contractors and advisors, and incentive stock options (ISOs), which can only be granted to employees and carry the possibility of capital gains treatment on the whole spread if specific holding period rules are met.
+
+Companies commonly grant more option shares than RSU shares to reach a comparable target value in a package, because an option is worth less than a full share until the stock climbs meaningfully above the strike price. That is a design decision made on the company's side when it sets grant sizes, not a calculation the recipient of the grant has to run.
+
+## Vesting looks identical, the tax treatment does not
+
+Both RSUs and options typically vest over a period of years under conditions set out in the grant agreement, often with an initial cliff before any shares vest and installments after that. For RSUs, vesting is the whole event: the shares become owned and the tax bill is triggered at the same moment. For options, vesting only unlocks the right to exercise. No stock changes hands and, for the ordinary type of employee option, no tax is due until the holder actually exercises, which can happen any time between vesting and the option's expiration, or never.
+
+## How RSUs are taxed
+
+RSU income is recognized at vesting, not at grant, because before vesting there is nothing but an unfunded promise. Per [IRS Publication 525](https://www.irs.gov/publications/p525), restricted property becomes taxable once it is "substantially vested," meaning the risk that it could be forfeited has lifted, which for a standard time-based RSU is the vesting date itself. The fair market value of the shares on that date is added to wages and reported in Box 1 of the W-2, and that same figure becomes the cost basis of the shares going forward.
+
+Worked example: 100 shares vest on a day the stock closes at $50. Taxable wages from the vest: 100 x $50 = $5,000. The basis of the 100 shares is $5,000. If the employer withholds 30 shares to cover taxes, the employee receives 70 shares with a basis of $3,500 (70 x $50), and the 30 withheld shares are not a sale at a gain, they are the tax payment.
+
+## How nonqualified stock options are taxed
+
+NSOs generally create no income at grant. [IRS Tax Topic 427](https://www.irs.gov/taxtopics/tc427) states that for a nonstatutory option without a readily determinable fair market value at grant, which describes most employee stock options, "you must include in income the fair market value of the stock received on exercise, less the amount paid, when you exercise the option." That spread, fair market value at exercise minus the exercise price, is ordinary income, reported through payroll the same way an RSU vest is. This rule traces to [section 83](https://www.law.cornell.edu/uscode/text/26/83) of the tax code, which taxes property received for services once it is no longer subject to a substantial risk of forfeiture, with an exception in subsection (e) for options that do have a readily ascertainable value at grant.
+
+After exercise, the shares carry a basis equal to the fair market value on the exercise date. That basis is the exercise price paid plus the ordinary income just recognized, so a later sale is taxed only on the change in value since exercise, not on the whole gain from the original strike price.
+
+Worked example: an NSO with a $40 exercise price is exercised when the stock is $70. Ordinary income per share: $70 minus $40 = $30. On 500 shares, that is $15,000 of ordinary income, plus the $20,000 exercise price ($40 x 500) paid in cash. Basis in the 500 shares is $35,000 ($20,000 paid plus $15,000 already taxed), which is the same as 500 shares at $70.
+
+## How incentive stock options are taxed
+
+ISOs are taxed differently at exercise, which is the entire reason companies grant them. Per Tax Topic 427, exercising an ISO generally creates no regular income tax: "you generally don't include any amount in your gross income when you receive or exercise the option." No cash comes in from the stock at exercise, since the holder is buying shares, not selling them, and yet exercising can still create a tax bill, because [section 56(b)(3)](https://www.law.cornell.edu/uscode/text/26/56) of the code turns off the ISO deferral for purposes of the alternative minimum tax. The exercise spread, fair market value minus exercise price, is added back as an AMT preference item in the year of exercise, so a large exercise can trigger AMT liability against income the holder cannot yet spend, since the shares themselves have not been sold.
+
+Getting favorable treatment on the eventual sale requires a qualifying disposition. Under [section 422(a)](https://www.law.cornell.edu/uscode/text/26/422), the shares cannot be sold within two years of the grant date or within one year of the exercise date. Meet both and the entire gain from exercise price to sale price is a long-term capital gain, with no ordinary income component at all. Miss either date, called a disqualifying disposition, and some or all of the spread that was tax-free at exercise for regular tax purposes becomes ordinary income in the year of the sale instead.
+
+There is also a cap on how much ISO treatment a single grant can carry. Section 422(d) limits ISO treatment to $100,000 of stock, measured by fair market value at grant, for the options held by one employee that first become exercisable in a given calendar year; anything granted above that amount "shall be treated as options which are not incentive stock options," meaning it is automatically an NSO no matter what the grant agreement calls it.
+
+Worked example applying the limit: an employee is granted 4,000 options with a $40 grant-date price, all first exercisable in the same year. Aggregate grant-date value: 4,000 x $40 = $160,000, which is $60,000 over the limit. The first 2,500 shares ($100,000 of grant-date value) keep ISO treatment. The remaining 1,500 shares ($60,000 of value) are NSOs by operation of the statute, taxed at exercise on the ordinary spread exactly as any other NSO would be, even though they sit in the same grant.
+
+## RSU vs NSO vs ISO at a glance
+
+| | RSU | NSO | ISO |
+|---|---|---|---|
+| Tax at grant | None | None | None |
+| Tax at vest or exercise | Ordinary income, full FMV at vest | Ordinary income, spread at exercise | None for regular tax; spread is an AMT preference item |
+| Cash required to receive shares | None | Exercise price | Exercise price |
+| Basis after | FMV at vest | FMV at exercise | Exercise price (regular tax); FMV at exercise (AMT) |
+| Value if stock is below the grant-date price | Still has value | Can be worth nothing | Can be worth nothing |
+| Path to long-term capital gain | Hold more than 1 year past vest | Hold more than 1 year past exercise | Qualifying disposition: 2 years from grant and 1 year from exercise |
+
+## The underwater problem
+
+An RSU has no price it needs to clear. As long as the stock is worth more than zero, the shares that vest are worth something, and the ordinary income recognized at vest simply scales down with the stock price.
+
+An option is different by design. It only pays off once the stock is above the exercise price, and every dollar the stock trades below that price is a dollar the option is not worth exercising. A stock that falls below the exercise price and stays there leaves the option "underwater," worth nothing to exercise, for as long as that holds. RSUs from the same period, granted at the same depressed price the options are now measured against, still convert into real shares at vest, just fewer dollars of them than originally modeled.
+
+## Worked example: 1,000 RSUs vs 4,000 options at the same grant price
+
+Same employer, same day, stock at $40. One package grants 1,000 RSUs. Another grants 4,000 NSOs with a $40 exercise price. Both vest fully before either outcome plays out below.
+
+**Outcome 1: the stock falls to $18.**
+
+RSUs: 1,000 shares vest at $18. Ordinary income: 1,000 x $18 = $18,000. The employee owns $18,000 of stock.
+
+Options: exercise price is $40, stock is $18. Exercising means paying $40 for something worth $18, so there is no reason to do it. The spread is negative, the options are worth nothing, and there is nothing to report because nothing was exercised.
+
+**Outcome 2: the stock rises to $95.**
+
+RSUs: 1,000 shares vest at $95. Ordinary income: 1,000 x $95 = $95,000.
+
+Options: exercised at $95 against a $40 strike. Spread per share: $95 minus $40 = $55. On 4,000 shares: $55 x 4,000 = $220,000 of ordinary income, on top of the $160,000 exercise price ($40 x 4,000) that has to be paid in cash (or covered through a cashless exercise) to receive the shares.
+
+Same grant date, same starting price, same two employees. When the stock drops by more than half, the RSU holder still has $18,000 and the option holder has nothing. When the stock more than doubles, the option holder's tax bill and share value both dwarf the RSU holder's, because the option grant was four times the share count and every dollar of gain above the strike price falls straight into taxable spread. Options carry more upside per grant and a real chance of paying out zero; RSUs carry less upside per grant and a floor above zero for as long as the stock trades at all.
+
+## After vest, it's just stock, and it adds up
+
+Once RSUs vest or options are exercised, the shares are ordinary holdings in a brokerage account, no different from stock bought on the open market, except that they usually sit next to more shares of the same company from the last vest, the one before that, an ESPP, and sometimes a 401(k) match paid in employer stock. None of that shows up as a single number anywhere unless something is built to add it up. The [portfolio concentration problem](/blog/portfolio-concentration-problem) covers how a position most investors think of as "part of a diversified portfolio" can end up being a third or more of a household's net worth without a single deliberate purchase. Timing the sale of vested shares against the tax picture, rather than the concentration picture, is covered separately in [RSU tax strategies for tech employees](/blog/rsu-tax-strategies).
+
+I build Helm Terminal. It reads vested shares from the brokerage feed and shows employer-stock concentration against the rest of the book, so the position is visible next to everything else the household holds rather than tracked separately by grant. The [RSU tax calculator](/tools/rsu-calculator) works the ordinary income and withholding gap for a specific vest.
+
+<CTACard title="See what a vest actually costs you" description="Helm reads your vested RSUs and exercised options from the accounts you connect and shows the concentration next to the rest of your holdings." buttonText="Open the terminal" href="/tools/rsu-calculator" />
+
+## Related reading
+
+- [RSU Tax Strategies for Tech Employees](/blog/rsu-tax-strategies)
+- [The Concentration Problem: Why Your Portfolio Probably Has a Single Point of Failure](/blog/portfolio-concentration-problem)
+- [How to Calculate Cost Basis on Stocks and Funds](/blog/how-to-calculate-cost-basis)
+- [Capital Gains vs Capital Losses: A Complete Tax Guide](/blog/capital-gains-vs-losses-explained)
+- [RSU Tax Calculator](/tools/rsu-calculator)
