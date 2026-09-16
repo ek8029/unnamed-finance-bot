@@ -6,6 +6,8 @@ import readingTime from 'reading-time';
 export interface BlogPost {
   slug: string;
   title: string;
+  /** Optional short title for the <title> tag only; the headline stays `title`. */
+  seoTitle?: string;
   description: string;
   date: string;
   author: string;
@@ -35,6 +37,7 @@ export function getAllPosts(): BlogPost[] {
       return {
         slug,
         title: data.title ?? '',
+        seoTitle: typeof data.seoTitle === 'string' ? data.seoTitle : undefined,
         description: data.description ?? '',
         date: data.date ?? '',
         author: data.author ?? 'Helm Terminal',
@@ -67,6 +70,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
   return {
     slug,
     title: data.title ?? '',
+    seoTitle: typeof data.seoTitle === 'string' ? data.seoTitle : undefined,
     description: data.description ?? '',
     date: data.date ?? '',
     author: data.author ?? 'Helm Terminal',
