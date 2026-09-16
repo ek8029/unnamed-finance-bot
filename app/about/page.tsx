@@ -7,7 +7,7 @@ import { LegalFooter } from '@/components/legal-footer';
 export const metadata: Metadata = {
   title: 'About | Helm Terminal',
   description:
-    'Helm Terminal is portfolio intelligence for people who manage their own money. Built by Evan Kim, a Penn State economics student and former derivatives hedging intern.',
+    'Helm Terminal is portfolio intelligence for people who manage their own money, built by Evan Kim, a Penn State economics student and former hedging intern.',
   alternates: {
     canonical: 'https://helmterminal.dev/about',
   },

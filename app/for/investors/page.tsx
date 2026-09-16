@@ -6,7 +6,7 @@ import { LegalFooter } from '@/components/legal-footer';
 import { Search, Wallet, LineChart, FileText } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Portfolio Intelligence for Self-Directed Investors | Helm Terminal',
+  title: 'Portfolio Intelligence for Self-Directed Investors | Helm',
   description:
     'Free AI stock analysis, portfolio tracking, a general daily brief, and your harvestable-loss figure. Pro adds detailed tax lots and wash-sale screening.',
   openGraph: {

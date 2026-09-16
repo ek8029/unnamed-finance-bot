@@ -5,9 +5,9 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
 export const metadata: Metadata = {
-  title: 'Best Investment Thesis Trackers in 2026 (Compared) | Helm Terminal',
+  title: 'Best Investment Thesis Trackers in 2026 (Compared) | Helm',
   description:
-    'An honest comparison of investment thesis trackers in 2026: Helm Terminal, MyThesis, Vela, Thesis (UseThesis), and ThesisWatch. Which ones are live, which cite SEC filings, and how they price.',
+    'Investment thesis trackers compared in 2026: Helm, MyThesis, Vela, UseThesis and ThesisWatch. Which are live, which cite SEC filings, how they price.',
   openGraph: {
     title: 'Best Investment Thesis Trackers in 2026 (Compared)',
     description:

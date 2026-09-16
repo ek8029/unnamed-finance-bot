@@ -5,9 +5,9 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
 export const metadata: Metadata = {
-  title: 'UseThesis (Thesis) Alternative You Can Use Today | Helm Terminal',
+  title: 'UseThesis (Thesis) Alternative You Can Use Today | Helm',
   description:
-    'Looking for a Thesis (usethesis.com) alternative? Thesis is a note-first tracker in early access. Helm Terminal automates thesis monitoring live today, reading SEC filings against your reasons.',
+    'Thesis (usethesis.com) is a note-first tracker in early access. Helm automates thesis monitoring live today, reading SEC filings against your reasons.',
   openGraph: {
     title: 'A UseThesis Alternative You Can Use Today',
     description:

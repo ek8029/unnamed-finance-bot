@@ -7,7 +7,7 @@ import { ETFOverlapTool } from './etf-overlap-tool';
 export const metadata: Metadata = {
   title: 'ETF Overlap Tool | Helm Terminal',
   description:
-    'Free ETF overlap tool. Pick two funds and see which companies they both hold, with each fund’s weight in the shared names. Compares the ten largest holdings of 35 funds. No signup.',
+    'Free ETF overlap tool. Pick two funds and see which companies they both hold and the weight each fund gives the shared names. Covers 35 funds, no signup.',
   openGraph: {
     title: 'ETF Overlap Tool | Helm Terminal',
     description:

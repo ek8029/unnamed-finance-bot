@@ -6,7 +6,7 @@ import { LegalFooter } from '@/components/legal-footer';
 import { Shield, Activity, Layers, Bell } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Institutional Analysis Without the Institutional Price | Helm Terminal',
+  title: 'Institutional Analysis, Not the Institutional Price | Helm',
   description:
     'Your advisor charges 1% AUM. Helm delivers real-time portfolio intelligence, AI-powered analysis, and multi-account aggregation for a fraction of the cost.',
   openGraph: {

@@ -10,7 +10,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'RSU Tax Calculator | Helm Terminal',
   description:
-    'Free RSU calculator. Enter your grant, vesting schedule and federal bracket to estimate tax at vesting and post-tax take-home. Built for employees holding restricted stock units.',
+    'Free RSU tax calculator. Enter grant, vesting schedule and federal bracket to estimate tax at vesting and post-tax take-home for restricted stock units.',
   openGraph: {
     title: 'RSU Tax Calculator | Helm Terminal',
     description:

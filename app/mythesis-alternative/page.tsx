@@ -5,9 +5,9 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
 export const metadata: Metadata = {
-  title: 'MyThesis Alternative Without the Per-Holding Meter | Helm Terminal',
+  title: 'MyThesis Alternative Without the Per-Holding Meter | Helm',
   description:
-    'Looking for a mythesis.ai alternative? MyThesis charges $4.99 per holding per month, so the bill grows with every position you add. Helm Terminal monitors your whole portfolio at $20/month flat, with verbatim dated SEC citations.',
+    'MyThesis charges $4.99 per holding per month, so the bill grows with every position. Helm watches the whole book at $20 a month flat, with SEC citations.',
   openGraph: {
     title: 'A MyThesis Alternative Without the Per-Holding Meter',
     description:

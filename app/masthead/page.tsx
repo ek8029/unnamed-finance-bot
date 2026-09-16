@@ -20,9 +20,9 @@ import {
 // appears here only after it is Approved at /admin.
 
 export const metadata: Metadata = {
-  title: 'The Masthead — filing and news evidence against live theses',
+  title: 'The Masthead: filing and news evidence against live theses',
   description:
-    'Helm reads SEC filings and market news against public investment theses and surfaces what moves them, each with the verbatim source quote. A running, sourced record of thesis evidence.',
+    'Helm reads SEC filings and market news against public investment theses and surfaces what moves them, each with the verbatim source quote.',
   alternates: { canonical: 'https://helmterminal.dev/masthead' },
   openGraph: {
     title: 'The Masthead',

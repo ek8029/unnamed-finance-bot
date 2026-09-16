@@ -6,7 +6,7 @@ import { LegalFooter } from '@/components/legal-footer';
 import { Code2, Rocket, TrendingUp, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Helm Terminal -- Built for Your Financial World',
+  title: 'Helm Terminal: Built for Your Financial World',
   description:
     'Institutional-grade financial intelligence for engineers, founders, self-directed investors, and high-net-worth individuals.',
   openGraph: {
@@ -108,6 +108,29 @@ export default function ForHubPage() {
             );
           })}
         </div>
+
+        {/* What every page shares. Server-rendered so the hub is not four links and a headline. */}
+        <section className="mt-12 max-w-2xl mx-auto space-y-4 text-[15px] leading-[1.65] text-[var(--color-text-secondary)]">
+          <h2 className="text-[20px] font-semibold text-[var(--color-text-primary)]">What every version of Helm does</h2>
+          <p>
+            Each page above starts from the same terminal. You connect brokerages read-only through Plaid, and
+            Helm reads the whole book: exposure by position and account, the tax lots and the losses
+            worth harvesting with wash-sale screening, upcoming earnings for what you hold, and a written brief
+            at 9:15 ET on what moved and what matters. Helm cannot trade or move money.
+          </p>
+          <p>
+            The persona pages differ in what they lead with. Engineers get RSU vesting and single-stock
+            concentration first. Founders get equity events and angel positions alongside the public book.
+            Self-directed investors get the free ticker analysis and the daily brief. High-net-worth readers get
+            multi-account aggregation and the tax picture across custodians. The underlying data and the
+            free tier are the same for all four.
+          </p>
+          <p>
+            Not sure which fits? The <Link href="/analyze" className="text-[var(--color-gold)] hover:underline">free stock analysis</Link> needs
+            no account, and the <Link href="/tools/tlh-calculator" className="text-[var(--color-gold)] hover:underline">tax-loss harvesting calculator</Link> and
+            the other free tools work without connecting anything.
+          </p>
+        </section>
 
         {/* CTA */}
         <section className="sovereign-card rounded p-6 md:p-8 text-center mt-12">

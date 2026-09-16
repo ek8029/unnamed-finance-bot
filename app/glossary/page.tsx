@@ -8,9 +8,9 @@ import { GLOSSARY } from '@/lib/glossary';
 const BASE = 'https://helmterminal.dev';
 
 export const metadata: Metadata = {
-  title: 'The Helm Glossary: Thesis Monitoring, Thesis Drift, and Agentic Finance Terms',
+  title: 'Helm Glossary: Thesis Monitoring and Agentic Finance Terms',
   description:
-    'Clear, sourced definitions for the language of thesis-driven investing: thesis drift, thesis monitoring, breaks-if conditions, conviction stops, agentic portfolio terminals, and more.',
+    'Sourced definitions for thesis-driven investing: thesis drift, thesis monitoring, breaks-if conditions, agentic portfolio terminals and more.',
   alternates: { canonical: `${BASE}/glossary` },
   openGraph: {
     title: 'The Helm Glossary',

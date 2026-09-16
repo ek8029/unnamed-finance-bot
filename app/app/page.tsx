@@ -28,7 +28,7 @@ const APP_STORE_URL: string | null = null;
 export const metadata: Metadata = {
   title: 'Helm for iPhone | Helm Terminal',
   description:
-    'The Helm terminal on iPhone. Your whole book across brokerages, a written brief each morning, every position with cost basis, the reasons behind each holding, and the losses worth taking.',
+    'Helm on iPhone: your whole book across brokerages, a written brief each morning, every position with cost basis, and the losses worth taking.',
   openGraph: {
     title: 'Helm for iPhone',
     description:

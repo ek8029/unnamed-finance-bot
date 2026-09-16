@@ -7,7 +7,7 @@ import { CinematicBg } from '@/components/cinematic-bg';
 export const metadata: Metadata = {
   title: 'Vela Alternative You Can Use Today | Helm Terminal',
   description:
-    'Looking for a Vela alternative? Vela is waitlist-only as of June 2026. Helm Terminal does thesis monitoring live today, with verbatim dated SEC citations and cross-position risk detection.',
+    'Vela is waitlist-only as of June 2026. Helm does thesis monitoring live today, with verbatim dated SEC citations and cross-position risk detection.',
   openGraph: {
     title: 'A Vela Alternative You Can Use Today',
     description:

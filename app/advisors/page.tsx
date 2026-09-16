@@ -7,7 +7,7 @@ import { IntakeForm } from '@/components/advisors/intake-form';
 export const metadata: Metadata = {
   title: 'Held-Away Visibility for Advisors | Helm Terminal Research',
   description:
-    'We are researching an advisor platform: read-only visibility across in-custody and held-away accounts, no credential sharing, an MCP layer for your AI tools. In research with practicing advisors, not for sale.',
+    'Researching an advisor platform: read-only visibility across custodied and held-away accounts, no credential sharing, an MCP layer. Not for sale yet.',
   openGraph: {
     title: 'Held-Away Visibility for Advisors | Helm Terminal Research',
     description:

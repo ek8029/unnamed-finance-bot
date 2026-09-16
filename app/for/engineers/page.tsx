@@ -8,7 +8,7 @@ import { RefreshCw, ShieldAlert, Calculator, BarChart3 } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'RSU Portfolio Tracker for Software Engineers | Helm Terminal',
   description:
-    'RSU tracking, concentration alerts, tax-loss harvesting, and multi-account sync. Built by an engineer, for engineers who optimize everything except their portfolio.',
+    'RSU tracking, concentration alerts, tax-loss harvesting and multi-account sync, built by an engineer for engineers who optimize everything but their book.',
   openGraph: {
     title: 'RSU Portfolio Tracker for Software Engineers | Helm Terminal',
     description: 'You optimize systems for a living. Why is your portfolio still a spreadsheet?',

@@ -5,9 +5,9 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
 export const metadata: Metadata = {
-  title: 'Agentic Portfolio Intelligence: An AI Analyst for Your Portfolio | Helm Terminal',
+  title: 'Agentic Portfolio Intelligence, Explained | Helm Terminal',
   description:
-    'Agentic portfolio intelligence is an AI analyst that watches your whole portfolio for you: risk, taxes, earnings, factor tilt, and whether the reasons you own each stock still hold. A plain guide to what it is and how it works.',
+    'Agentic portfolio intelligence: an AI analyst watching your whole book for risk, taxes, earnings, and whether your reasons for each stock still hold.',
   openGraph: {
     title: 'Agentic Portfolio Intelligence: An AI Analyst for Your Portfolio',
     description:

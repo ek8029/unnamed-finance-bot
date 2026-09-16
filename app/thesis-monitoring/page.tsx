@@ -5,9 +5,9 @@ import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
 export const metadata: Metadata = {
-  title: 'What Is Thesis Monitoring? (And Thesis Drift) | Helm Terminal',
+  title: 'What Is Thesis Monitoring? (And Thesis Drift) | Helm',
   description:
-    'Thesis monitoring tracks the reasons you own each stock against live SEC filings, earnings, and news, and alerts you the moment your reasoning weakens or breaks. A plain guide to thesis monitoring, thesis drift, and how to track your investment thesis.',
+    'Thesis monitoring tracks the reasons you own each stock against live SEC filings, earnings and news, and alerts you when the reasoning weakens or breaks.',
   openGraph: {
     title: 'What Is Thesis Monitoring? (And Thesis Drift)',
     description:

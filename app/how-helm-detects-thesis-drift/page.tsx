@@ -7,7 +7,7 @@ import { CinematicBg } from '@/components/cinematic-bg';
 export const metadata: Metadata = {
   title: 'How Helm Detects Thesis Drift (Methodology) | Helm Terminal',
   description:
-    'The methodology behind Helm thesis monitoring: how pillars are scored against SEC EDGAR filings and news, how a pillar is judged weakening or broken, and why every alert carries a verbatim, dated citation.',
+    'How Helm scores thesis pillars against SEC filings and news, when a pillar is judged weakening or broken, and why every alert carries a dated citation.',
   openGraph: {
     title: 'How Helm Detects Thesis Drift (Methodology)',
     description:

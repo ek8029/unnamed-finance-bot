@@ -52,8 +52,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
-  title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
-  description: 'An agentic terminal that watches your whole portfolio: the exposure, the taxes, and the thesis behind every position, then tells you what to do. Thesis monitoring with cited evidence, tax-loss harvesting, and free AI stock analysis.',
+  title: 'Helm Terminal | Agentic Thesis Monitoring for Your Book',
+  description: 'An agentic terminal that watches your whole portfolio: exposure, taxes, and the thesis behind every position, with cited evidence and free stock analysis.',
   openGraph: {
     title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
     description: 'An agentic AI analyst on every position. Helm monitors each thesis against SEC filings and news, surfaces tax-loss harvesting and earnings exposure, and tells you what to do, across all your accounts.',
@@ -76,7 +76,8 @@ export const metadata: Metadata = {
     images: ['/opengraph-image'],
   },
   alternates: {
-    canonical: 'https://helmterminal.dev',
+    // No site-wide canonical: a page without its own must not be canonicalized
+    // to the homepage. Indexable pages declare their own; app/page.tsx has the root.
     // The Masthead feed existed for weeks with nothing on the site pointing at
     // it: no autodiscovery link, no mention in llms.txt, no link on the page
     // itself. Perplexity and OAI-SearchBot both retrieve live, so a dated feed
