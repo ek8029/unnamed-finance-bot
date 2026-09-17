@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, Loader2, Check, Minus, ArrowRight } from 'lucide-react';
+import { HelmOrb } from '@/components/helm-orb';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const GOLD = '#E6B94D';
@@ -119,8 +120,8 @@ export function AgentSweep() {
         <ol className="m-0 list-none border-t border-white/[0.05] p-0">
           {steps.map((s) => (
             <li key={s.id} className="flex items-center gap-3 border-b border-white/[0.03] px-5 py-2.5 last:border-0">
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                {s.status === 'running' && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: GOLD }} />}
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                {s.status === 'running' && <HelmOrb state="connecting" />}
                 {s.status === 'done' && <Check className="h-3.5 w-3.5" style={{ color: (s.found ?? 0) > 0 ? GOLD : GREEN }} />}
                 {s.status === 'skipped' && <Minus className="h-3.5 w-3.5 text-[#5A5A5A]" />}
               </span>

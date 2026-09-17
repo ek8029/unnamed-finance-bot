@@ -4,6 +4,8 @@
 .helm-analysis-loading { width: 100%; max-width: 620px; padding: 35px; background: var(--color-bg-surface); border: 1px solid var(--color-rule); border-top: 2px solid var(--color-gold); border-radius: 6px; }
 .helm-loading-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font: 10px var(--font-mono), monospace; letter-spacing: .08em; color: var(--color-gold); }
 .helm-analysis-loading h2 { font-size: clamp(27px, 3vw, 36px); line-height: 1.15; letter-spacing: -.04em; margin-block: 30px 16px; font-weight: 500; }
+.helm-loading-head { display: flex; align-items: center; gap: 22px; margin-block: 30px 16px; }
+.helm-loading-head h2 { margin-block: 0; }
 .helm-analysis-loading > p { color: var(--color-text-secondary); font-size: 14px; line-height: 1.85; max-width: 470px; }
 .helm-loading-outline { display: grid; gap: 14px; margin-block: 32px; }
 .helm-loading-outline > div { height: 9px; background: var(--color-border-base); border-radius: 2px; }

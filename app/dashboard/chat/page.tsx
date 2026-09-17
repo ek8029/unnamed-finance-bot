@@ -5,10 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useResearch, type ResearchMessage } from '@/contexts/research-context';
-import {
-  AnalysisCard,
-  AnalysisSkeletonCard,
-} from '@/components/analysis/analysis-cards';
+import { AnalysisCard } from '@/components/analysis/analysis-cards';
+import { HelmOrb } from '@/components/helm-orb';
 import type { Analysis } from '@/components/analysis/types';
 import {
   Send,
@@ -445,7 +443,10 @@ function ResearchChatContent() {
               <div className="flex flex-col items-start">
                 <div className="w-full sm:max-w-[88%]">
                   <HelmLabel />
-                  <AnalysisSkeletonCard />
+                  <div className="flex items-center gap-3 text-[13px] text-[var(--color-text-secondary)]">
+                    <HelmOrb state="working" />
+                    <span>Reading the evidence</span>
+                  </div>
                 </div>
               </div>
             )}

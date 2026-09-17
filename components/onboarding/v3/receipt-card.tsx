@@ -4,6 +4,7 @@
 // `house: false` when Helm has no thesis on the ticker; that is the fallback,
 // not an error. A network failure or a non-2xx status throws for the caller.
 import { V3_COPY } from '@/lib/onboarding/v3-copy';
+import { HelmOrb } from '@/components/helm-orb';
 
 export type Receipt = {
   claim: string | null;
@@ -38,7 +39,10 @@ export function ReceiptCard({ ticker, receipt, className }: {
   const copy = V3_COPY.reveal;
   return (
     <article className={className}>
-      <h3 className="text-[14px] font-medium text-[var(--color-text-primary)]">{copy.receiptHeading(ticker)}</h3>
+      <div className="flex items-center gap-3">
+        {receipt === undefined && <HelmOrb state="searching" />}
+        <h3 className="text-[14px] font-medium text-[var(--color-text-primary)]">{copy.receiptHeading(ticker)}</h3>
+      </div>
       {receipt === undefined ? (
         <div className="mt-3 grid gap-2" aria-hidden="true">
           <div className="h-3 w-1/3 animate-pulse rounded bg-[var(--color-surface-tint)]" />
