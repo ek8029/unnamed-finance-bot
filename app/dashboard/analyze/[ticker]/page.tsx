@@ -140,7 +140,7 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
   const symbol = parsed.ticker;
 
   // A cached analysis returns in well under a second, which snaps the
-  // loading terminal off before it reads. Hold the boundary for 900 ms at
+  // loading terminal off before it reads. Hold the boundary for 2 s at
   // most; a real run already takes longer and pays nothing here. Only on
   // this signed-in page: the public /analyze pages are crawled and keep
   // their natural timing.
@@ -148,7 +148,7 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
     analyzeStock(symbol),
     getFullTickerData(symbol),
     getThesisBridge(symbol),
-    new Promise<void>((resolve) => setTimeout(resolve, 900)),
+    new Promise<void>((resolve) => setTimeout(resolve, 2000)),
   ]);
 
   if (!analysis) {

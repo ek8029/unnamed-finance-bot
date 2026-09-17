@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { TickerSearch } from '@/app/analyze/ticker-search';
 import { TrendingUp, TrendingDown, Loader2, ArrowRight, AlertCircle } from 'lucide-react';
 import { parseResearchTicker } from '@/lib/research-ticker';
+import { AnalysisLoadingTerminal } from '@/components/analysis-loading-terminal';
 
 const POPULAR_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'JPM'];
 
@@ -31,29 +32,16 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 }
 
 // Navigation does not tell us whether a report is cached or being generated.
+// This overlay covers the gap between submit and the route's own loading
+// boundary, and renders the same terminal that boundary renders, so the
+// handoff between the two is one continuous frame rather than two screens.
 function GeneratingOverlay({ symbol }: { symbol: string }) {
   return (
     <div
-      className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-6 sm:px-10 text-center"
-      style={{ background: 'rgba(10,10,10,0.88)', backdropFilter: 'blur(3px)' }}
-      role="status"
-      aria-live="polite"
+      className="absolute inset-0 z-20 flex items-center justify-center px-6 py-16"
+      style={{ background: 'var(--color-bg-base)' }}
     >
-      <Loader2 className="w-[30px] h-[30px] text-[var(--color-gold)] animate-spin" strokeWidth={1.8} />
-      <div className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-        Opening research on <span className="text-[var(--color-gold)]">{symbol}</span>…
-      </div>
-      <div
-        className="text-[12px] tracking-[0.04em] text-[var(--color-text-muted)]"
-        style={MONO}
-      >
-        Company overview · bull and bear cases · supporting sources
-      </div>
-      <div className="mt-1.5 flex w-[min(460px,80%)] flex-col gap-[9px]">
-        <div className="h-[9px] w-[92%] rounded-[3px] bg-white/[0.06] animate-pulse" />
-        <div className="h-[9px] w-[78%] rounded-[3px] bg-white/[0.06] animate-pulse [animation-delay:0.2s]" />
-        <div className="h-[9px] w-[85%] rounded-[3px] bg-white/[0.06] animate-pulse [animation-delay:0.4s]" />
-      </div>
+      <AnalysisLoadingTerminal command={`helm analyze ${symbol}`} />
     </div>
   );
 }
