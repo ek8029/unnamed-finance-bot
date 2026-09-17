@@ -139,10 +139,16 @@ export default async function DashboardTickerAnalysisPage({ params }: Props) {
   if (!parsed.ok) return <div className="p-8"><h1 className="text-2xl font-semibold">Research unavailable</h1><p role="status" className="mt-3">{parsed.message}</p><Link href="/dashboard/analyze" className="mt-4 inline-block text-[var(--color-gold)]">Research another ticker →</Link></div>;
   const symbol = parsed.ticker;
 
+  // A cached analysis returns in well under a second, which snaps the
+  // loading terminal off before it reads. Hold the boundary for 900 ms at
+  // most; a real run already takes longer and pays nothing here. Only on
+  // this signed-in page: the public /analyze pages are crawled and keep
+  // their natural timing.
   const [{ analysis, computedAt, dataSources, methodologyVersion }, tickerData, bridge] = await Promise.all([
     analyzeStock(symbol),
     getFullTickerData(symbol),
     getThesisBridge(symbol),
+    new Promise<void>((resolve) => setTimeout(resolve, 900)),
   ]);
 
   if (!analysis) {

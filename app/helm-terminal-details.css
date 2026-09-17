@@ -61,10 +61,11 @@
 .helm-action-standing > summary::-webkit-details-marker { display: none; }
 .helm-action-standing > summary:hover .helm-action-standing-note { color: var(--color-text-secondary); }
 .helm-action-standing-label { font: 9px var(--font-mono), monospace; letter-spacing: .09em; text-transform: uppercase; color: var(--color-text-muted); }
-.helm-action-standing-count { font: 11px var(--font-mono), monospace; color: var(--color-text-secondary); white-space: nowrap; }
+.helm-action-standing-count { font: 600 12px var(--font-mono), monospace; color: var(--color-text-primary); white-space: nowrap; }
 .helm-action-standing-note { font-size: 11px; line-height: 1.7; color: var(--color-text-muted); min-width: 0; }
-.helm-action-standing-toggle { font: 10px var(--font-mono), monospace; color: var(--color-gold); margin-left: auto; white-space: nowrap; }
-.helm-action-standing-chevron { flex-shrink: 0; color: var(--color-text-muted); align-self: center; }
+.helm-action-standing-toggle { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; font: 600 10px var(--font-mono), monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--color-gold); border: 1px solid var(--color-gold-border); border-radius: 4px; margin-left: auto; white-space: nowrap; align-self: center; }
+.helm-action-standing > summary:hover .helm-action-standing-toggle { background: var(--color-gold-surface); }
+.helm-action-standing-chevron { flex-shrink: 0; color: var(--color-gold); align-self: center; }
 .helm-action-standing[open] .helm-action-standing-toggle { display: none; }
 .helm-action-standing[open] .helm-action-standing-chevron { margin-left: auto; transform: rotate(180deg); }
 .helm-action-standing-hint { font-size: 11px; line-height: 1.8; color: var(--color-text-muted); }

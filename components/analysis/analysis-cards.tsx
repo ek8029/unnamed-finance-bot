@@ -64,7 +64,6 @@ function CardHeader({ left, right }: { left: React.ReactNode; right?: React.Reac
       {left}
       {right || (
         <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-[var(--color-gold)]" />
           <span className="type-eyebrow text-[var(--color-gold)]">Helm AI</span>
         </div>
       )}

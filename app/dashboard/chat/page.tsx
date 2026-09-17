@@ -11,7 +11,6 @@ import type { Analysis } from '@/components/analysis/types';
 import {
   Send,
   Loader2,
-  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { useTier } from '@/hooks/use-tier';
@@ -52,7 +51,6 @@ const SUGGESTED_QUERIES = [
 function HelmLabel() {
   return (
     <div className="flex items-center gap-2 mb-2">
-      <Sparkles className="w-3.5 h-3.5 text-[var(--color-gold)]" strokeWidth={1.6} />
       <span
         className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-gold)]"
         style={MONO}

@@ -129,12 +129,12 @@ const TERMINAL_NAV: NavItem[] = [
 const PORTFOLIO_PARENT: NavItem = { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp };
 const PORTFOLIO_CHILDREN: NavItem[] = [
   { name: 'Manual entry', href: '/dashboard/portfolio/add', icon: PenLine },
-  { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
   { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, tier: 'pro', dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.afterBrief) },
   { name: 'Factor lens', href: '/dashboard/portfolio/factors', icon: Layers, tier: 'pro' },
 ];
 
 const INTELLIGENCE_NAV: NavItem[] = [
+  { name: 'Research', href: '/dashboard/chat', icon: MessageSquare },
   { name: 'Analyze', href: '/dashboard/analyze', icon: Search },
   { name: 'Daily Brief', href: '/dashboard/brief', icon: BookOpen, dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.briefTomorrow) },
   { name: 'Actions', href: '/dashboard/actions', icon: Zap },
