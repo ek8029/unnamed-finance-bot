@@ -186,22 +186,22 @@ export const COMPARISON_CATEGORIES: ComparisonCategory[] = [
       {
         name: 'The category, compared',
         href: '/best-thesis-trackers',
-        note: 'Every thesis tracker worth naming, in one table.',
+        note: 'A focused shortlist, with public offers and evidence checks.',
       },
       {
         name: 'MyThesis',
         href: '/mythesis-alternative',
-        note: 'Priced per holding, which caps how much you track.',
+        note: 'Per-holding pricing compared with a flat subscription.',
       },
       {
         name: 'UseThesis',
         href: '/usethesis-alternative',
-        note: 'Still gated behind a waitlist.',
+        note: 'Notes and account sync described; early access advertised.',
       },
       {
         name: 'Vela',
         href: '/vela-alternative',
-        note: 'Research notes, without the book underneath.',
+        note: 'Thesis monitoring advertised; public waitlist.',
       },
     ],
   },

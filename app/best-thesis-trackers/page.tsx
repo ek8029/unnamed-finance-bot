@@ -4,196 +4,175 @@ import Link from 'next/link';
 import { LegalFooter } from '@/components/legal-footer';
 import { CinematicBg } from '@/components/cinematic-bg';
 
-export const metadata: Metadata = {
-  title: 'Best Investment Thesis Trackers in 2026 (Compared) | Helm',
-  description:
-    'Investment thesis trackers compared in 2026: Helm, MyThesis, Vela, UseThesis and ThesisWatch. Which are live, which cite SEC filings, how they price.',
-  openGraph: {
-    title: 'Best Investment Thesis Trackers in 2026 (Compared)',
-    description:
-      'Helm vs MyThesis vs Vela vs Thesis vs ThesisWatch. Which thesis-monitoring tools are live today, which cite primary sources, and what they cost.',
-    url: 'https://helmterminal.dev/best-thesis-trackers',
-    siteName: 'Helm Terminal',
-    type: 'article',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Best Investment Thesis Trackers in 2026 (Compared)',
-    description: 'Helm vs MyThesis vs Vela vs Thesis vs ThesisWatch, compared honestly.',
-  },
-  alternates: { canonical: 'https://helmterminal.dev/best-thesis-trackers' },
+const CONTENT = {
+  "title": "Best Investment Thesis Trackers in 2026",
+  "description": "Compare thesis trackers by monitoring workflow, current public pricing and source evidence. Start with one thesis before paying for broader coverage.",
+  "intro": "Choose a tracker by the work you need it to do: record an idea, help research it, or keep testing your confirmed reasons. Here are five public offers, with availability separated from advertised features. This is a shortlist, not a complete market census.",
+  "headers": [
+    "Tool",
+    "Public offer",
+    "Price shown"
+  ],
+  "rows": [
+    [
+      "Helm",
+      "One confirmed, tracked thesis on Free; broader monitoring on Pro",
+      "$20/month or $149/year for Pro"
+    ],
+    [
+      "MyThesis",
+      "Thesis alerts; public signup and linked filing examples",
+      "First holding free; $4.99/month per additional holding"
+    ],
+    [
+      "ThesisLoop",
+      "Cited research and monitoring advertised; public signup",
+      "Free allowance; Plus $60/year; Pro $200/year"
+    ],
+    [
+      "Vela",
+      "Waitlist; thesis structuring and monitoring advertised",
+      "Not displayed on the reviewed page"
+    ],
+    [
+      "UseThesis",
+      "Notes and account sync described; early-access signup",
+      "Not displayed on the reviewed page"
+    ]
+  ],
+  "sections": [
+    {
+      "title": "Which workflow fits?",
+      "paragraphs": [
+        "For personal reasons you want to keep testing, compare Helm and MyThesis using the same thesis. For generating and exploring cited research, include ThesisLoop. Vela and UseThesis currently lead with waitlist or early-access invitations; confirm access before relying on them for an immediate workflow.",
+        "Helm also provides portfolio context through optional Plaid connections or manual holdings. That context does not mean every imported holding has a monitored thesis. The Free/Pro boundary is the number of confirmed theses you keep tracked, alongside other plan-specific features."
+      ]
+    },
+    {
+      "title": "What starts monitoring in Helm",
+      "paragraphs": [
+        "Choose a stock, write or edit the reasons you own it, confirm those reasons, and enable tracking. Connecting a brokerage or importing holdings alone does not start thesis monitoring. Checks run on a schedule; a new finding or immediate alert is not guaranteed.",
+        "Free includes one monitored thesis. Pro adds monitoring for more theses you confirm and track, at $20/month or $149/year. Brokerage linking is optional for your first thesis."
+      ]
+    },
+    {
+      "title": "Compare a real finding before subscribing",
+      "paragraphs": [
+        "Use the same stock and the same written reason in each tool. Open a finding, check the source and reporting date, and decide whether the evidence actually tests your reason. A source link, a quotation and a correct interpretation are three different things; none proves the others.",
+        "Pay for broader monitoring when you have additional theses you want to keep under review. If you only need to write down one idea and check it yourself, the free worksheet or a spreadsheet may be enough."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Which thesis tracker is best?",
+      "a": "The useful comparison is whether a tool checks your own reasons, provides evidence you can verify, and supports the number of theses you need. This founder-written comparison does not rank paid-product accuracy or claim Helm is the only tool with citations."
+    },
+    {
+      "q": "Which products offer a public signup?",
+      "a": "The September 19 public pages for Helm, MyThesis and ThesisLoop provide signup paths. Vela offers a waitlist; UseThesis invites early access. A public signup page does not establish paid-product quality or complete availability."
+    },
+    {
+      "q": "Can I start without connecting a brokerage?",
+      "a": "Yes. Helm lets you start with a stock and your confirmed investment reasons. Plaid or manual portfolio entry adds portfolio context but is not required for the first thesis."
+    },
+    {
+      "q": "When would I need Helm Pro?",
+      "a": "Free includes one monitored thesis. Pro adds monitoring for more theses you confirm and track, at $20/month or $149/year. Brokerage linking is optional for your first thesis."
+    }
+  ],
+  "sources": [
+    {
+      "label": "MyThesis public product and pricing",
+      "href": "https://www.mythesis.ai/"
+    },
+    {
+      "label": "ThesisLoop public product and pricing",
+      "href": "https://thesisloop.ai/"
+    },
+    {
+      "label": "Vela public waitlist",
+      "href": "https://www.getvela.co/"
+    },
+    {
+      "label": "UseThesis public feature page",
+      "href": "https://usethesis.com/"
+    }
+  ]
 };
+const URL = 'https://helmterminal.dev/best-thesis-trackers';
 
-const FAQS: { q: string; a: string }[] = [
-  {
-    q: 'What is the best investment thesis tracker in 2026?',
-    a: 'Helm Terminal is the only thesis-monitoring tool in this comparison that lets you monitor the theses you choose to track on flat pricing, cites verbatim, dated SEC filings rather than paraphrased signals, and detects shared-driver risk across positions. MyThesis (mythesis.ai) is the other live paid option, but it meters by holding at $4.99 each per month, so the bill scales with the size of your book. Vela and Thesis (UseThesis) are still waitlist or early access as of July 2026.',
-  },
-  {
-    q: 'Which thesis trackers are actually available right now?',
-    a: 'As of August 2026, three are live: Helm Terminal (free to start), MyThesis (paid, $4.99 per holding per month with the first free), and ThesisLoop (paid, $60/year or $200/year). Vela (getvela.co) is in private waitlist. Thesis (usethesis.com) is in early access with several features marked "coming soon." Confirm current status and pricing on each site before signing up.',
-  },
-  {
-    q: 'Which thesis tracker cites SEC filings with sources?',
-    a: 'Helm cites verbatim, dated excerpts from SEC EDGAR filings and news. Vela reads filings but presents paraphrased interpretations rather than verbatim quotes. MyThesis names the source behind an alert but does not quote the underlying document. Thesis (UseThesis) is a manual note-taking tracker and does not cite filings.',
-  },
-  {
-    q: 'Is there a free investment thesis tracker?',
-    a: 'Helm Terminal includes one ongoing monitored thesis with up to 12 months of cited history on Free, alongside portfolio aggregation, AI stock analysis, and the actions inbox. Helm Pro extends monitoring across your portfolio at $20/month or $149/year. MyThesis gives you your first holding free and charges $4.99 per holding per month after that. ThesisLoop is $60/year or $200/year. Vela and Thesis had not published pricing as of August 2026.',
-  },
-  {
-    q: 'How is MyThesis different from Helm Terminal?',
-    a: 'Both monitor investment theses and are live today. MyThesis is a dedicated thesis-alert tool priced at $4.99 per holding per month, first holding free, with manually entered positions, so 10 holdings is $44.91/month and 25 is $119.76/month. Helm runs thesis monitoring inside a broader portfolio agent: brokerage aggregation via Plaid, tax-loss harvesting, concentration and earnings scans, and a daily brief, at $20/month flat for unlimited holdings, with verbatim dated citations behind every alert.',
-  },
-];
-
-type Cell = string;
-const ROWS: { label: string; helm: Cell; mythesis: Cell; vela: Cell; thesis: Cell; watch: Cell }[] = [
-  { label: 'Status (July 2026)', helm: 'Live, shipping', mythesis: 'Live, shipping', vela: 'Private waitlist', thesis: 'Early access', watch: 'Not disclosed' },
-  { label: 'Free tier', helm: '1 monitored thesis', mythesis: '1 holding', vela: 'Not shown', thesis: 'Not shown', watch: 'Not disclosed' },
-  { label: 'Paid price', helm: '$20/mo, unlimited holdings', mythesis: '$4.99/mo per holding, 1st free', vela: 'Not public', thesis: 'Not public', watch: 'Not disclosed' },
-  { label: 'Reads SEC filings', helm: 'Yes (EDGAR)', mythesis: 'Not shown', vela: 'Yes', thesis: 'No', watch: 'Not disclosed' },
-  { label: 'Verbatim dated citations', helm: 'Yes', mythesis: 'No (source named only)', vela: 'No (paraphrased)', thesis: 'No', watch: 'Not disclosed' },
-  { label: 'Shared-driver risk', helm: 'Yes', mythesis: 'No', vela: 'No', thesis: 'No', watch: 'Not disclosed' },
-  { label: 'Account sync', helm: 'Plaid + manual', mythesis: 'Manual only', vela: 'Plaid (optional)', thesis: 'Plaid', watch: 'Not disclosed' },
-  { label: 'Taxes, concentration, earnings', helm: 'Yes', mythesis: 'No', vela: 'No', thesis: 'No', watch: 'Not disclosed' },
-  { label: 'Coverage', helm: 'US-listed', mythesis: 'US equities', vela: 'US-focused', thesis: 'US equities + ETFs', watch: 'Not disclosed' },
-];
+export const metadata: Metadata = {
+  title: CONTENT.title + ' | Helm',
+  description: CONTENT.description,
+  openGraph: { title: CONTENT.title, description: CONTENT.description, url: URL, siteName: 'Helm Terminal', type: 'article' },
+  twitter: { card: 'summary_large_image', title: CONTENT.title, description: CONTENT.description },
+  alternates: { canonical: URL },
+};
 
 export default function BestThesisTrackersPage() {
   const jsonLd = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline: 'Best Investment Thesis Trackers in 2026 (Compared)',
-      description:
-        'An honest comparison of investment thesis trackers in 2026: Helm Terminal, MyThesis, Vela, Thesis (UseThesis), and ThesisWatch.',
-      datePublished: '2026-06-17',
-      dateModified: '2026-07-16',
+    { '@context': 'https://schema.org', '@type': 'Article', headline: CONTENT.title, description: CONTENT.description,
+      datePublished: '2026-06-17', dateModified: '2026-09-19',
       author: { '@type': 'Person', name: 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
-      publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
-      url: 'https://helmterminal.dev/best-thesis-trackers',
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: FAQS.map((f) => ({
-        '@type': 'Question',
-        name: f.q,
-        acceptedAnswer: { '@type': 'Answer', text: f.a },
-      })),
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://helmterminal.dev' },
-        { '@type': 'ListItem', position: 2, name: 'Best Thesis Trackers', item: 'https://helmterminal.dev/best-thesis-trackers' },
-      ],
-    },
+      publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' }, url: URL },
+    { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: CONTENT.faqs.map(f => ({
+      '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })) },
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://helmterminal.dev' },
+      { '@type': 'ListItem', position: 2, name: CONTENT.title, item: URL },
+    ] },
   ];
-
   return (
-    <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] relative overflow-hidden">
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] relative overflow-hidden">
       <CinematicBg />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      {/* Nav */}
       <SiteNav />
-
       <article className="relative z-10 container mx-auto px-6 pt-12 pb-24 max-w-3xl">
         <header className="mb-8">
-          <div className="type-eyebrow text-[var(--color-gold)] mb-4">Comparison</div>
-          <h1 className="font-sans mb-5">
-            Best investment thesis trackers in 2026
-          </h1>
-          <p className="text-[17px] leading-[1.55] text-[var(--color-text-secondary)]">
-            A new category is forming: tools that watch the reasons you own a stock, not just the price. Here is an honest look at the five names in the space as of July 2026, including ours. Only two are open to the public today.
-          </p>
+          <div className="type-eyebrow text-[var(--color-gold)] mb-4">Comparison · Updated September 19, 2026</div>
+          <h1 className="font-sans mb-5">{CONTENT.title}</h1>
+          <p className="text-[17px] leading-[1.55] text-[var(--color-text-secondary)]">{CONTENT.intro}</p>
+          <p className="text-[13px] text-[var(--color-text-muted)] mt-4">Written by Evan Kim, Helm&apos;s founder. Competitor details below describe public pages, not a hands-on test of their paid products.</p>
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-[14px]">
+            <Link href="/signup?next=%2Fdashboard%2Ftheses%2Fclassic" className="text-[var(--color-gold)] font-semibold hover:underline">Start one thesis free</Link>
+            <Link href="/blog/investment-thesis-examples" className="text-[var(--color-text-secondary)] hover:underline">Read a worked example</Link>
+          </div>
         </header>
-
-        <div className="space-y-12 text-[var(--color-text-secondary)] text-[15px] leading-relaxed">
-          {/* Table */}
-          <section>
+        <div className="space-y-10 text-[var(--color-text-secondary)] text-[15px] leading-relaxed">
+          <section aria-label="Comparison table">
             <div className="overflow-x-auto sovereign-card rounded">
-              <table className="w-full text-[14.5px] text-left border-collapse min-w-[760px]">
-                <thead>
-                  <tr className="border-b border-[var(--color-border-base)]">
-                    <th className="p-3 font-semibold text-[var(--color-text-primary)]">&nbsp;</th>
-                    <th className="p-3 font-semibold text-[var(--color-gold)]">Helm</th>
-                    <th className="p-3 font-semibold text-[var(--color-text-muted)]">MyThesis</th>
-                    <th className="p-3 font-semibold text-[var(--color-text-muted)]">Vela</th>
-                    <th className="p-3 font-semibold text-[var(--color-text-muted)]">Thesis</th>
-                    <th className="p-3 font-semibold text-[var(--color-text-muted)]">ThesisWatch</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ROWS.map((r) => (
-                    <tr key={r.label} className="border-b border-[var(--color-border-subtle)] last:border-0">
-                      <td className="p-3 text-[var(--color-text-primary)] font-medium">{r.label}</td>
-                      <td className="p-3 text-[var(--color-text-primary)]">{r.helm}</td>
-                      <td className="p-3">{r.mythesis}</td>
-                      <td className="p-3">{r.vela}</td>
-                      <td className="p-3">{r.thesis}</td>
-                      <td className="p-3">{r.watch}</td>
-                    </tr>
-                  ))}
-                </tbody>
+              <table className="w-full text-[14px] text-left border-collapse min-w-[560px]">
+                <caption className="text-left p-3 text-[13px]">Public offers checked September 19, 2026. Confirm terms with each provider before paying.</caption>
+                <thead><tr className="border-b border-[var(--color-border-base)]">{CONTENT.headers.map(h => <th key={h} scope="col" className="p-3 font-semibold text-[var(--color-text-primary)]">{h}</th>)}</tr></thead>
+                <tbody>{CONTENT.rows.map(row => <tr key={row[0]} className="border-b border-[var(--color-border-subtle)] last:border-0">
+                  {row.map((cell, i) => i === 0 ? <th key={i} scope="row" className="p-3 font-medium text-[var(--color-text-primary)]">{cell}</th> : <td key={i} className="p-3">{cell}</td>)}
+                </tr>)}</tbody>
               </table>
             </div>
-            <p className="text-[13px] text-[var(--color-text-muted)] mt-2">Vela, Thesis, and ThesisWatch details verified from public sites on June 17, 2026; MyThesis details verified July 14, 2026. All may change. ThesisWatch did not expose details to public crawls, so its cells are marked not disclosed.</p>
           </section>
-
-          {/* Per-tool */}
-          <section className="space-y-8">
-            <div>
-              <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Helm Terminal</h2>
-              <p>Helm is a financial intelligence terminal whose flagship layer is thesis monitoring. You write the pillars behind each holding, and Helm scores SEC filings, earnings, news, and price against them every trading day, flagging thesis drift with verbatim, dated citations. It is the only tool here that cites primary sources verbatim, detects shared-driver risk across positions, and runs the thesis layer inside a whole-portfolio agent: brokerage aggregation, tax-loss harvesting, concentration and earnings scans, and a daily brief. Free includes the core terminal and one ongoing monitored thesis with up to 12 months of cited history. Pro extends monitoring across your portfolio at $20/month or $149/year. <Link href="/thesis-monitoring" className="text-[var(--color-gold)] hover:underline">How it works.</Link></p>
-            </div>
-            <div>
-              <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">MyThesis</h2>
-              <p>MyThesis (mythesis.ai) is the newest live entrant: a dedicated thesis-alert tool with a status chip per thesis (Supported or Challenged), a per-pillar breakdown, an alert feed tagged by severity, and versioned theses. It is a focused take on one job and it does that job cleanly. The tradeoffs are structural: holdings are entered manually (no brokerage sync), alerts name their source but do not quote the underlying document, and pricing meters by position at $4.99 per holding per month with the first one free (observed August 9, 2026). A good fit if you hold a few positions and want a standalone thesis alert feed. If you want the thesis layer inside a whole-portfolio agent, or you hold more than a handful of names, the per-holding math turns against it quickly. <Link href="/mythesis-alternative" className="text-[var(--color-gold)] hover:underline">Full MyThesis vs Helm breakdown.</Link></p>
-            </div>
-            <div>
-              <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Vela</h2>
-              <p>Vela (getvela.co) positions around the line "know when your thesis breaks." It reads filings and maps signals to your thesis drivers, but presents paraphrased interpretations rather than verbatim quotes, and as of June 2026 it is in private waitlist with pricing not public. Closest in positioning to Helm; the main differences are that Helm is live, cites verbatim sources, and adds cross-position risk.</p>
-            </div>
-            <div>
-              <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">Thesis (UseThesis)</h2>
-              <p>Thesis (usethesis.com) is a lighter, note-first tracker: remember why you invested and take notes as events happen. It connects brokerages via Plaid and supports US equities and ETFs, but does not cite SEC filings, and several features were marked "coming soon" with a waitlist as of June 2026. A good fit for manual journaling; not an automated monitor.</p>
-            </div>
-            <div>
-              <h2 className="text-[20px] font-bold text-[var(--color-text-primary)] mb-2">ThesisWatch</h2>
-              <p>ThesisWatch (thesiswatch.com) bills itself as an investment thesis management platform. Its site did not expose product details, pricing, or launch status to public crawls as of June 2026, so we have left those cells blank rather than guess. Check the site directly for current details.</p>
-            </div>
-          </section>
-
-          {/* FAQ */}
+          {CONTENT.sections.map(section => <section key={section.title}>
+            <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">{section.title}</h2>
+            {section.paragraphs.map(p => <p key={p} className="mb-3">{p}</p>)}
+          </section>)}
           <section>
-            <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-5">Common questions</h2>
-            <div className="space-y-6">
-              {FAQS.map((f) => (
-                <div key={f.q}>
-                  <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)] mb-1.5">{f.q}</h3>
-                  <p>{f.a}</p>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">Sources and a practical next step</h2>
+            <ul className="list-disc pl-5 space-y-2">{CONTENT.sources.map(s => <li key={s.href}><a href={s.href} className="text-[var(--color-gold)] hover:underline">{s.label}</a></li>)}</ul>
+            <p className="mt-4">Try the <Link href="/resources/helm-thesis-review-worksheet.pdf" className="text-[var(--color-gold)] hover:underline">free thesis review worksheet</Link> before choosing a tool. See <Link href="/how-helm-detects-thesis-drift" className="text-[var(--color-gold)] hover:underline">Helm&apos;s scoring methodology</Link> and <Link href="/pricing" className="text-[var(--color-gold)] hover:underline">the full Free/Pro comparison</Link>.</p>
           </section>
-
-          {/* CTA */}
+          <section>
+            <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-5">Common questions</h2>
+            <div className="space-y-6">{CONTENT.faqs.map(f => <div key={f.q}><h3 className="text-[16px] font-semibold text-[var(--color-text-primary)] mb-1.5">{f.q}</h3><p>{f.a}</p></div>)}</div>
+          </section>
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
-            <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Every holding. One flat price. Real receipts.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Start with one monitored thesis on Free. Pro monitors more theses you confirm and track, with dated citations, at $20/month or $149/year. No per-holding meter.</p>
-            <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
+            <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Start with one reason you can test.</h2>
+            <p className="mb-5 max-w-xl mx-auto">Confirm your reasons for one stock and enable tracking. One monitored thesis is free; Pro adds more. No brokerage connection needed to begin.</p>
+            <Link href="/signup?next=%2Fdashboard%2Ftheses%2Fclassic" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Start one thesis free</Link>
           </section>
-
-          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed border-t border-[var(--color-border-subtle)] pt-6">
-            Comparison reflects public information as of July 16, 2026 and is provided for general information, not financial advice. Verify current details with each provider. Helm Terminal is not a registered investment advisor.
-          </p>
+          <p className="text-[13px] text-[var(--color-text-muted)] border-t border-[var(--color-border-subtle)] pt-6">General information, not investment advice. Product availability, prices and features can change. AI findings can be incomplete or wrong; verify the underlying evidence. Helm Terminal is not a registered investment advisor.</p>
         </div>
       </article>
-
       <LegalFooter />
     </main>
   );
