@@ -61,6 +61,7 @@ import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import { ConvictionRail } from '@/components/thesis/conviction-rail';
 import { ConvictionNavButton } from '@/components/thesis/conviction-nav-button';
 import { cachedGet, invalidate } from '@/lib/api-cache';
+import { navigateAfterAuth } from '@/lib/auth-navigation';
 
 /* ── Legacy-onboarding fallback for a parked checkout ──
    V2 tells the shell when it is out of the way. The legacy flow does not, so
@@ -445,8 +446,9 @@ export default function DashboardShell({
     try {
       const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (res.ok) {
-        router.push('/login');
-        router.refresh();
+        // A soft route change keeps URL-keyed profile/portfolio caches alive
+        // for the next account. End the document at the auth boundary.
+        navigateAfterAuth('/login');
       }
     } catch (error) {
       console.error('Logout failed:', error);

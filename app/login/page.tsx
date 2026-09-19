@@ -1,20 +1,20 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AUTH_MESSAGES, UNCONFIRMED_LOGIN_ERROR, type AuthMessageKey } from '@/lib/auth-messages';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/auth-shell';
 import { supabase } from '@/lib/supabase/client';
 import { safeNext } from '@/lib/checkout-intent';
+import { navigateAfterAuth, clearAccountBrowserData } from '@/lib/auth-navigation';
 
 // Copy lives in lib/auth-messages.ts so redirects and this lookup cannot drift
 // apart. An unknown key renders nothing on purpose: the param must never be
 // echoed to the page.
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = safeNext(searchParams.get('redirect'));
   const messageKey = searchParams.get('message') ?? '';
@@ -108,8 +108,9 @@ function LoginForm() {
         return;
       }
 
-      router.push(redirect);
-      router.refresh();
+      // An account change must discard the previous document's profile/API
+      // caches and mounted providers. router.refresh preserves client state.
+      navigateAfterAuth(redirect);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -135,8 +136,7 @@ function LoginForm() {
       });
       if (verifyError) throw verifyError;
 
-      router.push(redirect);
-      router.refresh();
+      navigateAfterAuth(redirect);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Invalid verification code';
       setError(message);
@@ -209,6 +209,7 @@ function LoginForm() {
         /* Password Step */
         <>
           <button type="button" onClick={async () => {
+            clearAccountBrowserData();
             await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}` },

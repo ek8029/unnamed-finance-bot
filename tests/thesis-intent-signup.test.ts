@@ -3,12 +3,13 @@ import React from 'react';
 import SignupPage from '@/app/signup/page';
 import MfaVerifyPage from '@/app/mfa-verify/page';
 import LoginPage from '@/app/login/page';
+import { cachedGet, __resetApiCache } from '@/lib/api-cache';
 
 const h = vi.hoisted(() => ({
   query: '', path: '/signup', slots: [] as any[], cursor: 0,
   effects: [] as (() => unknown)[],
   router: { push: vi.fn(), refresh: vi.fn() },
-  fetch: vi.fn(), oauth: vi.fn(), verify: vi.fn(), challenge: vi.fn(),
+  fetch: vi.fn(), oauth: vi.fn(), verify: vi.fn(), challenge: vi.fn(), replace: vi.fn(),
 }));
 vi.mock('react', async original => {
   const actual = await original<typeof import('react')>();
@@ -76,12 +77,14 @@ beforeEach(() => {
   h.query = `next=${encodeURIComponent(destination)}`;
   h.slots = []; h.cursor = 0; h.effects = [];
   h.router.push.mockReset(); h.router.refresh.mockReset();
+  h.replace.mockReset();
+  __resetApiCache();
   h.fetch.mockReset(); h.oauth.mockReset();
   h.challenge.mockReset().mockResolvedValue({ data: { id: 'challenge' }, error: null });
   h.verify.mockReset().mockResolvedValue({ error: null });
   vi.stubGlobal('React', React);
   vi.stubGlobal('fetch', h.fetch);
-  vi.stubGlobal('window', { location: { origin: 'https://helmterminal.dev' } });
+  vi.stubGlobal('window', { location: { origin: 'https://helmterminal.dev', replace: h.replace } });
   vi.stubGlobal('sessionStorage', { getItem: () => null, setItem: vi.fn() });
   vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
   vi.stubEnv('NEXT_PUBLIC_HCAPTCHA_SITE_KEY', '');
@@ -130,9 +133,12 @@ describe('actual signup handlers retain thesis intent', () => {
     await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
     expect(h.fetch).toHaveBeenCalledTimes(1);
     expect(JSON.parse(h.fetch.mock.calls[0][1].body).next).toBe(next);
-    const pushed = h.router.push.mock.calls[0][0];
-    if (session) expect(pushed).toBe(next);
+    if (session) {
+      expect(h.replace).toHaveBeenCalledWith(next);
+      expect(h.router.push).not.toHaveBeenCalled();
+    }
     else {
+      const pushed = h.router.push.mock.calls[0][0];
       const login = new URL(pushed, 'https://helmterminal.dev');
       expect(login.pathname).toBe('/login');
       expect(login.searchParams.get('redirect')).toBe(next);
@@ -163,7 +169,31 @@ describe('actual login handler uses the same safe destination', () => {
     await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
     expect(h.fetch).toHaveBeenCalledTimes(1);
     expect(h.fetch.mock.calls[0][0]).toBe('/api/auth/login');
-    expect(h.router.push).toHaveBeenCalledWith(next === destination ? destination : '/dashboard');
+    expect(h.replace).toHaveBeenCalledWith(next === destination ? destination : '/dashboard');
+    expect(h.router.push).not.toHaveBeenCalled();
+  });
+  it('leaves the old document after login even when another account has a warm profile cache', async () => {
+    h.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ profile: { email: 'old@example.test' } })));
+    await cachedGet('/api/user/profile');
+    h.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ user: { email: 'new@example.test' } })));
+    let tree = await settle(LoginPage);
+    tree.find(node => node.props.id === 'email')!.props.onChange({ target: { value: 'new@example.test' } });
+    tree.find(node => node.props.id === 'password')!.props.onChange({ target: { value: 'Example-Strong9' } });
+    tree = await settle(LoginPage);
+    await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
+    expect(JSON.parse(h.fetch.mock.calls[1][1].body).email).toBe('new@example.test');
+    // The actual cache still holds the old profile in this document. A soft
+    // router transition would reuse it; a full document navigation discards it.
+    expect((await cachedGet('/api/user/profile')).data).toEqual({ profile: { email: 'old@example.test' } });
+    expect(h.replace).toHaveBeenCalledWith('/dashboard');
+    expect(h.router.push).not.toHaveBeenCalled();
+  });
+  it('does not navigate when password login fails', async () => {
+    h.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'Invalid email or password' }), { status: 401 }));
+    const tree = await settle(LoginPage);
+    await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
+    expect(h.replace).not.toHaveBeenCalled();
+    expect(h.router.push).not.toHaveBeenCalled();
   });
 });
 
@@ -177,13 +207,15 @@ describe('actual MFA verification handler retains thesis intent', () => {
     await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
     expect(h.challenge).toHaveBeenCalledWith({ factorId: 'factor' });
     expect(h.verify).toHaveBeenCalledWith({ factorId: 'factor', challengeId: 'challenge', code: '123456' });
-    expect(h.router.push).toHaveBeenCalledWith(next === destination ? destination : '/dashboard');
+    expect(h.replace).toHaveBeenCalledWith(next === destination ? destination : '/dashboard');
+    expect(h.router.push).not.toHaveBeenCalled();
   });
   it('does not navigate when MFA verification fails', async () => {
     h.verify.mockResolvedValue({ error: new Error('Invalid verification code') });
     const tree = await settle(MfaVerifyPage);
     await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
     expect(h.verify).toHaveBeenCalled();
+    expect(h.replace).not.toHaveBeenCalled();
     expect(h.router.push).not.toHaveBeenCalled();
   });
 });

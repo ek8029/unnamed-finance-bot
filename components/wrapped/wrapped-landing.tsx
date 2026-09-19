@@ -8,6 +8,7 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { HelmMark } from '@/components/helm-mark';
 import { supabase } from '@/lib/supabase/client';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
+import { navigateAfterAuth, clearAccountBrowserData } from '@/lib/auth-navigation';
 
 /* ═══════════════════════════════════════════════════════════
    WRAPPED FUNNEL — single page, 4 states:
@@ -133,8 +134,8 @@ export function WrappedLanding() {
         return;
       }
       if (data.session) {
-        // Auto-confirmed — go straight to Plaid
-        setFlowState('connect');
+        // Reload the funnel with the new session and fresh account caches.
+        navigateAfterAuth('/wrapped');
       } else {
         // Email confirmation required — save userId, poll for confirmation
         if (data.user?.id) setPendingUserId(data.user.id);
@@ -150,6 +151,7 @@ export function WrappedLanding() {
   };
 
   const handleGoogleSignIn = async () => {
+    clearAccountBrowserData();
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=/wrapped` },
@@ -171,7 +173,7 @@ export function WrappedLanding() {
           // One sign-in attempt to establish session
           const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           if (data.session && !error) {
-            setFlowState('connect');
+            navigateAfterAuth('/wrapped');
           } else {
             // Confirmed but sign-in failed — send to login
             setSignupError('Email confirmed. Please log in to continue.');

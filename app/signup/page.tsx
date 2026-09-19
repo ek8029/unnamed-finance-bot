@@ -9,6 +9,7 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { AuthShell } from '@/components/auth-shell';
 import { supabase } from '@/lib/supabase/client';
 import posthog from 'posthog-js';
+import { navigateAfterAuth, clearAccountBrowserData } from '@/lib/auth-navigation';
 
 function getPasswordStrength(password: string) {
   const requirements = [
@@ -106,8 +107,8 @@ function SignupForm() {
       }
       if (data.session) {
         posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default' });
-        router.push(nextPath);
-        router.refresh();
+        // Start the authenticated account with fresh client caches/providers.
+        navigateAfterAuth(nextPath);
       } else {
         posthog.capture('signup_completed', { method: 'email', flow: isWrappedFlow ? 'wrapped' : 'default', needs_confirmation: true });
         // Must be a key from lib/auth-messages.ts, not the sentence itself:
@@ -124,6 +125,7 @@ function SignupForm() {
   };
 
   const handleGoogleSignIn = async () => {
+    clearAccountBrowserData();
     posthog.capture('signup_started', { method: 'google', flow: isWrappedFlow ? 'wrapped' : 'default' });
     await supabase.auth.signInWithOAuth({
       provider: 'google',

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { AuthShell } from '@/components/auth-shell';
 import { loginUrlForNext, safeNext } from '@/lib/checkout-intent';
+import { navigateAfterAuth } from '@/lib/auth-navigation';
 
 function MfaVerifyForm() {
   const router = useRouter();
@@ -57,8 +58,7 @@ function MfaVerifyForm() {
       });
       if (verifyError) throw verifyError;
 
-      router.push(nextPath);
-      router.refresh();
+      navigateAfterAuth(nextPath);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Invalid verification code';
       setError(message);
@@ -123,9 +123,9 @@ function MfaVerifyForm() {
         <button
           type="button"
           onClick={async () => {
-            await supabase.auth.signOut();
-            router.push(loginUrlForNext(nextPath));
-            router.refresh();
+            const { error } = await supabase.auth.signOut();
+            if (error) { setError('Could not sign out. Please try again.'); return; }
+            navigateAfterAuth(loginUrlForNext(nextPath));
           }}
           className="w-full text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
         >

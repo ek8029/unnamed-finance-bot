@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { HelmMark } from '@/components/helm-mark';
 import { createClient } from '@/lib/supabase/client';
+import { navigateAfterAuth } from '@/lib/auth-navigation';
 
 function getPasswordStrength(password: string) {
   const requirements = [
@@ -21,7 +21,6 @@ function getPasswordStrength(password: string) {
 }
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -81,7 +80,7 @@ export default function ResetPasswordPage() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/dashboard');
+        navigateAfterAuth('/dashboard');
       }, 2000);
     } catch {
       setError('Something went wrong. Please try again.');
