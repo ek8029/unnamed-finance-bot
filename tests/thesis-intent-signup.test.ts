@@ -96,13 +96,32 @@ describe('actual signup handlers retain thesis intent', () => {
     expect(tree.some(node => node.props.children === 'One thesis free · No brokerage connection required')).toBe(true);
     expect(tree.some(node => node.props.children === 'No credit card required · Connect or enter positions after sign-up')).toBe(false);
   });
-  it.each(['', 'next=%2Fdashboard%3Fcheckout%3Dpro', 'flow=wrapped', 'next=%2Fdashboard%2Ftheses%2Fclassic-extra'])('retains ordinary signup copy for %s', async query => {
+  it.each(['', 'flow=wrapped', 'next=%2Fdashboard%2Ftheses%2Fclassic-extra',
+    'next=%2Fdashboard%3Fcheckout%3Dmax', 'next=%2Fdashboard%3Fcheckout%3Dunknown',
+    'next=https%3A%2F%2Fevil.example%2Fdashboard%3Fcheckout%3Dpro',
+    'next=%2Fsomewhere-else%3Fcheckout%3Dpro',
+    'flow=wrapped&next=%2Fdashboard%3Fcheckout%3Dpro',
+  ])('retains ordinary signup copy for %s', async query => {
     h.query = query;
     const tree = await settle(SignupPage);
     expect(tree.find(node => node.props.className === 'helm-auth-subtitle')!.props.children).toBe('Create your account, then connect a brokerage or add your first position. No card required.');
     expect(tree.some(node => node.props.children === 'No credit card required · Connect or enter positions after sign-up')).toBe(true);
+    expect(tree.some(node => node.props.children === 'CONTINUE TO HELM PRO')).toBe(false);
   });
-  it.each([true, false])('preserves the submitted destination when signup session=%s', async session => {
+  it.each([['pro', 'monthly'], ['pro_annual', 'yearly']] as const)('acknowledges %s without promising a trial or subscribing during account creation', async (plan, interval) => {
+    h.query = `next=${encodeURIComponent(`/dashboard?checkout=${plan}`)}`;
+    const tree = await settle(SignupPage);
+    expect(tree.find(node => node.type === 'h1')!.props.children).toBe('Create your account for Pro');
+    expect(tree.some(node => node.props.children === 'CONTINUE TO HELM PRO')).toBe(true);
+    expect(tree.find(node => node.props.className === 'helm-auth-subtitle')!.props.children).toBe(`Create your account to continue with Pro ${interval}. Review the price, payment details and any eligible trial at checkout.`);
+    expect(tree.some(node => node.props.children === 'Account creation is free · Pro requires checkout')).toBe(true);
+    expect(tree.some(node => node.props.children === 'START WITH HELM FREE')).toBe(false);
+    expect(h.fetch).not.toHaveBeenCalled();
+    const signIn = tree.find(node => node.type === 'a' && node.props.children === 'Sign in')!;
+    expect(new URL(signIn.props.href, 'https://helmterminal.dev').searchParams.get('redirect')).toBe(`/dashboard?checkout=${plan}`);
+  });
+  it.each([true, false].flatMap(session => [destination, '/dashboard?checkout=pro', '/dashboard?checkout=pro_annual'].map(next => ({ session, next }))))('preserves $next when signup session=$session', async ({ session, next }) => {
+    h.query = `next=${encodeURIComponent(next)}`;
     h.fetch.mockResolvedValue(new Response(JSON.stringify({ session: session ? { access_token: 'fixture' } : null })));
     let tree = await settle(SignupPage);
     tree.find(node => node.props.id === 'email')!.props.onChange({ target: { value: 'fixture@example.test' } });
@@ -110,17 +129,17 @@ describe('actual signup handlers retain thesis intent', () => {
     tree = await settle(SignupPage);
     await tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
     expect(h.fetch).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(h.fetch.mock.calls[0][1].body).next).toBe(destination);
+    expect(JSON.parse(h.fetch.mock.calls[0][1].body).next).toBe(next);
     const pushed = h.router.push.mock.calls[0][0];
-    if (session) expect(pushed).toBe(destination);
+    if (session) expect(pushed).toBe(next);
     else {
       const login = new URL(pushed, 'https://helmterminal.dev');
       expect(login.pathname).toBe('/login');
-      expect(login.searchParams.get('redirect')).toBe(destination);
+      expect(login.searchParams.get('redirect')).toBe(next);
       expect(login.searchParams.get('message')).toBe('check-email');
     }
   });
-  it.each([destination, '//evil.example', '/a/..//evil.example'])('passes only a safe next to Google OAuth (%s)', async next => {
+  it.each([destination, '/dashboard?checkout=pro', '/dashboard?checkout=pro_annual', '//evil.example', '/a/..//evil.example'])('passes only a safe next to Google OAuth (%s)', async next => {
     h.query = `next=${encodeURIComponent(next)}`;
     const tree = await settle(SignupPage);
     const google = tree.find(node => node.type === 'button' && node.props.onClick?.name === 'handleGoogleSignIn')!;
@@ -129,7 +148,7 @@ describe('actual signup handlers retain thesis intent', () => {
     expect(request.provider).toBe('google');
     const callback = new URL(request.options.redirectTo);
     expect(callback.pathname).toBe('/auth/callback');
-    expect(callback.searchParams.get('next')).toBe(next === destination ? destination : '/dashboard');
+    expect(callback.searchParams.get('next')).toBe(next.startsWith('/dashboard') ? next : '/dashboard');
   });
 });
 

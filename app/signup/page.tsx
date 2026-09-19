@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { safeNext, loginUrlForNext } from '@/lib/checkout-intent';
+import { safeNext, loginUrlForNext, isCheckoutIntent, CHECKOUT_PARAM } from '@/lib/checkout-intent';
 import Link from 'next/link';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
@@ -34,6 +34,14 @@ function SignupForm() {
   // reachable by anyone with a link, so it must never leave the origin.
   const nextPath = isWrappedFlow ? '/wrapped' : safeNext(searchParams.get('next'));
   const isThesisEntry = nextPath.split(/[?#]/, 1)[0] === '/dashboard/theses/classic';
+  // Describe only the supported purchase destination. This is presentation;
+  // auth and checkout still validate the destination and subscription eligibility.
+  const nextUrl = new URL(nextPath, 'https://helmterminal.dev');
+  const requestedPlan = nextUrl.pathname === '/dashboard' ? nextUrl.searchParams.get(CHECKOUT_PARAM) : null;
+  const checkoutIntent = isCheckoutIntent(requestedPlan) ? requestedPlan : null;
+  const checkoutDescription = checkoutIntent
+    ? `Create your account to continue with Pro ${checkoutIntent === 'pro_annual' ? 'yearly' : 'monthly'}. Review the price, payment details and any eligible trial at checkout.`
+    : undefined;
 
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
@@ -124,7 +132,11 @@ function SignupForm() {
   };
 
   return (
-    <AuthShell subtitle={isWrappedFlow ? "Create your account to see your Wrapped" : "Create your account"} signupDescription={isThesisEntry ? 'Create your account, then draft and track your first investment thesis. No card required.' : undefined}>
+    <AuthShell
+      subtitle={isWrappedFlow ? 'Create your account to see your Wrapped' : checkoutIntent ? 'Create your account for Pro' : 'Create your account'}
+      signupLabel={checkoutIntent ? 'CONTINUE TO HELM PRO' : undefined}
+      signupDescription={checkoutDescription ?? (isThesisEntry ? 'Create your account, then draft and track your first investment thesis. No card required.' : undefined)}
+    >
       {isWrappedFlow && (
         <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-5 text-center">
           Connect any brokerage and get your personalized year in review in 30 seconds.
@@ -207,11 +219,11 @@ function SignupForm() {
 
         <button type="submit" disabled={loading}
           className="w-full py-3.5 px-4 bg-[var(--color-gold)] hover:bg-[var(--color-gold-hi)] disabled:opacity-50 disabled:cursor-not-allowed text-[#0A0A0A] font-semibold rounded-md transition-colors flex items-center justify-center gap-2">
-          {loading ? 'Creating account...' : (<>Create your free account <ArrowRight className="w-4 h-4" /></>)}
+          {loading ? 'Creating account...' : (<>{checkoutIntent ? 'Create account and continue' : 'Create your free account'} <ArrowRight className="w-4 h-4" /></>)}
         </button>
 
         <p className="text-[13px] text-center text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-          {isThesisEntry ? 'One thesis free · No brokerage connection required' : 'No credit card required · Connect or enter positions after sign-up'}
+          {checkoutIntent ? 'Account creation is free · Pro requires checkout' : isThesisEntry ? 'One thesis free · No brokerage connection required' : 'No credit card required · Connect or enter positions after sign-up'}
         </p>
       </form>
 
