@@ -13,7 +13,7 @@ export const V3_COPY = {
     title: 'Start with what you own.',
     loadError: 'Could not load your accounts.',
     lede: 'Connect a brokerage, or type in the positions you hold. Either one gives Helm something real to read.',
-    syncing: 'Linked. Your holdings are syncing and show up here in a minute or two. You can leave this page; the sync keeps going.',
+    syncing: 'Linked. Your holdings are syncing and show up here when the first import lands. You can leave this page; the sync keeps going.',
     duplicate: 'That brokerage is already connected. Accounts shows the connection.',
     syncFailed: 'The connection is saved, but the first import did not finish. Accounts shows its status and the next sync runs on its own.',
     manual: {
@@ -22,7 +22,7 @@ export const V3_COPY = {
     },
     plaid: {
       heading: 'Connect a brokerage',
-      body: 'Read-only. Helm can see positions and balances and can never trade, move money or see your login.',
+      body: 'Imports the positions and balances at that brokerage and keeps them current.',
       search: 'Search all brokerages',
       chips: ['Fidelity', 'Schwab', 'Robinhood', 'Vanguard', 'E*TRADE', 'Interactive Brokers'],
       trust: [
@@ -39,7 +39,7 @@ export const V3_COPY = {
     // The figures live in the summary strip now, so the heading does not
     // repeat them: a 23-account book made the same three numbers appear twice
     // above a list too long to scroll.
-    several: 'Helm has these. Add another account, or continue.',
+    several: 'These are the accounts Helm can read. Add another, or continue.',
     statAccounts: (n: number) => plural(n, 'account', 'accounts'),
     statPositions: (n: number) => plural(n, 'position', 'positions'),
     statValue: 'tracked',
@@ -60,25 +60,25 @@ export const V3_COPY = {
     title: 'Here is your book, read.',
     loading: 'Reading your book',
     stillSyncing: (institution: string) => `${institution} is still syncing; this updates when it lands.`,
-    error: 'Helm could not read the filings just now.',
+    error: 'Helm could not read the sources just now.',
     bookError: 'Helm could not read your accounts just now.',
     retry: 'Retry',
     exposureHeading: 'What you actually own',
     legendDirect: 'Held directly',
     legendFunds: 'Inside your funds',
-    receiptHeading: (t: string) => `The reason you hold ${t}, checked`,
-    receiptFallback: (t: string) => `No filing has moved ${t} in the last 90 days.`,
-    changesHeading: 'What moved today in these positions',
-    changesEmpty: 'Nothing in these positions moved outside its normal range today.',
+    receiptHeading: (t: string) => `The case for ${t}, checked`,
+    receiptFallback: (t: string) => `No dated source on ${t} yet.`,
+    changesHeading: 'What moved in these positions',
+    changesEmpty: 'Nothing in these positions moved more than 2% in the last session.',
     primary: 'Open the terminal',
-    promise: 'The brief on these positions lands at 9:15 ET tomorrow.',
+    promise: 'The brief on these positions lands before the 9:30 open on the next trading day.',
   },
   firstLook: {
     title: 'What do you want to see first?',
     lede: 'Pick as many as you want. Helm leads with them on the next screen and in your brief.',
     options: {
       exposure: 'How much of everything I actually own',
-      receipts: 'Whether the reasons I hold these still hold',
+      receipts: 'Whether the case for these still stands',
       changes: 'What changed in these positions',
       brief: 'What Helm read while I was away',
       overlap: 'Overlap between my accounts',
@@ -107,9 +107,12 @@ export const V3_COPY = {
     receiptOn: (t: string) => `Helm's read on ${t}`,
     watching: (n: number) => `${n} ${plural(n, 'name', 'names')} in your book`,
     // Day-agnostic on purpose: "tomorrow" is wrong on a Friday, and the daily
-    // cron is gated off on weekends and NYSE holidays.
-    firstBrief: 'Your first brief lands at 9:15 ET on the next trading day.',
+    // cron is gated off on weekends and NYSE holidays. Time-agnostic too: the
+    // cron is fixed at 13:15 UTC, which is 9:15 EDT but 8:15 EST, so every
+    // brief promise names the open rather than a clock time.
+    firstBrief: 'Your first brief lands before the 9:30 open on the next trading day.',
     openBell: '9:30 open',
+    briefMark: 'Your brief',
     sharedNames: (n: number) => `${n} ${plural(n, 'name', 'names')} in more than one account, funds included`,
     noShared: 'Nothing is in more than one account yet.',
     heldIn: (t: string, n: number) => `${t} is held in ${n} of these accounts`,
@@ -127,9 +130,9 @@ export const V3_COPY = {
   },
   inbox: {
     secondAccountTitle: 'Add your second account',
-    secondAccountBody: 'Exposure and the tax view are only as complete as the book. Accounts holds the connection.',
+    secondAccountBody: 'Exposure and the tax view are only as complete as the book. Add it from Accounts.',
   },
   portfolio: {
-    promise: 'Your first brief on these positions lands at 9:15 ET tomorrow.',
+    promise: 'Your first brief on these positions lands before the 9:30 open on the next trading day.',
   },
 } as const;

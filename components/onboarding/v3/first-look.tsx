@@ -332,8 +332,9 @@ function MoversPreview({ delta, pending }: { delta: Delta | 'error' | undefined;
 
 // The morning mail. The rail is 6:00 to 16:00 ET, so the brief sitting just
 // left of the opening bell is the whole point of the picture. 13:15 UTC in
-// vercel.json is 9:15 ET, and the daily cron is gated off on weekends and NYSE
-// holidays, which is why nothing here says "tomorrow".
+// vercel.json is 9:15 EDT but 8:15 EST, and the daily cron is gated off on
+// weekends and NYSE holidays, so the mark says "Your brief" rather than a clock
+// time and nothing here says "tomorrow". Either way it lands before the open.
 const RAIL_FROM = 6;
 const RAIL_TO = 16;
 const railX = (hour: number) => 8 + ((hour - RAIL_FROM) / (RAIL_TO - RAIL_FROM)) * 284;
@@ -352,7 +353,7 @@ function BriefPreview({ names }: { names: number }) {
         <text x={open + 5} y={48} fontSize={9} fill="var(--color-text-muted)">{copy.openBell}</text>
         <line x1={brief} y1={14} x2={brief} y2={34} stroke="var(--color-gold)" strokeWidth={1.4} />
         <circle cx={brief} cy={34} r={3.4} fill="var(--color-gold)" />
-        <text x={brief - 4} y={11} fontSize={10} fontWeight={600} textAnchor="end" fill="var(--color-gold)">9:15 ET</text>
+        <text x={brief - 4} y={11} fontSize={10} fontWeight={600} textAnchor="end" fill="var(--color-gold)">{copy.briefMark}</text>
       </svg>
       <span className="mt-1 block text-[13px] text-[var(--color-text-primary)]">{copy.firstBrief}</span>
       <span className="mt-2 flex flex-wrap items-center gap-1.5">
