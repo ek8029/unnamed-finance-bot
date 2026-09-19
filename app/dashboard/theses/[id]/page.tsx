@@ -6,6 +6,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
+import { freeThesisEntryHref } from '@/lib/thesis-entry';
 import { investigationForThesis } from '@/lib/thesis-investigation';
 import { getStoryNotes } from '@/lib/content/mechanism-graft';
 import { summarizePillars } from '@/lib/thesis-summary';
@@ -78,26 +79,6 @@ function StatusChip({ status }: { status: PillarStatus }) {
   );
 }
 
-function LockedPanel() {
-  return (
-    <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8">
-      <div className="max-w-[460px] rounded-lg border border-white/[0.07] bg-[var(--color-bg-elevated,var(--color-bg-surface))] p-6 space-y-3">
-        <div className="font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--color-gold)]" style={MONO}>
-          Pro
-        </div>
-        <p className="text-[15px] leading-[1.5] text-[var(--color-text-muted)] m-0">Thesis detail is a Pro feature.</p>
-        <Link
-          href="/pricing"
-          className="inline-block font-mono text-[14px] font-semibold uppercase tracking-[0.12em] px-4 py-2.5 rounded bg-transparent text-[var(--color-gold)] border border-[color-mix(in_srgb,var(--color-gold)_35%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-gold)_8%,transparent)] transition-colors"
-          style={MONO}
-        >
-          See plans
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 /**
  * Tab title carries the ticker: with four theses open the tabs have to be
  * tellable apart. RLS-scoped like the page itself, and falls back to the
@@ -121,10 +102,6 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  if (!(await hasThesisAccess(user.id, user.email))) {
-    return <LockedPanel />;
-  }
-
   const { data: thesis } = await supabase
     .from('theses')
     .select('id, ticker, tracked')
@@ -132,6 +109,13 @@ export default async function ThesisDetailPage({ params }: { params: Promise<{ i
     .eq('user_id', user.id)
     .maybeSingle();
   if (!thesis) notFound();
+
+  // Every saved-thesis link resolves ownership before choosing a workspace.
+  // Free owners can read their reasons and history in Classic; premium agent
+  // queries remain below the entitlement boundary.
+  if (!(await hasThesisAccess(user.id, user.email))) {
+    redirect(freeThesisEntryHref(thesis.ticker));
+  }
 
   const { data: pillarsRaw } = await supabase
     .from('thesis_pillars')
