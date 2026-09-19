@@ -328,7 +328,17 @@ export default function SettingsPage() {
     billingPeriod: string | null
     currentPeriodEnd: string | null
     cancelAtPeriodEnd: boolean
+    canPurchasePro?: boolean
+    trialEndsAt?: string | null
+    billingManagement?: { stripe: boolean; apple: boolean } | null
   } | null>(null)
+  const [billingLoading, setBillingLoading] = useState(true)
+  const [billingError, setBillingError] = useState(false)
+  const [billingAttempt, setBillingAttempt] = useState(0)
+  const billingManagement = billing?.billingManagement
+    && typeof billing.billingManagement.stripe === 'boolean'
+    && typeof billing.billingManagement.apple === 'boolean'
+      ? billing.billingManagement : null
 
   // ── Delete account state ──
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -435,15 +445,25 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
+    let active = true
     async function fetchBilling() {
-      const res = await fetch('/api/user/tier')
-      if (res.ok) {
+      setBillingLoading(true)
+      setBillingError(false)
+      try {
+        const res = await fetch('/api/user/tier', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Membership lookup unavailable')
         const data = await res.json()
-        setBilling(data)
+        if (!data || !['free', 'pro', 'max', 'lifetime'].includes(data.realTier ?? data.tier)) throw new Error('Invalid membership response')
+        if (active) setBilling(data)
+      } catch {
+        if (active) { setBilling(null); setBillingError(true) }
+      } finally {
+        if (active) setBillingLoading(false)
       }
     }
-    fetchBilling()
-  }, [])
+    void fetchBilling()
+    return () => { active = false }
+  }, [billingAttempt])
 
   useEffect(() => {
     async function checkMfaStatus() {
@@ -1741,12 +1761,19 @@ export default function SettingsPage() {
           Manage your plan and billing information.
         </p>
         <div className="space-y-4">
-        {tierLoading || billing === null ? (
+        {billingLoading ? (
           <div className="p-6 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg">
             <div className="h-6 w-32 bg-white/5 rounded animate-pulse mb-2" />
             <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
           </div>
-        ) : (billing.realTier ?? billing.tier) === 'lifetime' ? (
+        ) : billingError || !billing ? (
+          <div role="alert" className="text-[15px] text-[var(--color-text-secondary)]">
+            <p>We couldn’t load your membership. Please try again.</p>
+            <Button variant="outline" size="sm" onClick={() => setBillingAttempt(value => value + 1)}>Retry billing</Button>
+          </div>
+        ) : (billing.realTier ?? billing.tier) === 'lifetime' || (
+          billing.billingPeriod === 'lifetime' && ['pro', 'max'].includes(billing.realTier ?? billing.tier)
+        ) ? (
           <div className="p-6 bg-[var(--color-bg-elevated)] border border-[var(--color-gold)]/30 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -1768,25 +1795,30 @@ export default function SettingsPage() {
                       what the $149/yr plan stores. Matching only the old one
                       labelled a yearly subscriber "Pro Monthly" directly above
                       a renewal date twelve months out. */}
-                  {(billing.realTier ?? billing.tier) === 'max' ? 'Max' : 'Pro'}
-                  {billing.billingPeriod === 'pro_annual' || billing.billingPeriod === 'annual' ? ' Annual' : ' Monthly'}
+                  {billing.canPurchasePro === true ? 'Pro trial' : 'Pro'}
+                  {billing.canPurchasePro !== true && (
+                    billing.billingPeriod === 'pro_annual' || billing.billingPeriod === 'annual' ? ' Annual'
+                      : ['pro', 'monthly', 'founding', 'max'].includes(billing.billingPeriod ?? '') ? ' Monthly' : ''
+                  )}
                 </p>
-                {billing.currentPeriodEnd && (
+                {billing.trialEndsAt ? (
+                  <p className="text-[15px] text-[var(--color-text-secondary)] mt-0.5">
+                    Trial ends {new Date(billing.trialEndsAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                ) : billing.currentPeriodEnd && billing.canPurchasePro !== true && (
                   <p className="text-[15px] text-[var(--color-text-secondary)] mt-0.5">
                     {billing.cancelAtPeriodEnd
                       ? `Cancels on ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-                      : `Renews on ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+                      : `Current period ends ${new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
                   </p>
                 )}
               </div>
-              <Badge className="bg-[var(--color-gold)]/10 text-[var(--color-gold)] border-[var(--color-gold)]/30">Active</Badge>
+              <Badge className="bg-[var(--color-gold)]/10 text-[var(--color-gold)] border-[var(--color-gold)]/30">Pro access</Badge>
             </div>
             <p className="text-[15px] text-[var(--color-text-muted)] mb-4">
               Unlimited AI analysis, tax-loss harvesting, earnings impact, Portfolio Wrapped, and full intelligence feed.
             </p>
-            <Button variant="outline" size="sm" onClick={handleManageBilling}>
-              Manage billing
-            </Button>
+            {billing.canPurchasePro === true && <a href="/pricing" className="inline-flex min-h-[44px] items-center font-semibold text-[var(--color-gold)] hover:underline">Choose a Pro plan</a>}
           </div>
         ) : (
           <div className="p-6 bg-[var(--color-bg-elevated)] border border-[var(--color-border-base)] rounded-lg">
@@ -1803,6 +1835,19 @@ export default function SettingsPage() {
               </Button>
             </a>
           </div>
+        )}
+        {!billingLoading && billing && (
+          billingManagement ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {billingManagement.stripe && <Button variant="outline" size="sm" onClick={handleManageBilling}>Manage Stripe billing</Button>}
+              {billingManagement.apple && <a href="https://apps.apple.com/account/subscriptions" className="inline-flex min-h-[44px] items-center font-semibold text-[var(--color-gold)] hover:underline">Manage Apple subscription</a>}
+            </div>
+          ) : (
+            <div role="status" className="text-[15px] text-[var(--color-text-secondary)]">
+              <p>Billing management is unavailable right now. Please try again.</p>
+              <Button variant="outline" size="sm" onClick={() => setBillingAttempt(value => value + 1)}>Retry billing</Button>
+            </div>
+          )
         )}
         </div>
       </SettingsCard>

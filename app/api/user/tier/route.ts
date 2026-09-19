@@ -25,14 +25,14 @@ export async function GET() {
   // `user_tiers` table never existed (migration 021 is NAMED user_tiers but
   // creates user_subscriptions), so this silently returned null for everyone and
   // no user ever saw a renewal date or a pending cancellation.
-  const { data } = await supabase
+  const { data, error: billingError } = await supabase
     .from('user_subscriptions')
     // `source` (migration 064) is 'revenuecat' or 'stripe'. The iOS app needs
     // it to tell someone HOW to cancel: an App Store subscription can only be
     // managed in App Store settings, and a Stripe one cannot be managed there
     // at all. Sending the wrong instruction is worse than sending none, and
     // Apple requires the right one next to account deletion.
-    .select('tier, billing_period, current_period_end, cancel_at_period_end, source')
+    .select('tier, billing_period, current_period_end, cancel_at_period_end, source, stripe_customer_id, store_product_id')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -57,6 +57,13 @@ export async function GET() {
     currentPeriodEnd: data?.current_period_end || null,
     cancelAtPeriodEnd: data?.cancel_at_period_end || false,
     source: data?.source || null,
+    // Management is independent of current access. An unpaid Stripe customer
+    // can review billing while Free; a retained Apple marker can still open
+    // Apple's management after expiry or a provider change. Never expose IDs.
+    billingManagement: billingError ? null : {
+      stripe: !!data?.stripe_customer_id && data?.billing_period !== 'lifetime',
+      apple: data?.source === 'revenuecat' || !!data?.store_product_id,
+    },
   }, {
     headers: NO_CACHE_HEADERS,
   });

@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     // not exist, the guard would read false, and an existing Pro subscriber
     // could buy a second subscription and be billed twice.
     if (tierAtLeast(currentTier, 'pro')) {
-      return NextResponse.json({ error: 'You already have Pro.' }, { status: 400 });
+      return NextResponse.json({ error: 'You already have Pro access. Review your membership in Settings.', code: 'membership_exists' }, { status: 400 });
     }
 
     // 4. Find or create Stripe customer
@@ -172,7 +172,10 @@ export async function POST(req: NextRequest) {
       );
       if (live) {
         console.warn(`[checkout] ${user.id} already has Stripe subscription ${live.id} (${live.status}); local row said ${currentTier}`);
-        return NextResponse.json({ error: 'You already have Pro.' }, { status: 400 });
+        return NextResponse.json({
+          error: 'An existing Stripe subscription needs to be managed through billing. Review it in Settings before starting another subscription.',
+          code: 'billing_management_required',
+        }, { status: 400 });
       }
     }
 

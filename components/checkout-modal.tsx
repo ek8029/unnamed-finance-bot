@@ -33,6 +33,7 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
   const [mode, setMode] = useState<Mode>('loading');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recovery, setRecovery] = useState<'billing' | 'membership' | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   // Hit the checkout endpoint once. It either returns a clientSecret (new
@@ -42,6 +43,7 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
     let cancelled = false;
     setMode('loading');
     setError(null);
+    setRecovery(null);
     setClientSecret(null);
     if (!stripePromise) {
       posthog.capture('checkout_failed', { plan: billingPeriod, reason: 'missing_public_key' });
@@ -69,6 +71,7 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
           }
           posthog.capture('checkout_failed', { plan: billingPeriod, reason: 'http_error', status: res.status });
           setError((data?.error as string) || 'Something went wrong. Please try again.');
+          setRecovery(data?.code === 'billing_management_required' ? 'billing' : data?.code === 'membership_exists' ? 'membership' : null);
           setMode('error');
           return;
         }
@@ -208,7 +211,13 @@ export function CheckoutModal({ billingPeriod, onClose, zClassName = 'z-50' }: C
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}
             >
               <p role="alert">{error}</p>
-              <button type="button" className="mt-4 min-h-[44px] underline underline-offset-4 font-semibold" onClick={() => setAttempt(value => value + 1)}>Retry checkout</button>
+              {recovery ? (
+                <a href="/dashboard/settings#billing" className="mt-4 inline-flex min-h-[44px] items-center underline underline-offset-4 font-semibold">
+                  {recovery === 'billing' ? 'Manage existing billing' : 'Review membership'}
+                </a>
+              ) : (
+                <button type="button" className="mt-4 min-h-[44px] underline underline-offset-4 font-semibold" onClick={() => setAttempt(value => value + 1)}>Retry checkout</button>
+              )}
             </div>
           )}
 
