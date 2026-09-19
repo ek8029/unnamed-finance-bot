@@ -33,6 +33,7 @@ function SignupForm() {
   // so the trial the button promised actually opens. Sanitised: this param is
   // reachable by anyone with a link, so it must never leave the origin.
   const nextPath = isWrappedFlow ? '/wrapped' : safeNext(searchParams.get('next'));
+  const isThesisEntry = nextPath.split(/[?#]/, 1)[0] === '/dashboard/theses/classic';
 
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
@@ -123,7 +124,7 @@ function SignupForm() {
   };
 
   return (
-    <AuthShell subtitle={isWrappedFlow ? "Create your account to see your Wrapped" : "Create your account"}>
+    <AuthShell subtitle={isWrappedFlow ? "Create your account to see your Wrapped" : "Create your account"} signupDescription={isThesisEntry ? 'Create your account, then draft and track your first investment thesis. No card required.' : undefined}>
       {isWrappedFlow && (
         <p className="text-[15px] text-[var(--color-text-muted)] -mt-2 mb-5 text-center">
           Connect any brokerage and get your personalized year in review in 30 seconds.
@@ -210,7 +211,7 @@ function SignupForm() {
         </button>
 
         <p className="text-[13px] text-center text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
-          No credit card required · Connect or enter positions after sign-up
+          {isThesisEntry ? 'One thesis free · No brokerage connection required' : 'No credit card required · Connect or enter positions after sign-up'}
         </p>
       </form>
 

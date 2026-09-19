@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { AuthShell } from '@/components/auth-shell';
+import { loginUrlForNext, safeNext } from '@/lib/checkout-intent';
 
-export default function MfaVerifyPage() {
+function MfaVerifyForm() {
   const router = useRouter();
+  const nextPath = safeNext(useSearchParams().get('next'));
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,13 +21,13 @@ export default function MfaVerifyPage() {
     async function checkFactors() {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error || !data?.totp?.length) {
-        router.push('/dashboard');
+        router.push(nextPath);
         return;
       }
 
       const verified = data.totp.filter(f => f.status === 'verified');
       if (verified.length === 0) {
-        router.push('/dashboard');
+        router.push(nextPath);
         return;
       }
 
@@ -35,7 +37,7 @@ export default function MfaVerifyPage() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
     checkFactors();
-  }, [router]);
+  }, [router, nextPath]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +57,7 @@ export default function MfaVerifyPage() {
       });
       if (verifyError) throw verifyError;
 
-      router.push('/dashboard');
+      router.push(nextPath);
       router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Invalid verification code';
@@ -122,7 +124,7 @@ export default function MfaVerifyPage() {
           type="button"
           onClick={async () => {
             await supabase.auth.signOut();
-            router.push('/login');
+            router.push(loginUrlForNext(nextPath));
             router.refresh();
           }}
           className="w-full text-[15px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
@@ -132,4 +134,8 @@ export default function MfaVerifyPage() {
       </form>
     </AuthShell>
   );
+}
+
+export default function MfaVerifyPage() {
+  return <Suspense fallback={<div className="min-h-screen bg-[var(--color-bg-base)] flex items-center justify-center"><div className="text-[var(--color-text-muted)]">Loading...</div></div>}><MfaVerifyForm /></Suspense>;
 }

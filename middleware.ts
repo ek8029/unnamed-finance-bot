@@ -2,6 +2,15 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { ATTR_COOKIE, ATTR_MAX_AGE, buildFirstTouch, encodeFirstTouch } from '@/lib/attribution';
 import { expiredLinkRedirect } from '@/lib/auth-messages';
+import { loginUrlForNext, safeNext } from '@/lib/checkout-intent';
+
+function authDestination(raw: string | null): string {
+  const next = safeNext(raw);
+  // Auth pages immediately redirect a verified session. Returning to one would
+  // create a loop, even though the destination is on the same origin.
+  const pathname = new URL(next, 'https://helmterminal.dev').pathname;
+  return /^\/(login|signup|forgot-password|mfa-verify)\/?$/.test(pathname) ? '/dashboard' : next;
+}
 
 export async function middleware(request: NextRequest) {
   // An expired or already-opened email link lands on the homepage with the
@@ -75,12 +84,13 @@ export async function middleware(request: NextRequest) {
 
   // MFA verification page
   if (pathname === '/mfa-verify') {
+    const next = authDestination(request.nextUrl.searchParams.get('next'));
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL(loginUrlForNext(next), request.url));
     }
     if (!needsMFA) {
       // Already verified or no MFA required
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(new URL(next, request.url));
     }
     return response;
   }
@@ -100,37 +110,38 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath && !user && !labImpersonating) {
     const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirect', pathname);
+    redirectUrl.searchParams.set('redirect', pathname + request.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
   }
 
   if (isProtectedPath && user && needsMFA) {
     // Authenticated but MFA not yet verified this session
-    return NextResponse.redirect(new URL('/mfa-verify', request.url));
+    const verifyUrl = new URL('/mfa-verify', request.url);
+    verifyUrl.searchParams.set('next', safeNext(pathname + request.nextUrl.search));
+    return NextResponse.redirect(verifyUrl);
   }
 
   // Thesis layer is a Pro feature. The page itself is reachable by everyone so free
   // users see the ProBlur upsell; entitlement is enforced at the page (blur) and on
   // the /api/thesis routes (403 via hasThesisAccess). No middleware redirect needed.
 
-  // Auth pages - redirect to dashboard if already fully authenticated
+  // Auth pages resume the same safe destination used by signup/login forms.
   const authPaths = ['/login', '/signup', '/forgot-password'];
   const isAuthPath = authPaths.some(path =>
     pathname === path
   );
 
-  if (isAuthPath && user && !needsMFA) {
-    // Wrapped flow: authenticated user on signup → back to /wrapped (handles everything)
+  if (isAuthPath && user) {
     const flow = request.nextUrl.searchParams.get('flow');
-    if (flow === 'wrapped') {
-      return NextResponse.redirect(new URL('/wrapped', request.url));
+    const next = flow === 'wrapped' ? '/wrapped' : authDestination(
+      request.nextUrl.searchParams.get(pathname === '/login' ? 'redirect' : 'next')
+    );
+    if (needsMFA) {
+      const verifyUrl = new URL('/mfa-verify', request.url);
+      verifyUrl.searchParams.set('next', next);
+      return NextResponse.redirect(verifyUrl);
     }
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  if (isAuthPath && user && needsMFA) {
-    // User has session but needs MFA - redirect to MFA verify page
-    return NextResponse.redirect(new URL('/mfa-verify', request.url));
+    return NextResponse.redirect(new URL(next, request.url));
   }
 
   // ── /analyze/[ticker] Cache-Control override ──

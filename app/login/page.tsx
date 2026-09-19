@@ -7,42 +7,16 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/auth-shell';
 import { supabase } from '@/lib/supabase/client';
+import { safeNext } from '@/lib/checkout-intent';
 
 // Copy lives in lib/auth-messages.ts so redirects and this lookup cannot drift
 // apart. An unknown key renders nothing on purpose: the param must never be
 // echoed to the page.
 
-/**
- * Only ever returns a path on this origin.
- *
- * The string-prefix version of this check let `/\evil.com` through: it starts
- * with a single "/" and contains no "://", but the URL spec treats a backslash
- * after the leading slash as a second slash for special schemes, so the browser
- * resolved it to https://evil.com and router.push performed a real off-site
- * navigation. On a product whose core action is handing over brokerage
- * credentials, "authenticate on the real domain, then get bounced to a page
- * that asks you to reconnect" is a well-fitted phishing primitive.
- *
- * Parsing and comparing origins is the only version of this that is not a
- * blocklist. app/auth/callback/route.ts is already safe for the same reason:
- * it prefixes the origin before the path is parsed.
- */
-function sanitizeRedirect(next: string | null): string {
-  if (!next) return '/dashboard';
-  try {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://helmterminal.dev';
-    const u = new URL(next, origin);
-    if (u.origin !== origin) return '/dashboard';
-    return `${u.pathname}${u.search}${u.hash}`;
-  } catch {
-    return '/dashboard';
-  }
-}
-
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = sanitizeRedirect(searchParams.get('redirect'));
+  const redirect = safeNext(searchParams.get('redirect'));
   const messageKey = searchParams.get('message') ?? '';
   const message = messageKey in AUTH_MESSAGES ? AUTH_MESSAGES[messageKey as AuthMessageKey] : null;
 

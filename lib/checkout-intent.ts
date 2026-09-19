@@ -27,7 +27,10 @@ export function safeNext(next: string | null | undefined, fallback = '/dashboard
   try {
     const origin = 'https://helmterminal.dev';
     const parsed = new URL(next, origin);
-    return parsed.origin === origin ? `${parsed.pathname}${parsed.search}${parsed.hash}` : fallback;
+    // Dot segments can turn /a/..//host into //host. Returning that canonical
+    // path would become an external URL when a router or redirect parses it again.
+    if (parsed.origin !== origin || parsed.pathname.startsWith('//')) return fallback;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch { return fallback; }
 }
 
