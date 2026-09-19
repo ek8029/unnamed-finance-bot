@@ -4,6 +4,8 @@
 // existing theses, the bear case), edit/confirm/dismiss the pillars, then track it.
 // Reuses the existing thesis-write APIs end to end — no new write endpoints.
 'use client';
+import { requireThesisResponse, thesisRequestError, ThesisRequestError } from '@/lib/thesis-request-error';
+import { ThesisErrorNotice } from '@/components/thesis/thesis-error-notice';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -94,7 +96,7 @@ function BuilderInner() {
 
   const [ticker, setTicker] = useState(prefill);
   const [drafting, setDrafting] = useState(false);
-  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftError, setDraftError] = useState<ThesisRequestError | null>(null);
 
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
   const [pillars, setPillars] = useState<DraftPillar[]>([]);
@@ -129,7 +131,7 @@ function BuilderInner() {
     e?.preventDefault();
     const tk = ticker.trim().toUpperCase();
     if (!TICKER_RE.test(tk) || drafting) {
-      if (!TICKER_RE.test(tk)) setDraftError('Enter a valid US ticker (letters only).');
+      if (!TICKER_RE.test(tk)) setDraftError(new ThesisRequestError('Enter a valid US ticker (letters only).'));
       return;
     }
     setDrafting(true);
@@ -143,9 +145,8 @@ function BuilderInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker: tk }),
       });
-      if (res.status === 403 || res.status === 404) { setDraftError('Could not draft a thesis for that ticker.'); return; }
-      if (res.status === 429) { setDraftError('Too many drafts right now. Try again in a bit.'); return; }
-      if (!res.ok) { setDraftError('Could not draft a thesis for that ticker.'); return; }
+      await requireThesisResponse(res, 'Could not draft this thesis. Please try again.');
+      invalidate('/api/thesis');
 
       const data = await res.json() as {
         thesis?: { tracked?: boolean };
@@ -158,8 +159,8 @@ function BuilderInner() {
       setTracked(!!data.thesis?.tracked);
       // Risk panel runs in parallel once we have a candidate.
       void loadRisk(tk);
-    } catch {
-      setDraftError('Something went wrong. Try again.');
+    } catch (error) {
+      setDraftError(thesisRequestError(error, 'Could not reach Helm to draft this thesis. Please try again.'));
     } finally {
       setDrafting(false);
     }
@@ -329,7 +330,7 @@ function BuilderInner() {
           {drafting ? 'Drafting…' : 'Draft starting pillars'}
         </button>
       </form>
-      {draftError && <p className="font-mono text-[13px] text-[var(--color-negative-text)] -mt-6" style={MONO}>{draftError}</p>}
+      <ThesisErrorNotice error={draftError} />
 
       {/* First draft in flight (e.g. arriving from /analyze): the agent terminal. */}
       {drafting && !activeTicker && (

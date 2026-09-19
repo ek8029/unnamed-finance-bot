@@ -22,6 +22,11 @@ describe('onboarding saved-value handoff', () => {
     await expect(saveOnboardingReasons(house, request)).rejects.toThrow('Save failed');
     expect(request).toHaveBeenCalledTimes(1);
   });
+  it('keeps an adoption cap actionable and does not read back a failed save', async () => {
+    const request = responses({ status: 403, body: { error: 'Free accounts can hold 1 thesis.', code: 'PRO_REQUIRED' } });
+    await expect(saveOnboardingReasons(house, request)).rejects.toMatchObject({ message: 'Free accounts can hold 1 thesis.', upgradeRequired: true });
+    expect(request).toHaveBeenCalledTimes(1);
+  });
   it('does not equate a conflict with confirmed saved work', async () => {
     await expect(saveOnboardingReasons(house, responses({ status: 409 }, { body: saved(false, []) }))).rejects.toThrow('not confirmed');
   });

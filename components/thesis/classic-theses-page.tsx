@@ -26,6 +26,8 @@ import { STATUS_META, dotGlow, METER_ORDER, METER_COLORS, convictionColor, type 
 import { CompanyLogo } from '@/components/company-logo';
 import { cachedGet, invalidate } from '@/lib/api-cache';
 import { thesisEntryTicker } from '@/lib/thesis-entry';
+import { requireThesisResponse, thesisRequestError, type ThesisRequestError } from '@/lib/thesis-request-error';
+import { ThesisErrorNotice } from '@/components/thesis/thesis-error-notice';
 
 /* ── Local types ── */
 interface EvidenceRow {
@@ -174,9 +176,7 @@ function LoadingSkeleton() {
 }
 
 async function requireSaved(response: Response, fallback: string): Promise<void> {
-  if (response.ok) return;
-  const body = await response.json().catch(() => null) as { error?: unknown } | null;
-  throw new Error(typeof body?.error === 'string' ? body.error : fallback);
+  await requireThesisResponse(response, fallback);
 }
 
 async function finishWriteBatch(writes: Promise<void>[]): Promise<void> {
@@ -203,7 +203,7 @@ function ClassicThesesInner() {
   const { tier: previewTier } = usePreview();
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [seedingTicker, setSeedingTicker] = useState<string | null>(null);
-  const [seedError, setSeedError] = useState<string | null>(null);
+  const [seedError, setSeedError] = useState<{ ticker: string; failure: ThesisRequestError } | null>(null);
   const [firstTicker, setFirstTicker] = useState('');
   const [forceFirstRun, setForceFirstRun] = useState(false);
   // Inline first-thesis flow: pick -> confirm reasons -> scanning -> done
@@ -213,7 +213,7 @@ function ClassicThesesInner() {
   const [keptClaims, setKeptClaims] = useState<Record<string, string>>({});
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const [scanEvidence, setScanEvidence] = useState<number | null>(null);
-  const [confirmationError, setConfirmationError] = useState<string | null>(null);
+  const [confirmationError, setConfirmationError] = useState<ThesisRequestError | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [historyPending, setHistoryPending] = useState(false);
   const confirmInFlight = useRef(false);
@@ -400,6 +400,8 @@ function ClassicThesesInner() {
         body: JSON.stringify({ ticker }),
       });
       if (!mountedRef.current) return;
+      await requireThesisResponse(res, 'Could not draft this thesis. Please try again.');
+      invalidate('/api/thesis');
       if (res.ok) {
         const data = await res.json() as { pillars?: { id: string; claim: string; confirmed: boolean }[] };
         const drafts = (data.pillars ?? []).filter((p) => !p.confirmed);
@@ -416,11 +418,9 @@ function ClassicThesesInner() {
           setRemovedIds([]);
           setOnboardStep('confirm');
         }
-      } else {
-        setSeedError(ticker);
       }
-    } catch {
-      if (mountedRef.current) setSeedError(ticker);
+    } catch (error) {
+      if (mountedRef.current) setSeedError({ ticker, failure: thesisRequestError(error, 'Could not reach Helm to draft this thesis. Please try again.') });
     } finally {
       if (mountedRef.current) setSeedingTicker(null);
     }
@@ -467,6 +467,7 @@ function ClassicThesesInner() {
           body: JSON.stringify({ confirmed: true, claim: keptClaims[p.id].trim() }),
         });
         await requireSaved(response, 'Could not save your reasons.');
+        invalidate('/api/thesis');
       }));
       if (!mountedRef.current) return;
       const toRemove = draftPillars.filter((p) => removedIds.includes(p.id) || !keptClaims[p.id]?.trim());
@@ -475,6 +476,7 @@ function ClassicThesesInner() {
         // AI drafts soft-dismiss idempotently. A retry of a hard deletion may
         // return 404; absent is the intended result for an explicit removal.
         if (response.status !== 404) await requireSaved(response, 'Could not remove a reason.');
+        invalidate('/api/thesis');
         if (mountedRef.current) setDraftPillars((previous) => previous.filter((pillar) => pillar.id !== p.id));
       }));
       if (!mountedRef.current) return;
@@ -489,7 +491,7 @@ function ClassicThesesInner() {
       await loadHistory();
     } catch (error) {
       if (mountedRef.current) {
-        setConfirmationError(error instanceof Error ? error.message : 'Could not save your thesis. Please try again.');
+        setConfirmationError(thesisRequestError(error, 'Could not save your thesis. Please try again.'));
         setOnboardStep('confirm');
       }
     } finally {
@@ -621,7 +623,7 @@ function ClassicThesesInner() {
           >
             {seedingTicker === h.ticker ? 'Drafting…' : 'Draft thesis'}
           </button>
-          {seedError === h.ticker && <p className="font-mono text-[11.5px] text-[#F87171]" style={MONO}>Try again.</p>}
+          {seedError?.ticker === h.ticker && <ThesisErrorNotice error={seedError.failure} />}
         </div>
       ))}
     </div>
@@ -980,9 +982,7 @@ function ClassicThesesInner() {
               {seedingTicker ? 'Drafting…' : 'Draft thesis'}
             </button>
           </form>
-          {seedError && (
-            <p className="font-mono text-[14.5px] text-[#F87171]" style={MONO}>Could not draft a thesis for {seedError}. Check the symbol and try again.</p>
-          )}
+          <ThesisErrorNotice error={seedError?.failure ?? null} />
 
           {/* or from holdings, when connected — fills the width as a grid */}
           {unthesedHoldings.length > 0 && (
@@ -1040,9 +1040,7 @@ function ClassicThesesInner() {
             </button>
             <span className="font-mono text-[14px] text-[#5A5A5A]" style={MONO}>Helm will scan 12 months of filings and news against these.</span>
           </div>
-          {confirmationError && (
-            <p role="alert" className="font-mono text-[14.5px] text-[#F87171]" style={MONO}>{confirmationError}</p>
-          )}
+          <ThesisErrorNotice error={confirmationError} />
         </section>
         ) : onboardStep === 'scanning' ? (
         <section className="space-y-4 py-8">

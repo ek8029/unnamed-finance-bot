@@ -6,6 +6,8 @@ import { EvidenceTimeline as EvidenceChronology } from '@/components/thesis/evid
 import { VerdictCard, type ThesisIntelligenceItem } from '@/components/thesis/verdict-card';
 import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
 import { invalidate } from '@/lib/api-cache';
+import { requireThesisResponse, thesisRequestError, type ThesisRequestError } from '@/lib/thesis-request-error';
+import { ThesisErrorNotice } from './thesis-error-notice';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 const SERIF: React.CSSProperties = { fontFamily: "var(--font-serif, 'Instrument Serif', Georgia, serif)" };
@@ -494,6 +496,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
   const [addBusy, setAddBusy] = useState(false);
   const [seedBusy, setSeedBusy] = useState(false);
   const [trackBusy, setTrackBusy] = useState(false);
+  const [requestError, setRequestError] = useState<ThesisRequestError | null>(null);
 
   const applyPayload = useCallback((data: { thesis: Thesis; pillars?: Partial<Pillar>[] }) => {
     setThesis(data.thesis);
@@ -552,13 +555,18 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
   const seedThesis = useCallback(async () => {
     if (seedBusy) return;
     setSeedBusy(true);
+    setRequestError(null);
     try {
       const res = await fetch('/api/thesis/seed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker }),
       });
-      if (res.ok) applyPayload(await res.json());
+      await requireThesisResponse(res, 'Could not draft this thesis. Please try again.');
+      invalidate('/api/thesis');
+      applyPayload(await res.json());
+    } catch (error) {
+      setRequestError(thesisRequestError(error, 'Could not reach Helm to draft this thesis. Please try again.'));
     } finally {
       setSeedBusy(false);
     }
@@ -573,6 +581,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
     const checked = validateBreaksIf(breaksIf);
     if (!checked.ok) { setAddError(checked.error); return; }
     setAddError(null);
+    setRequestError(null);
     setAddBusy(true);
     try {
       if (!thesis) {
@@ -582,7 +591,8 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ticker }),
         });
-        if (!seedRes.ok) return;
+        await requireThesisResponse(seedRes, 'Could not draft this thesis. Please try again.');
+        invalidate('/api/thesis');
         applyPayload(await seedRes.json());
       }
       const res = await fetch(`/api/thesis/${encodeURIComponent(ticker)}`, {
@@ -600,6 +610,8 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
         const data = await res.json().catch(() => null) as { error?: string } | null;
         setAddError(data?.error ?? 'Could not save that pillar.');
       }
+    } catch (error) {
+      setRequestError(thesisRequestError(error, 'Could not reach Helm to save this pillar. Please try again.'));
     } finally {
       setAddBusy(false);
     }
@@ -746,6 +758,7 @@ export function WhyIOwnThis({ ticker, bare = false }: { ticker: string; bare?: b
       </div>
 
       {phase === 'loading' && <Skeleton />}
+      <ThesisErrorNotice error={requestError} />
 
       {phase === 'error' && (
         <p className="mt-4 text-[14px] text-[#6A6A6A] m-0">Could not load your thesis. Refresh to retry.</p>

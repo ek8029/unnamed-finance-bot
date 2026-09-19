@@ -4,10 +4,15 @@ import AnalyzePage from '@/app/dashboard/analyze/[ticker]/page';
 import BuilderPage from '@/app/dashboard/theses/builder/page';
 import { ClassicThesesPage } from '@/components/thesis/classic-theses-page';
 import { freeThesisEntryHref, thesisEntryTicker } from '@/lib/thesis-entry';
+import { RatifyQueue } from '@/components/thesis/ratify-queue';
+import { WhyIOwnThis } from '@/components/thesis/why-i-own-this';
+import AdoptThesisPage from '@/app/dashboard/theses/adopt/page';
+import { OnboardingFlowV2 } from '@/components/onboarding/onboarding-flow-v2';
+import { __resetApiCache } from '@/lib/api-cache';
 
 const h = vi.hoisted(() => ({
   tier: 'free', resolved: true, query: '', path: '/dashboard/theses/classic',
-  theses: [] as any[], held: false, countError: false,
+  theses: [] as any[], held: false, countError: false, realCache: false,
   slots: [] as any[], cursor: 0,
   effects: [] as { index: number; effect: () => void | (() => void) }[],
   cleanups: new Map<number, () => void>(), fetch: vi.fn(), capture: vi.fn(),
@@ -42,17 +47,21 @@ vi.mock('react', async (original) => {
   };
 });
 vi.mock('next/link', () => ({ default: 'a' }));
-vi.mock('next/navigation', () => ({ usePathname: () => h.path, useSearchParams: () => new URLSearchParams(h.query), notFound: vi.fn() }));
+vi.mock('next/navigation', () => ({ usePathname: () => h.path, useSearchParams: () => new URLSearchParams(h.query), useRouter: () => ({ push: vi.fn() }), notFound: vi.fn() }));
 vi.mock('posthog-js', () => ({ default: { capture: h.capture } }));
+vi.mock('@/lib/supabase/client', () => ({ supabase: { auth: { getUser: async () => ({ data: { user: { email: 'owner@example.test' } } }) } } }));
 vi.mock('@/lib/preview-context', () => ({ usePreview: () => ({ tier: h.tier, resolved: h.resolved }) }));
 vi.mock('@/lib/tier', () => ({ getUserTier: async () => h.tier, tierAtLeast: (tier: string) => tier === 'pro' }));
 vi.mock('@/lib/analyze-stock', () => ({ analyzeStock: async () => ({ analysis: {}, computedAt: '2026-09-12T12:00:00Z' }) }));
 vi.mock('@/lib/financial-data', () => ({ getFullTickerData: async () => ({}) }));
 vi.mock('@/app/analyze/[ticker]/analysis-terminal', () => ({ AnalysisTerminal: () => null }));
-vi.mock('@/lib/api-cache', () => ({
-  cachedGet: async (url: string) => url === '/api/thesis' ? { ok: true, status: 200, data: { theses: h.theses } } : { ok: false, status: 404 },
-  invalidate: vi.fn(),
-}));
+vi.mock('@/lib/api-cache', async (original) => {
+  const actual = await original<typeof import('@/lib/api-cache')>();
+  return {
+    ...actual,
+    cachedGet: async (url: string) => h.realCache ? actual.cachedGet(url) : url === '/api/thesis' ? { ok: true, status: 200, data: { theses: h.theses } } : { ok: false, status: 404 },
+  };
+});
 
 // Read-only schema double: UNIQUE(user_id,ticker), row ownership and exact
 // counts are enforced. There are deliberately no insert/update/delete methods.
@@ -87,11 +96,11 @@ vi.mock('@/lib/supabase/server', () => ({
 type Element = React.ReactElement<Record<string, any>>;
 // Expand the actual entry components and TierLock. Unrelated chart/detail
 // children remain React elements, so their external effects are not exercised.
-const actualComponents = new Set(['ThesisBridge', 'BuilderPage', 'BuilderInner', 'FreeThesisEntry', 'TierLock', 'ClassicThesesPage', 'ClassicThesesInner']);
+const actualComponents = new Set(['ThesisBridge', 'BuilderPage', 'BuilderInner', 'FreeThesisEntry', 'TierLock', 'ClassicThesesPage', 'ClassicThesesInner', 'RatifySubject', 'WhySubject', 'AdoptThesisPage', 'ThesisErrorNotice', 'OnboardingSubject']);
 function nodes(node: React.ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(nodes);
   if (!React.isValidElement<Record<string, any>>(node)) return [];
-  if (typeof node.type === 'function' && actualComponents.has(node.type.name)) {
+  if (typeof node.type === 'function' && (actualComponents.has(node.type.name) || (h.realCache && node.type.name === 'RatifyQueue'))) {
     return nodes((node.type as (props: any) => React.ReactNode)(node.props));
   }
   return [node, ...nodes(node.props.children)];
@@ -108,7 +117,7 @@ function render(component: () => React.ReactNode) {
 }
 async function settle(component: () => React.ReactNode) {
   let tree = render(component);
-  for (let i = 0; i < 5; i++) { await Promise.resolve(); tree = render(component); }
+  for (let i = 0; i < 12; i++) { await Promise.resolve(); tree = render(component); }
   return tree;
 }
 function seedCalls() { return h.fetch.mock.calls.filter(([url]) => url === '/api/thesis/seed'); }
@@ -120,6 +129,7 @@ function draftRow(ticker = 'AAPL', userId = 'owner') {
 }
 
 beforeEach(() => {
+  h.realCache = false; __resetApiCache();
   h.tier = 'free'; h.resolved = true; h.query = ''; h.theses = []; h.held = false; h.countError = false;
   h.slots = []; h.cursor = 0; h.effects = []; h.cleanups.clear(); h.capture.mockReset();
   h.fetch.mockReset().mockImplementation(async (url: string) => {
@@ -338,5 +348,241 @@ describe('local thesis entry URLs', () => {
   it.each(['//elsewhere.test', 'AAPL&upgrade=pro', 'ABCDEFGHIJK', '', null])('rejects malformed ticker %s', (ticker) => {
     expect(thesisEntryTicker(ticker)).toBeNull();
     expect(freeThesisEntryHref(ticker)).toBe('/dashboard/theses/classic');
+  });
+});
+
+describe('actual thesis cap and failure handling', () => {
+  const cap = { error: 'Free accounts can hold 1 thesis. Pro tracks every position you own.', code: 'PRO_REQUIRED' };
+  const changed = vi.fn();
+  const draft = { thesisId: 'draft', ticker: 'AAPL', draftPillarIds: ['p1'], topClaim: 'My reason', moreCount: 0 };
+  function RatifySubject() { return RatifyQueue({ items: [draft], unthesed: [{ ticker: 'AAPL', name: 'Apple' }, { ticker: 'MSFT', name: 'Microsoft' }], confirmedCount: 0, onChanged: changed, onEdit: vi.fn() }); }
+  function WhySubject() { return WhyIOwnThis({ ticker: 'AAPL' }); }
+  function errorIsVisible(tree: Element[], message: string) { expect(tree.some(node => node.props.role === 'alert' && node.props.children === message)).toBe(true); }
+  function upgradeIsVisible(tree: Element[]) { expect(tree.some(node => node.props.href === '/pricing' && node.props.children === 'View Pro')).toBe(true); }
+
+  it.each([
+    [403, cap], [403, { error: 'Personal AI permission is required.', code: 'AI_CONSENT_REQUIRED' }],
+    [401, { error: 'Unauthorized' }], [429, { error: 'Too many requests. Please try again later.' }], [500, { error: 'Drafting is temporarily unavailable.' }],
+  ] as const)('keeps the ticker and truthful failure after a Classic seed response %s/%s', async (status, body) => {
+    h.query = 'ticker=AAPL'; h.theses = [draftRow('MSFT')];
+    let tree = await settle(ClassicThesesPage);
+    h.fetch.mockResolvedValue(new Response(JSON.stringify(body), { status }));
+    tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
+    tree = await settle(ClassicThesesPage);
+    expect(seedCalls()).toHaveLength(1);
+    expect(tree.some(node => node.type === 'input' && node.props.value === 'AAPL')).toBe(true);
+    errorIsVisible(tree, body.error);
+    expect(tree.some(node => node.props.href === '/pricing' && node.props.children === 'View Pro')).toBe('code' in body && body.code === 'PRO_REQUIRED');
+    expect(tree.some(node => node.props.children === 'Track this thesis')).toBe(false);
+  });
+  it('does not blame the ticker for a network failure', async () => {
+    h.query = 'ticker=AAPL';
+    let tree = await settle(ClassicThesesPage);
+    h.fetch.mockRejectedValue(new TypeError('Failed to fetch'));
+    tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
+    tree = await settle(ClassicThesesPage);
+    expect(tree.some(node => node.props.role === 'alert')).toBe(true);
+    expect(JSON.stringify(tree)).not.toContain('Check the symbol');
+    expect(tree.some(node => node.type === 'input' && node.props.value === 'AAPL')).toBe(true);
+  });
+  it('shows a cap from the real Pro Builder seed branch without loading risk', async () => {
+    h.tier = 'pro'; h.query = 'ticker=AAPL';
+    h.fetch.mockResolvedValue(new Response(JSON.stringify(cap), { status: 403 }));
+    const tree = await settle(BuilderPage);
+    expect(seedCalls()).toHaveLength(1);
+    errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+  });
+  it('stops batch drafting on the cap and never reports it as success', async () => {
+    changed.mockReset();
+    h.fetch.mockResolvedValue(new Response(JSON.stringify(cap), { status: 403 }));
+    let tree = await settle(RatifySubject);
+    await tree.find(node => node.props.children === 'Draft 2 more from holdings')!.props.onClick();
+    tree = await settle(RatifySubject);
+    errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+    expect(seedCalls()).toHaveLength(1);
+    expect(changed).not.toHaveBeenCalled();
+  });
+  it('does not track or claim confirmation after a failed ratification write', async () => {
+    changed.mockReset();
+    h.fetch.mockResolvedValue(new Response(JSON.stringify({ error: 'Could not save reason' }), { status: 500 }));
+    let tree = await settle(RatifySubject);
+    await tree.find(node => node.props.children === 'Looks right')!.props.onClick();
+    tree = await settle(RatifySubject);
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    errorIsVisible(tree, 'Could not save reason');
+    expect(changed).not.toHaveBeenCalled();
+  });
+  it('surfaces the cap in the actual holding thesis composer', async () => {
+    h.fetch.mockImplementation(async (url: string) => url === '/api/thesis/AAPL' ? new Response('{}', { status: 404 }) : new Response(JSON.stringify(cap), { status: 403 }));
+    let tree = await settle(WhySubject);
+    await tree.find(node => node.props.children === 'Draft my thesis')!.props.onClick();
+    tree = await settle(WhySubject);
+    errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+    expect(seedCalls()).toHaveLength(1);
+  });
+  it('retains a custom reason when its prerequisite draft hits the cap', async () => {
+    h.fetch.mockImplementation(async (url: string) => url === '/api/thesis/AAPL' ? new Response('{}', { status: 404 }) : new Response(JSON.stringify(cap), { status: 403 }));
+    let tree = await settle(WhySubject);
+    tree.find(node => node.props.children === '+ Add a pillar')!.props.onClick();
+    tree = await settle(WhySubject);
+    tree.find(node => node.props.placeholder === 'Write a reason you own AAPL, in one sentence')!.props.onChange('My own reason');
+    tree.find(node => node.type === 'textarea')!.props.onChange({ target: { value: 'Revenue falls for two consecutive quarters' } });
+    tree = await settle(WhySubject);
+    await tree.find(node => node.props.children === 'Add pillar')!.props.onClick();
+    tree = await settle(WhySubject);
+    errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+    expect(tree.some(node => node.props.value === 'My own reason')).toBe(true);
+    expect(seedCalls()).toHaveLength(1);
+    expect(h.fetch.mock.calls.filter(([, options]) => options?.method === 'POST')).toHaveLength(1);
+  });
+  it('adds a Pro action to adoption limits without marking a house thesis followed', async () => {
+    h.fetch.mockImplementation(async (url: string) => url === '/api/dashboard/holdings-tickers' ? new Response('{"tickers":[]}') : new Response(JSON.stringify(cap), { status: 403 }));
+    let tree = await settle(AdoptThesisPage);
+    await tree.find(node => node.props.children === 'Follow')!.props.onClick();
+    tree = await settle(AdoptThesisPage);
+    errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+    expect(tree.some(node => node.props.children === '✓ Following')).toBe(false);
+  });
+  it('keeps V2 failed batch drafts visible with a Pro action instead of completing onboarding', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('localStorage', { getItem: () => null });
+    vi.stubGlobal('sessionStorage', { getItem: () => null });
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url === '/api/onboarding/status') return new Response('{"hasSavedWork":false}');
+      if (url === '/api/financial-summary') return new Response(JSON.stringify({ accounts: [], holdings: [{ ticker: 'AAPL', total_value: 100 }, { ticker: 'MSFT', total_value: 90 }] }));
+      if (url === '/api/thesis/seed') return new Response(JSON.stringify(cap), { status: 403 });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    function OnboardingSubject() { return OnboardingFlowV2({ jumpTo: 'synced' }); }
+    try {
+      for (let i = 0; i < 6; i++) await settle(OnboardingSubject);
+      await vi.advanceTimersByTimeAsync(1000);
+      const tree = await settle(OnboardingSubject);
+      expect(seedCalls()).toHaveLength(1);
+      errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+      expect(tree.some(node => node.props.children === 'No theses drafted yet.')).toBe(true);
+      const confirmAll = tree.find(node => node.props.onClick?.name === 'confirmAll')!;
+      expect(confirmAll.props.disabled).toBe(true);
+      expect(h.capture.mock.calls.some(([event]) => event === 'onb_thesis_confirmed')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+  it('preserves a scanned V2 ticker when its direct draft hits the cap', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('localStorage', { getItem: () => null });
+    vi.stubGlobal('sessionStorage', { getItem: () => null });
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url === '/api/onboarding/status') return new Response('{"hasSavedWork":false}');
+      if (url.startsWith('/api/scan/ticker')) return new Response(JSON.stringify({ ticker: 'AAPL', house: false, kind: 'filer' }));
+      if (url === '/api/thesis/seed') return new Response(JSON.stringify(cap), { status: 403 });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    function OnboardingSubject() { return OnboardingFlowV2({ jumpTo: 'input' }); }
+    try {
+      let tree = await settle(OnboardingSubject);
+      tree.find(node => node.type === 'input')!.props.onChange({ target: { value: 'AAPL' } });
+      tree = await settle(OnboardingSubject);
+      tree.find(node => node.type === 'form')!.props.onSubmit({ preventDefault() {} });
+      for (let i = 0; i < 4; i++) await settle(OnboardingSubject);
+      await vi.advanceTimersByTimeAsync(2500);
+      tree = await settle(OnboardingSubject);
+      errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+      expect(seedCalls()).toHaveLength(1);
+      expect(JSON.parse(seedCalls()[0][1].body)).toEqual({ ticker: 'AAPL' });
+      expect(tree.some(node => node.props.children === 'AAPL')).toBe(true);
+      expect(h.capture.mock.calls.some(([event]) => event === 'onb_draft_shown' || event === 'onb_reasons_saved')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+  it('does not exit V2 confirmation or label a thesis Watching after a tracking cap', async () => {
+    const dismiss = vi.fn();
+    vi.useFakeTimers();
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem: dismiss });
+    vi.stubGlobal('sessionStorage', { getItem: () => null, setItem: dismiss });
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url === '/api/onboarding/status') return new Response('{"hasSavedWork":false}');
+      if (url === '/api/financial-summary') return new Response(JSON.stringify({ accounts: [], holdings: [{ ticker: 'AAPL', total_value: 100 }] }));
+      if (url === '/api/thesis/seed') return new Response(JSON.stringify({ thesis: draftRow(), pillars: draftRow().pillars }));
+      if (url.startsWith('/api/thesis/pillars/')) return new Response('{}');
+      if (url === '/api/thesis/AAPL') return new Response(JSON.stringify(cap), { status: 403 });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    function OnboardingSubject() { return OnboardingFlowV2({ jumpTo: 'synced' }); }
+    try {
+      let tree = await settle(OnboardingSubject);
+      for (let i = 0; i < 4; i++) tree = await settle(OnboardingSubject);
+      await tree.find(node => node.props.onClick?.name === 'confirmAll')!.props.onClick();
+      tree = await settle(OnboardingSubject);
+      errorIsVisible(tree, cap.error); upgradeIsVisible(tree);
+      expect(dismiss).not.toHaveBeenCalled();
+      expect(tree.some(node => node.props.children === 'Watching')).toBe(false);
+      expect(h.capture.mock.calls.some(([event]) => event === 'onb_thesis_confirmed')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+  it('reloads saved V2 reasons as untracked and retries only tracking', async () => {
+    const dismiss = vi.fn();
+    const saved = draftRow(); saved.pillars[0].confirmed = true;
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem: dismiss });
+    vi.stubGlobal('sessionStorage', { getItem: () => null, setItem: dismiss });
+    let trackingAllowed = false;
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url === '/api/onboarding/status') return new Response('{"hasSavedWork":false}');
+      if (url === '/api/financial-summary') return new Response(JSON.stringify({ accounts: [], holdings: [{ ticker: 'AAPL', total_value: 100 }] }));
+      // Seed's existing-thesis branch returns saved reasons without auto-tracking.
+      if (url === '/api/thesis/seed') return new Response(JSON.stringify({ thesis: saved, pillars: saved.pillars }));
+      if (url === '/api/thesis/AAPL') return trackingAllowed ? new Response('{}') : new Response(JSON.stringify(cap), { status: 403 });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    function OnboardingSubject() { return OnboardingFlowV2({ jumpTo: 'synced' }); }
+    let tree = await settle(OnboardingSubject);
+    for (let i = 0; i < 4; i++) tree = await settle(OnboardingSubject);
+    expect(seedCalls()).toHaveLength(1);
+    expect(tree.some(node => node.props.children === 'Watching')).toBe(false);
+    expect(tree.some(node => node.props.children === 'Saved · not watching')).toBe(true);
+    await tree.find(node => node.props.onClick?.name === 'confirmAll')!.props.onClick();
+    tree = await settle(OnboardingSubject);
+    errorIsVisible(tree, cap.error);
+    expect(dismiss).not.toHaveBeenCalled();
+    trackingAllowed = true;
+    await tree.find(node => node.props.children === 'Track')!.props.onClick();
+    tree = await settle(OnboardingSubject);
+    expect(tree.some(node => node.props.children === 'Watching')).toBe(true);
+    expect(h.fetch.mock.calls.filter(([url]) => url === '/api/thesis/AAPL')).toHaveLength(2);
+    expect(h.fetch.mock.calls.some(([url]) => url.startsWith('/api/thesis/pillars/'))).toBe(false);
+  });
+  it.each([false, true])('refreshes the actual Classic parent after Ratify drafting and confirmation (partial=%s)', async (partial) => {
+    h.realCache = true;
+    const existing = draftRow('GOOG'); existing.pillars[0].confirmed = true; existing.tracked = true;
+    const persisted = [existing];
+    h.fetch.mockImplementation(async (url: string, options?: RequestInit) => {
+      if (url === '/api/thesis') return new Response(JSON.stringify({ theses: persisted }));
+      if (url === '/api/holdings') return new Response(JSON.stringify({ holdings: ['GOOG', 'AAPL', 'MSFT'].map(ticker => ({ ticker, total_value: 100 })) }));
+      if (url === '/api/thesis/seed') {
+        const { ticker } = JSON.parse(String(options?.body));
+        if (partial && ticker === 'MSFT') return new Response(JSON.stringify(cap), { status: 403 });
+        const row = draftRow(ticker); persisted.push(row);
+        return new Response(JSON.stringify({ thesis: row, pillars: row.pillars }));
+      }
+      if (url === '/api/thesis/pillars/pillar-AAPL' && options?.method === 'PATCH') {
+        persisted.find(row => row.ticker === 'AAPL')!.pillars[0].confirmed = true;
+        return new Response('{}');
+      }
+      if (url === '/api/thesis/AAPL' && options?.method === 'PATCH') {
+        persisted.find(row => row.ticker === 'AAPL')!.tracked = true;
+        return new Response('{}');
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    let tree = await settle(ClassicThesesPage);
+    expect(h.fetch.mock.calls.filter(([url]) => url === '/api/thesis')).toHaveLength(1);
+    await tree.find(node => node.props.children === 'Draft 2 more from holdings')!.props.onClick();
+    tree = await settle(ClassicThesesPage);
+    expect(h.fetch.mock.calls.filter(([url]) => url === '/api/thesis')).toHaveLength(2);
+    expect(tree.filter(node => node.props.children === 'Looks right')).toHaveLength(partial ? 1 : 2);
+    if (partial) { errorIsVisible(tree, cap.error); upgradeIsVisible(tree); }
+    await tree.find(node => node.props.children === 'Looks right')!.props.onClick();
+    tree = await settle(ClassicThesesPage);
+    expect(h.fetch.mock.calls.filter(([url]) => url === '/api/thesis')).toHaveLength(3);
+    expect(persisted.find(row => row.ticker === 'AAPL')!.tracked).toBe(true);
+    expect(tree.filter(node => node.props.children === 'Looks right')).toHaveLength(partial ? 0 : 1);
   });
 });

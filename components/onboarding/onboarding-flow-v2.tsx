@@ -26,8 +26,10 @@ import { SourceIcon } from '@/components/onboarding/source-icon';
 import { saveOnboardingReasons, type OnboardingSaveResult } from '@/lib/onboarding-save';
 import { supabase } from '@/lib/supabase/client';
 import { validateBreaksIf, BREAKS_IF_MAX } from '@/lib/pillar-breaks-if';
-import { cachedGet } from '@/lib/api-cache';
+import { cachedGet, invalidate } from '@/lib/api-cache';
 import { demoAccountEmail } from '@/lib/onboarding/demo-account';
+import { requireThesisResponse, thesisRequestError, type ThesisRequestError } from '@/lib/thesis-request-error';
+import { ThesisErrorNotice } from '@/components/thesis/thesis-error-notice';
 
 const ONBOARDING_KEY = 'helm_onboarding_dismissed';
 // The investor demo login runs onboarding on EVERY visit, in preview mode (no
@@ -113,6 +115,7 @@ interface RatifyDraft {
   moreCount: number;
   draftPillarIds: string[];
   confirmed: boolean;
+  tracked: boolean;
 }
 
 // Same words, rendered in the /analyze loading-terminal style ([tag] step ✓).
@@ -145,9 +148,9 @@ const AGENT_JOBS = [
 //
 // Falls back to a clearly-labelled sample only when the account has no theses yet.
 const PREVIEW_FALLBACK: RatifyDraft[] = [
-  { ticker: 'NVDA', name: 'sample', thesisId: 'sample-nvda', topClaim: 'Hyperscaler AI capex keeps growing and NVIDIA keeps the majority of accelerator spend', moreCount: 2, draftPillarIds: [], confirmed: false },
-  { ticker: 'MSFT', name: 'sample', thesisId: 'sample-msft', topClaim: 'Azure reaccelerates as AI workloads move to the cloud', moreCount: 1, draftPillarIds: [], confirmed: false },
-  { ticker: 'AAPL', name: 'sample', thesisId: 'sample-aapl', topClaim: 'Services keeps compounding and lifts gross margin', moreCount: 1, draftPillarIds: [], confirmed: false },
+  { ticker: 'NVDA', name: 'sample', thesisId: 'sample-nvda', topClaim: 'Hyperscaler AI capex keeps growing and NVIDIA keeps the majority of accelerator spend', moreCount: 2, draftPillarIds: [], confirmed: false, tracked: false },
+  { ticker: 'MSFT', name: 'sample', thesisId: 'sample-msft', topClaim: 'Azure reaccelerates as AI workloads move to the cloud', moreCount: 1, draftPillarIds: [], confirmed: false, tracked: false },
+  { ticker: 'AAPL', name: 'sample', thesisId: 'sample-aapl', topClaim: 'Services keeps compounding and lifts gross margin', moreCount: 1, draftPillarIds: [], confirmed: false, tracked: false },
 ];
 
 type Phase = 'welcome' | 'input' | 'scan' | 'card' | 'reasons' | 'saved' | 'howItWorks' | 'connect' | 'manual' | 'synced' | 'ratify' | 'attribution' | 'done';
@@ -224,6 +227,7 @@ export function OnboardingFlowV2({
   const [drafts, setDrafts] = useState<RatifyDraft[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<ThesisRequestError | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   // reasons step
@@ -353,6 +357,8 @@ export function OnboardingFlowV2({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ ticker }),
             });
+            await requireThesisResponse(sr, 'Could not draft this thesis. Please try again.');
+            invalidate('/api/thesis');
             if (sr.ok) {
               const d = await sr.json();
               const rows: Array<{ id: string | number; claim: string; breaks_if?: string | null; lifecycle?: string }> =
@@ -372,7 +378,9 @@ export function OnboardingFlowV2({
                 track('onb_draft_shown', { ticker, pillars: pillars.length });
               }
             }
-          } catch { /* the card falls back to the honest degrade */ }
+          } catch (error) {
+            if (!cancelled) setRequestError(thesisRequestError(error, 'Could not reach Helm to draft this thesis. Please try again.'));
+          }
           if (cancelled) return;
         }
         setScan(res);
@@ -393,6 +401,7 @@ export function OnboardingFlowV2({
     const t = raw.trim().toUpperCase();
     if (!/^[A-Z.\-]{1,10}$/.test(t)) return;
     setTicker(t);
+    setRequestError(null);
     setShowAll(false);
     track('onb_ticker_entered', { ticker: t });
     setPhase('scan');
@@ -437,7 +446,7 @@ export function OnboardingFlowV2({
         try {
           const [sum, th] = await Promise.all([
             fetch('/api/financial-summary').then((r) => (r.ok ? r.json() : null)).catch(() => null),
-            cachedGet<{ theses?: Array<{ id: string; ticker: string; pillars?: Array<{ id: string; claim: string; confirmed: boolean; origin: string; lifecycle: string }> }> }>('/api/thesis').then((r) => r.data).catch(() => null),
+            cachedGet<{ theses?: Array<{ id: string; ticker: string; tracked?: boolean; pillars?: Array<{ id: string; claim: string; confirmed: boolean; origin: string; lifecycle: string }> }> }>('/api/thesis').then((r) => r.data).catch(() => null),
           ]);
           if (cancelled) return;
 
@@ -446,7 +455,7 @@ export function OnboardingFlowV2({
             holdings: Array.isArray(sum?.holdings) ? sum.holdings.length : 0,
           });
 
-          const theses: Array<{ id: string; ticker: string; pillars?: Array<{ id: string; claim: string; confirmed: boolean; origin: string; lifecycle: string }> }> =
+          const theses: Array<{ id: string; ticker: string; tracked?: boolean; pillars?: Array<{ id: string; claim: string; confirmed: boolean; origin: string; lifecycle: string }> }> =
             Array.isArray(th?.theses) ? th.theses : [];
           const real: RatifyDraft[] = theses
             .map((t) => {
@@ -462,6 +471,7 @@ export function OnboardingFlowV2({
                 moreCount: Math.max(0, live.length - 1),
                 draftPillarIds: [],                       // never PATCHed in preview
                 confirmed: drafts.length === 0,           // reflect real confirmed state
+                tracked: t.tracked === true,
               } as RatifyDraft;
             })
             .filter(Boolean)
@@ -506,8 +516,8 @@ export function OnboardingFlowV2({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ ticker: tk }),
             });
-            if (res.status === 404) { setPhase('done'); return; } // no thesis access -> skip cliff-2 honestly
-            if (!res.ok) continue;
+            await requireThesisResponse(res, `Could not draft ${tk}. Please try again.`);
+            invalidate('/api/thesis');
             const data = await res.json();
             const pillars: Array<{ id: string; claim: string; origin: string; confirmed: boolean; lifecycle: string }> =
               Array.isArray(data.pillars) ? data.pillars : [];
@@ -522,13 +532,18 @@ export function OnboardingFlowV2({
               moreCount: Math.max(0, draftPillars.length - 1),
               draftPillarIds: draftPillars.map((p) => p.id),
               confirmed: draftPillars.length === 0 && confirmedAlready,
+              tracked: data.thesis?.tracked === true,
             });
-          } catch { /* skip this ticker */ }
+          } catch (error) {
+            if (!cancelled) setRequestError(thesisRequestError(error, `Could not reach Helm to draft ${tk}. Please try again.`));
+            break;
+          }
         }
         if (cancelled) return;
-        if (built.length === 0) { setPhase('done'); return; }
         setDrafts(built);
-        setTimeout(() => { if (!cancelled) setPhase('ratify'); }, 900);
+        // Leave the drafting phase with the result, including a failed empty
+        // batch. Staying in synced while drafts changes would restart this effect.
+        setPhase('ratify');
       } catch {
         if (!cancelled) setPhase('done');
       }
@@ -562,6 +577,7 @@ export function OnboardingFlowV2({
     }
     setBusy('reasons');
     setNote(null);
+    setRequestError(null);
     track('onb_reasons_save_started', { ticker: scan.ticker, picked: ids.length, custom: !!custom });
     try {
       const result = await saveOnboardingReasons({
@@ -573,7 +589,7 @@ export function OnboardingFlowV2({
       track('onb_reasons_saved', { ticker: scan.ticker, monitored: result.monitored, existing: result.existing });
       setPhase('saved');
     } catch (error) {
-      setNote(error instanceof Error ? error.message : 'Could not reach Helm. Your choices are still here; please retry.');
+      setRequestError(thesisRequestError(error, error instanceof Error ? error.message : 'Could not reach Helm. Your choices are still here; please retry.'));
       track('onb_reasons_save_failed', { ticker: scan.ticker });
     } finally {
       setBusy(null);
@@ -598,30 +614,41 @@ export function OnboardingFlowV2({
   }
 
   async function confirmDraft(d: RatifyDraft) {
-    if (busy || d.confirmed) return;
+    if (busy) return false;
+    if (d.confirmed && d.tracked) return true;
     if (preview) {
       track('onb_thesis_confirmed', { ticker: d.ticker, preview: true });
-      setDrafts((prev) => prev?.map((x) => (x.ticker === d.ticker ? { ...x, confirmed: true } : x)) ?? null);
-      return;
+      setDrafts((prev) => prev?.map((x) => (x.ticker === d.ticker ? { ...x, confirmed: true, tracked: true } : x)) ?? null);
+      return true;
     }
     setBusy(d.ticker);
+    setRequestError(null);
     try {
       // fetch does not reject on 4xx, so an unchecked loop here reported success
       // for pillars that were never confirmed. That is how a thesis ended up
       // tracked, empty, and labelled "Watching": the confirm silently 404'd and
       // the backfill then refused with "No confirmed pillars".
-      let confirmedAny = false;
+      // Saved reasons survive a failed tracking request and a reload. Retry
+      // tracking directly when there are no unconfirmed reasons left to save.
+      let confirmedAny = d.confirmed;
       for (const id of d.draftPillarIds) {
         const pr = await fetch(`/api/thesis/pillars/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ confirmed: true }),
         });
-        if (pr.ok) confirmedAny = true;
+        await requireThesisResponse(pr, `Could not confirm ${d.ticker}. Please try again.`);
+        invalidate('/api/thesis');
+        confirmedAny = true;
+        setDrafts((prev) => prev?.map((x) => {
+          if (x.ticker !== d.ticker) return x;
+          const remaining = x.draftPillarIds.filter((pendingId) => pendingId !== id);
+          return { ...x, draftPillarIds: remaining, confirmed: remaining.length === 0 };
+        }) ?? null);
       }
       if (!confirmedAny) {
         setNote(`Could not confirm ${d.ticker}. You can try again from the Theses page.`);
-        return;
+        return false;
       }
       // Tracking is what the cron actually scans, and free tier caps it at one.
       // A silent 403 would leave the user believing all three are being watched.
@@ -630,21 +657,22 @@ export function OnboardingFlowV2({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracked: true }),
       });
-      if (tr.status === 403) {
-        setNote(`${d.ticker} is confirmed. Watching every position is part of Pro, so only your first thesis is being monitored for now.`);
-      }
+      await requireThesisResponse(tr, `Could not track ${d.ticker}. Please try again.`);
+      invalidate('/api/thesis');
       track('onb_thesis_confirmed', { ticker: d.ticker, tracked: tr.ok });
-      setDrafts((prev) => prev?.map((x) => (x.ticker === d.ticker ? { ...x, confirmed: true } : x)) ?? null);
-    } catch {
-      setNote(`Could not confirm ${d.ticker}. You can try again from the Theses page.`);
+      setDrafts((prev) => prev?.map((x) => (x.ticker === d.ticker ? { ...x, confirmed: true, tracked: true } : x)) ?? null);
+      return true;
+    } catch (error) {
+      setRequestError(thesisRequestError(error, `Could not confirm ${d.ticker}. You can try again from the Theses page.`));
+      return false;
     } finally {
       setBusy(null);
     }
   }
 
   async function confirmAll() {
-    const pending = drafts?.filter((d) => !d.confirmed) ?? [];
-    for (const d of pending) await confirmDraft(d);
+    const pending = drafts?.filter((d) => !d.confirmed || !d.tracked) ?? [];
+    for (const d of pending) if (!(await confirmDraft(d))) return;
     dismiss(true);
   }
 
@@ -726,6 +754,7 @@ export function OnboardingFlowV2({
           )}
 
           {/* ═══ WELCOME ═══ */}
+          {requestError && <div className="relative px-5 sm:px-8 pt-14 max-w-2xl mx-auto w-full"><ThesisErrorNotice error={requestError} /></div>}
           {phase === 'welcome' && (
             <div className="flex-1 grid place-items-center px-6" style={{ animation: 'onb-fade-up 0.7s ease-out' }}>
               <div className="relative text-center space-y-9 max-w-2xl">
@@ -1456,10 +1485,10 @@ export function OnboardingFlowV2({
               <div className="flex-1 overflow-y-auto flex flex-col px-5 sm:px-8 pt-[max(48px,env(safe-area-inset-top))] pb-6" style={{ animation: 'onb-fade-up 0.5s ease-out' }}>
                 <div className="max-w-xl mx-auto w-full my-auto py-4">
                   <h2 className="text-[clamp(22px,4vw,30px)] font-bold tracking-tight text-[var(--color-text-primary)] leading-[1.15]">
-                    Helm drafted a starting thesis for your {drafts.length === 1 ? 'largest position' : `${drafts.length} largest positions`}.
+                    {drafts.length === 0 ? 'No theses drafted yet.' : <>Helm drafted a starting thesis for your {drafts.length === 1 ? 'largest position' : `${drafts.length} largest positions`}.</>}
                   </h2>
                   <p className="text-[15px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
-                    Confirm the ones that match how you actually think. Helm starts watching them the moment you do.
+                    {drafts.length === 0 ? 'Your holdings are still here. Review the message above before trying again from the terminal.' : 'Confirm the ones that match how you actually think. Helm starts watching them the moment you do.'}
                   </p>
 
                   <div className="mt-6 rounded-lg overflow-hidden border border-[var(--color-border-base)] bg-[#0B0B0B] divide-y divide-white/[0.05]">
@@ -1469,17 +1498,17 @@ export function OnboardingFlowV2({
                         <div className="min-w-0 flex-1">
                           <p className="text-[14px] leading-[1.4] text-[var(--color-text-secondary)] m-0 line-clamp-2">{d.topClaim || d.name}</p>
                           <p className="mt-1 text-[10.5px] uppercase tracking-[0.12em] text-[var(--color-text-muted)] m-0" style={MONO}>
-                            {d.confirmed ? 'Watching' : d.moreCount > 0 ? `Draft · +${d.moreCount} more` : 'Draft'}
+                            {d.confirmed ? (d.tracked ? 'Watching' : 'Saved · not watching') : d.moreCount > 0 ? `Draft · +${d.moreCount} more` : 'Draft'}
                           </p>
                         </div>
-                        {d.confirmed ? (
+                        {d.confirmed && d.tracked ? (
                           <span className="flex items-center gap-1.5 text-[12px] text-[var(--color-positive)] shrink-0" style={MONO}>
                             <Check className="w-4 h-4" /> Watching
                           </span>
                         ) : (
                           <button onClick={() => confirmDraft(d)} disabled={busy === d.ticker}
                             className="text-[13px] font-semibold px-4 min-h-[44px] rounded bg-[var(--color-gold)] text-black hover:brightness-110 transition disabled:opacity-50 shrink-0" style={MONO}>
-                            {busy === d.ticker ? 'Saving…' : 'Confirm'}
+                            {busy === d.ticker ? 'Saving…' : d.confirmed ? 'Track' : 'Confirm'}
                           </button>
                         )}
                       </div>
@@ -1499,7 +1528,7 @@ export function OnboardingFlowV2({
               <div className="shrink-0 sticky bottom-0 bg-[#050505]/92 backdrop-blur-md border-t border-[var(--color-border-base)] px-5 sm:px-8 py-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
                 <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
                   <button onClick={() => dismiss(true)} className="text-[13px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors min-h-[44px]" style={MONO}>Skip for now</button>
-                  <button onClick={confirmAll} disabled={busy !== null}
+                  <button onClick={confirmAll} disabled={busy !== null || drafts.length === 0}
                     className="flex items-center gap-2 px-6 min-h-[48px] bg-[var(--color-gold)] text-black text-[15px] font-semibold rounded-md hover:brightness-110 transition-all disabled:opacity-50">
                     Confirm all and enter the terminal <ArrowRight className="w-4 h-4" />
                   </button>

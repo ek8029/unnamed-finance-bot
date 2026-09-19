@@ -8,6 +8,9 @@
 // affirms a drafted reason rather than authoring from scratch.
 
 import { useState } from 'react';
+import { invalidate } from '@/lib/api-cache';
+import { requireThesisResponse, thesisRequestError, type ThesisRequestError } from '@/lib/thesis-request-error';
+import { ThesisErrorNotice } from './thesis-error-notice';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -35,7 +38,7 @@ interface Props {
 export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const [note, setNote] = useState<ThesisRequestError | null>(null);
 
   const total = confirmedCount + items.length;
 
@@ -46,11 +49,13 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
     try {
       // 1. Confirm each drafted pillar.
       for (const id of item.draftPillarIds) {
-        await fetch(`/api/thesis/pillars/${id}`, {
+        const response = await fetch(`/api/thesis/pillars/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ confirmed: true }),
         });
+        await requireThesisResponse(response, `Could not confirm ${item.ticker}. Try again.`);
+        invalidate('/api/thesis');
       }
       // 2. Track it — the cron only scans tracked theses, and track-enable
       //    fires the initial backfill scan.
@@ -59,12 +64,11 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracked: true }),
       });
-      if (!tr.ok && tr.status === 403) {
-        setNote(`${item.ticker} confirmed. Tracking is capped on the free tier — upgrade to monitor every position.`);
-      }
+      await requireThesisResponse(tr, `Could not track ${item.ticker}. Try again.`);
+      invalidate('/api/thesis');
       await onChanged();
-    } catch {
-      setNote(`Could not confirm ${item.ticker}. Try again.`);
+    } catch (error) {
+      setNote(thesisRequestError(error, `Could not confirm ${item.ticker}. Try again.`));
     } finally {
       setBusy(null);
     }
@@ -74,19 +78,23 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
     if (drafting) return;
     setDrafting(true);
     setNote(null);
+    let drafted = 0;
     try {
       for (const h of unthesed) {
-        await fetch('/api/thesis/seed', {
+        const response = await fetch('/api/thesis/seed', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ticker: h.ticker }),
         });
+        await requireThesisResponse(response, `Could not draft ${h.ticker}. Try again.`);
+        invalidate('/api/thesis');
+        drafted += 1;
       }
-      await onChanged();
-    } catch {
-      setNote('Could not draft every holding — some may have failed. Try again.');
+    } catch (error) {
+      setNote(thesisRequestError(error, 'Could not reach Helm to draft every holding. Please try again.'));
     } finally {
       setDrafting(false);
+      if (drafted > 0) await onChanged();
     }
   }
 
@@ -172,7 +180,7 @@ export function RatifyQueue({ items, unthesed, confirmedCount, onChanged, onEdit
 
         {note && (
           <div className="px-5 py-3 border-t border-white/[0.05] font-mono text-[12px] text-[#9A9A9A]" style={MONO}>
-            {note}
+            <ThesisErrorNotice error={note} />
           </div>
         )}
       </div>

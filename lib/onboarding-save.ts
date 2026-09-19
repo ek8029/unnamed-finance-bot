@@ -1,3 +1,6 @@
+import { requireThesisResponse } from '@/lib/thesis-request-error';
+import { invalidate } from '@/lib/api-cache';
+
 type SavedPillar = { id: string; confirmed: boolean; lifecycle?: string; claim?: string; breaks_if?: string };
 type SavedThesis = { thesis: { id: string; tracked: boolean }; pillars: SavedPillar[] };
 export type OnboardingSaveResult = { thesisId: string; monitored: boolean; existing: boolean };
@@ -16,13 +19,15 @@ export async function saveOnboardingReasons(input: {
     if (!data.thesis?.id || !Array.isArray(data.pillars)) throw new Error('Could not verify your saved reasons. Please retry.');
     return data;
   };
-  const write = async (url: string, method: string, body?: unknown) => request(url, {
-    method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
-  });
+  const write = async (url: string, method: string, body?: unknown) => {
+    const response = await request(url, {
+      method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
+    });
+    if (response.ok) invalidate('/api/thesis');
+    return response;
+  };
   const requireOK = async (response: Response) => {
-    if (response.ok) return;
-    const data = await response.json().catch(() => null);
-    throw new Error(data?.error || 'Could not save all your choices. Please retry.');
+    await requireThesisResponse(response, 'Could not save all your choices. Please retry.');
   };
   let existing = false;
   if (input.drafted) {

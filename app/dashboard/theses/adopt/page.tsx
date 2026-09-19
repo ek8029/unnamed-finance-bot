@@ -9,6 +9,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HOUSE_THESES } from '@/lib/content/house-theses';
+import { invalidate } from '@/lib/api-cache';
+import { requireThesisResponse, thesisRequestError, type ThesisRequestError } from '@/lib/thesis-request-error';
+import { ThesisErrorNotice } from '@/components/thesis/thesis-error-notice';
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)' };
 
@@ -18,6 +21,7 @@ export default function AdoptThesisPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [done, setDone] = useState<Set<string>>(() => new Set());
   const [note, setNote] = useState<string | null>(null);
+  const [error, setError] = useState<ThesisRequestError | null>(null);
 
   // Rank the grid: names the user actually holds first.
   useEffect(() => {
@@ -41,18 +45,19 @@ export default function AdoptThesisPage() {
     if (busy) return;
     setBusy(ticker);
     setNote(null);
+    setError(null);
     try {
       const res = await fetch('/api/thesis/adopt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker }),
       });
-      const d = await res.json();
-      if (!res.ok) { setNote(d?.error ?? 'Could not follow. Try again.'); return; }
+      await requireThesisResponse(res, 'Could not follow. Try again.');
+      invalidate('/api/thesis');
       setDone((prev) => new Set(prev).add(ticker));
       setNote(`Following Helm's ${ticker} thesis. The agent tests new filings and news against it from the next scan.`);
-    } catch {
-      setNote('Could not follow. Try again.');
+    } catch (error) {
+      setError(thesisRequestError(error, 'Could not reach Helm. Please try again.'));
     } finally {
       setBusy(null);
     }
@@ -75,6 +80,7 @@ export default function AdoptThesisPage() {
         {note && (
           <p className="mt-4 text-[13px] text-[var(--color-gold)]" style={MONO}>{note}</p>
         )}
+        <ThesisErrorNotice error={error} />
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
