@@ -7,7 +7,7 @@ import { CinematicBg } from '@/components/cinematic-bg';
 export const metadata: Metadata = {
   title: 'How Helm Detects Thesis Drift (Methodology) | Helm Terminal',
   description:
-    'How Helm scores thesis pillars against SEC filings and news, when a pillar is judged weakening or broken, and why every alert carries a dated citation.',
+    'How Helm checks investment theses against filings, news and market data, derives status, and presents evidence you can review.',
   openGraph: {
     title: 'How Helm Detects Thesis Drift (Methodology)',
     description:
@@ -27,28 +27,28 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: 'How does Helm decide a thesis is weakening?',
-    a: 'A pillar is marked weakening when at least one recent, material item from a primary source contradicts it. It is marked broken when independent items contradict it and at least one is a primary source such as an SEC filing. A single ambiguous headline does not flip a pillar.',
+    a: 'For a monitored personal thesis, weakening requires a material contradiction from a primary source or two independently keyed material contradictions within the last 30 days. Broken generally requires two such contradictions with at least one primary source. A severe primary contradiction can trigger broken on its own; the current scorer applies that exception to a price move of at least 20% classified as a material contradiction. A saved status override takes precedence.',
   },
   {
-    q: 'Does Helm make up numbers or paraphrase?',
-    a: 'No. Every status change is backed by a verbatim excerpt from the source, with its date. If Helm cannot tie a change to a real, quotable source, it does not raise the alert.',
+    q: 'How can I check the evidence?',
+    a: 'Text-source excerpts are checked against the retrieved source text before they enter the evidence record. Price and structured financial data use system-generated descriptions instead of quotations. AI-written explanations are interpretations and can be wrong. Review the source, its date, and the connection to your stated reason before acting.',
   },
   {
     q: 'What sources does Helm read?',
-    a: 'SEC EDGAR filings (10-K, 10-Q, 8-K), earnings, news, and price. Filings are anchored to the relevant section so the citation points to the exact passage that bears on a pillar.',
+    a: 'Available sources include SEC filings, insider transaction filings, structured financial facts, news and price moves. Evidence records include the excerpt or data description and source details. Coverage depends on the ticker, available data and successful processing.',
   },
   {
     q: 'How often does Helm check?',
-    a: 'Every hour the US market is open. The pipeline only does work when there is new information for a holding, so it does not re-score everything constantly.',
+    a: 'The personal-thesis scoring job is scheduled hourly during a weekday window around the US trading session. Other source collection jobs run separately. Source availability, processing and notification settings affect when findings appear; an immediate alert is not guaranteed.',
   },
 ];
 
 const STEPS = [
   ['Decompose the thesis into pillars', 'Each position is broken into its separable reasons, the pillars. A pillar is a specific, falsifiable claim, for example a claim about government revenue, operating margin, or a demand cycle. You write them, or Helm drafts them from its analysis for you to edit.'],
-  ['Gather primary sources per holding', 'For each holding, Helm pulls SEC EDGAR filings, earnings, news, and price. Filings are anchored to the relevant section, so a risk-factor change or a segment-revenue line can be matched to the pillar it actually affects.'],
-  ['Score each source against each pillar', 'Every source is assigned to the pillar it most directly affects, then scored for whether it confirms, contradicts, or is neutral to that pillar. A contract loss is matched to a revenue pillar, not a downstream margin pillar.'],
-  ['Derive a status, conservatively', 'A pillar is weakening when at least one recent material item contradicts it, and broken when independent items contradict it with at least one primary source. The position takes the worst status across its confirmed pillars. Status changes are timestamped only when a real flip occurs, so the dates mean something.'],
-  ['Attach a verbatim, dated citation', 'Every status change carries the exact excerpt that drove it, with the source and date. Nothing is paraphrased into an alert, and nothing is invented.'],
+  ['Gather available sources', 'Helm gathers filings, structured financial facts, news and market data for monitored tickers. A missing source or a failed check does not prove that your reason still holds.'],
+  ['Test the evidence against a reason', 'AI interprets whether a source supports, contradicts or is neutral to a confirmed pillar, and whether it is material. Validation checks reject unsupported excerpts and some weak connections. The interpretation still needs your review.'],
+  ['Derive the monitored status', 'Deterministic rules use recent material contradictions and distinct source keys to derive weakening or broken status. Severe primary contradictions have an exception, described below. Backfilled evidence does not drive this live status; a saved override takes precedence.'],
+  ['Review the evidence trail', 'Read the dated source excerpt or market-data description alongside the explanation. Findings appear in the app; push delivery depends on notification preferences and device setup.'],
 ];
 
 export default function MethodologyPage() {
@@ -59,7 +59,7 @@ export default function MethodologyPage() {
       headline: 'How Helm Detects Thesis Drift (Methodology)',
       description: 'The methodology behind Helm thesis monitoring: scoring pillars against SEC filings and news.',
       datePublished: '2026-06-17',
-      dateModified: '2026-06-17',
+      dateModified: '2026-09-19',
       author: { '@type': 'Person', name: 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
       publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       url: 'https://helmterminal.dev/how-helm-detects-thesis-drift',
@@ -101,7 +101,7 @@ export default function MethodologyPage() {
             How Helm detects thesis drift
           </h1>
           <p className="text-[17px] leading-[1.55] text-[var(--color-text-secondary)]">
-            An alert is only as good as the reasoning behind it. Here is exactly how Helm decides that the thesis on a position is weakening or broken, and why every alert points to a real, dated source.
+            Write down why you own a stock. Helm checks available evidence against that reason and gives you a record to review. Here is how personal monitoring works, what the statuses mean, and where the system has limits.
           </p>
         </header>
 
@@ -124,12 +124,17 @@ export default function MethodologyPage() {
           <section>
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">Why conservative thresholds matter</h2>
             <p className="mb-3">The failure mode of any alerting system is crying wolf. If every dip or ambiguous headline flips a pillar, you learn to ignore the alerts, and the one that matters gets lost. So Helm errs toward silence.</p>
-            <p>A pillar weakens on a real, material contradiction, and breaks only when independent sources agree and at least one is a primary document. Price alone never flips a pillar, because price is not a reason. The result is fewer, higher-signal alerts that are each backed by something you can read yourself.</p>
+            <p>A monitored pillar weakens on one material primary-source contradiction or two independently keyed material contradictions in a 30-day window. It normally breaks when at least two converge and one is primary. There is a severe-evidence exception: the current scorer can mark it broken after a price move of at least 20% that it classified as a material contradiction. A price-based flag is a prompt to investigate, not proof that the business thesis failed or an instruction to sell.</p>
           </section>
 
           <section>
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">Where the citations come from</h2>
-            <p>Helm reads SEC EDGAR filings (10-K, 10-Q, 8-K), earnings, and news. For filings, the relevant section is anchored so the citation points to the exact passage, a changed risk factor or a segment-revenue line, rather than a whole document. Every alert carries that excerpt verbatim, with its date. If a change cannot be tied to a quotable source, Helm does not raise it.</p>
+            <p>For text sources, Helm checks that an excerpt occurs in the retrieved source text. Price moves and structured financial facts instead carry system-generated descriptions. The accompanying explanation is AI-written, not a quotation. These checks reduce errors; they do not guarantee correct interpretation, complete coverage or timely delivery. Open the source and compare it with your own reason.</p>
+          </section>
+
+          <section>
+            <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-3">Public research uses a different status model</h2>
+            <p>The public ticker thesis pages use authored house theses and approved evidence. They weight filings and news by source type and age over a trailing year, producing Intact, Watch, Weakening, Broken or Unverified. Personal monitoring uses the 30-day contradiction rules above. Neither status is a recommendation, and an untested reason is not a confirmed reason.</p>
           </section>
 
           <section>

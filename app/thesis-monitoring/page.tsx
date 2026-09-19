@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'What Is Thesis Monitoring? (And Thesis Drift)',
     description:
-      'Track the reasons you own each stock against primary sources. Get alerted the moment your thesis weakens or breaks, with verbatim, dated citations.',
+      'Check the reasons you own each stock against available evidence. Review dated sources when your investment thesis is challenged.',
     url: 'https://helmterminal.dev/thesis-monitoring',
     siteName: 'Helm Terminal',
     type: 'article',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'What is thesis monitoring?',
-    a: 'Thesis monitoring is the practice of tracking the specific reasons you own a stock against live primary sources (SEC filings, earnings, news, and price), so you are alerted the moment your original reasoning weakens or breaks, rather than discovering it quarters later.',
+    a: 'Thesis monitoring means writing down why you own a stock and checking those reasons against new filings, financial results, news and market data. It helps you notice evidence that challenges your reasoning; it does not guarantee immediate detection or tell you whether to sell.',
   },
   {
     q: 'What is thesis drift?',
@@ -68,7 +68,7 @@ export default function ThesisMonitoringPage() {
           '@type': 'DefinedTerm',
           name: 'Thesis Monitoring',
           description:
-            'The practice of tracking the specific reasons you own a stock against live primary sources (SEC filings, earnings, news, and price), so you are alerted the moment your original reasoning weakens or breaks.',
+            'The practice of writing down the reasons you own a stock and checking those reasons against new filings, financial results, news and market data.',
           inDefinedTermSet: 'https://helmterminal.dev/thesis-monitoring',
         },
         {
@@ -94,7 +94,7 @@ export default function ThesisMonitoringPage() {
       description:
         'A plain guide to thesis monitoring, thesis drift, and how to track the reasons you own each stock against primary sources.',
       datePublished: '2026-06-17',
-      dateModified: '2026-06-17',
+      dateModified: '2026-09-19',
       author: { '@type': 'Person', name: 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
       publisher: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
       url: 'https://helmterminal.dev/thesis-monitoring',
@@ -138,7 +138,7 @@ export default function ThesisMonitoringPage() {
             What is thesis monitoring?
           </h1>
           <p className="text-[19px] md:text-[21px] leading-[1.5] text-[var(--color-text-primary)] font-medium border-l-2 border-[var(--color-gold)] pl-5">
-            Thesis monitoring is the practice of tracking the specific reasons you own a stock against live primary sources, SEC filings, earnings, news, and price, so you are alerted the moment your original reasoning weakens or breaks, rather than discovering it quarters later.
+            Thesis monitoring means writing down why you own a stock, then checking whether new evidence still supports those reasons. Instead of relying on memory, you have a reason, a condition that would challenge it, and a dated source to review.
           </p>
         </header>
 
@@ -160,8 +160,8 @@ export default function ThesisMonitoringPage() {
             <ol className="space-y-5">
               {[
                 ['Write the pillars', 'Break each position into the reasons you actually own it: "government revenue stays sticky," "operating margin keeps expanding," "the AI capex cycle has years to run." Write your own, or let Helm draft them from its analysis.'],
-                ['The system watches them', 'Every hour the market is open, Helm scores SEC filings, earnings, news, and price against each pillar.'],
-                ['See what is breaking', 'Positions are ranked by how intact the thesis is: intact, weakening, or broken. Every status change is backed by a verbatim, dated citation from the source filing or article. No paraphrased signals. No made-up numbers.'],
+                ['The system checks available evidence', 'Scheduled checks test available filings, financial facts, news and price data against the confirmed reasons in your monitored theses. Coverage and processing affect when a finding appears.'],
+                ['Review what changed', 'Inspect the evidence behind a monitored status: intact, weakening, broken or not yet verified. Text sources carry checked excerpts; market data can carry generated descriptions. AI explanations need your review.'],
                 ['Cross-position check', 'Helm flags shared-driver risk: when several holdings you believe are diversified actually rest on the same pillar, so a single event breaks all of them at once.'],
               ].map(([title, body], i) => (
                 <li key={i} className="flex gap-4">
@@ -173,6 +173,7 @@ export default function ThesisMonitoringPage() {
                 </li>
               ))}
             </ol>
+            <p className="mt-5">See <Link href="/how-helm-detects-thesis-drift" className="text-[var(--color-gold)] hover:underline">how the statuses are derived and what the system can miss</Link>.</p>
           </section>
 
           {/* Comparison table */}
@@ -210,9 +211,9 @@ export default function ThesisMonitoringPage() {
 
           {/* Worked example */}
           <section>
-            <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">A worked example</h2>
+            <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">A hypothetical example</h2>
             <p>
-              You own Palantir on two pillars: government revenue stays sticky, and operating margin keeps expanding. France ends an intelligence contract and the UK opens a review of its NHS deal. Helm reads both items the day they appear, attributes them to the government-revenue pillar (not the margin pillar), marks that pillar as weakening, and shows you the dated source for each. You learn your thesis is eroding while it is happening, not at the next quarterly review.
+              Imagine owning a software company because its largest customer keeps renewing and its operating margin is improving. A new filing says the customer will not renew. That directly challenges the renewal reason; it does not, by itself, establish what happened to margins. The useful review is the original reason beside the dated filing and the relevant passage. This is an illustrative scenario, not a claim about an actual company or a finding Helm delivered.
             </p>
           </section>
 
