@@ -187,7 +187,7 @@ export function TaxTeaser() {
             right now. That changes when the market does, and Helm rechecks every trading day.
           </p>
           <p className="mt-3 mb-0 max-w-[62ch] text-[14px] leading-[1.6] text-[var(--color-text-primary)]">
-            What Pro does the rest of the year: watches the thesis behind every position you own and
+            What Pro does the rest of the year: monitors the theses you confirm and track, and
             tells you when the evidence turns against it, flags earnings exposure before the print,
             and has the tax math ready in October rather than December. Most weeks it will be quiet.
             That is the design, not a fault.

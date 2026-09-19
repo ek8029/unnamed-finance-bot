@@ -7,7 +7,7 @@ import { CinematicBg } from '@/components/cinematic-bg';
 export const metadata: Metadata = {
   title: 'MyThesis Alternative Without the Per-Holding Meter | Helm',
   description:
-    'MyThesis charges $4.99 per holding per month, so the bill grows with every position. Helm watches the whole book at $20 a month flat, with SEC citations.',
+    'MyThesis charges $4.99 per holding per month, so the bill grows with every position. Helm Pro monitors the theses you choose to track at $20 a month flat, with SEC citations.',
   openGraph: {
     title: 'A MyThesis Alternative Without the Per-Holding Meter',
     description:
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'A MyThesis Alternative Without the Per-Holding Meter',
-    description: 'MyThesis meters by holding. Helm watches your whole portfolio at one flat price.',
+    description: 'MyThesis meters by holding. Helm Pro lets you monitor more theses at one flat price.',
   },
   alternates: { canonical: 'https://helmterminal.dev/mythesis-alternative' },
 };
@@ -65,7 +65,7 @@ export default function MyThesisAlternativePage() {
       '@type': 'Article',
       headline: 'A MyThesis Alternative Without the Per-Holding Meter',
       description:
-        'MyThesis charges $4.99 per holding per month, so the bill scales with the size of your book. Helm Terminal monitors the whole portfolio at $20/month flat, with verbatim dated SEC citations.',
+        'MyThesis charges $4.99 per holding per month, so the bill scales with the size of your book. Helm Pro monitors the theses you confirm and track at $20/month flat, with dated SEC citations.',
       datePublished: '2026-07-16',
       dateModified: '2026-07-16',
       author: { '@type': 'Person', name: 'Evan Kim', url: 'https://helmterminal.dev/about', jobTitle: 'Founder' },
@@ -101,7 +101,7 @@ export default function MyThesisAlternativePage() {
             Looking for a mythesis.ai alternative?
           </h1>
           <p className="text-[17px] leading-[1.55] text-[var(--color-text-secondary)]">
-            MyThesis is a clean, dedicated thesis-alert tool, and it is live, which already puts it ahead of most of this category. The catch is the meter: as of August 9, 2026 it charges $4.99 per holding per month, with your first holding free, and there is no cap. At five holdings that is $19.96 and the two products cost the same. At 25 it is $119.76, and at 60 it is $294.41. Helm Terminal watches your whole portfolio, thesis monitoring included, at $20 a month flat, so the gap widens with every position you own.
+            MyThesis is a clean, dedicated thesis-alert tool, and it is live, which already puts it ahead of most of this category. The catch is the meter: as of August 9, 2026 it charges $4.99 per holding per month, with your first holding free, and there is no cap. At five holdings that is $19.96 and the two products cost the same. At 25 it is $119.76, and at 60 it is $294.41. Helm Pro monitors the theses you confirm and track at $20 a month flat, so the gap widens with every position you own.
           </p>
         </header>
 

@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'What is the best investment thesis tracker in 2026?',
-    a: 'Helm Terminal is the only thesis-monitoring tool in this comparison that watches your whole portfolio on flat pricing, cites verbatim, dated SEC filings rather than paraphrased signals, and detects shared-driver risk across positions. MyThesis (mythesis.ai) is the other live paid option, but it meters by holding at $4.99 each per month, so the bill scales with the size of your book. Vela and Thesis (UseThesis) are still waitlist or early access as of July 2026.',
+    a: 'Helm Terminal is the only thesis-monitoring tool in this comparison that lets you monitor the theses you choose to track on flat pricing, cites verbatim, dated SEC filings rather than paraphrased signals, and detects shared-driver risk across positions. MyThesis (mythesis.ai) is the other live paid option, but it meters by holding at $4.99 each per month, so the bill scales with the size of your book. Vela and Thesis (UseThesis) are still waitlist or early access as of July 2026.',
   },
   {
     q: 'Which thesis trackers are actually available right now?',
@@ -184,7 +184,7 @@ export default function BestThesisTrackersPage() {
           {/* CTA */}
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Every holding. One flat price. Real receipts.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Start with one monitored thesis on Free. Pro watches the thesis behind every position with dated citations at $20/month or $149/year. No per-holding meter.</p>
+            <p className="mb-5 max-w-xl mx-auto">Start with one monitored thesis on Free. Pro monitors more theses you confirm and track, with dated citations, at $20/month or $149/year. No per-holding meter.</p>
             <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 

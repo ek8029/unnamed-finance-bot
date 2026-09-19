@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Pricing | Helm Terminal',
   description:
-    'Free: portfolio dashboard, AI stock analysis, one monitored thesis. Pro: $20 a month or $149 a year adds whole-portfolio monitoring, the agent and tax tools.',
+    'Free: portfolio dashboard, AI stock analysis, one monitored thesis. Pro: $20 a month or $149 a year adds more monitored theses, the agent and tax tools.',
   alternates: {
     canonical: 'https://helmterminal.dev/pricing',
   },

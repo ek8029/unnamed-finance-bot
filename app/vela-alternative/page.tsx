@@ -138,7 +138,7 @@ export default function VelaAlternativePage() {
 
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[21px] font-bold text-[var(--color-text-primary)] mb-2">Start monitoring your thesis now.</h2>
-            <p className="mb-5 max-w-xl mx-auto">No waitlist. Helm watches the reasons behind every position and tells you when one breaks. Free to start.</p>
+            <p className="mb-5 max-w-xl mx-auto">No waitlist. Helm checks the reasons you confirm and track against cited evidence. Start with one monitored thesis free.</p>
             <Link href="/signup" className="inline-block px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
           </section>
 

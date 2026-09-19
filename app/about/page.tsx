@@ -236,7 +236,7 @@ export default function AboutPage() {
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">04</span>
-                <span><strong className="text-[var(--color-text-primary)]">Free by default.</strong> The terminal is free, including one tracked thesis and the history behind it. Pro is $20 a month and watches every position you own.</span>
+                <span><strong className="text-[var(--color-text-primary)]">Free by default.</strong> The terminal is free, including one tracked thesis and the history behind it. Pro is $20 a month and lets you monitor more theses you choose to track.</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-[var(--color-gold)] font-mono text-[15px] mt-0.5">05</span>

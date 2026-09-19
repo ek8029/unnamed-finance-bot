@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'What is agentic portfolio intelligence?',
-    a: 'Agentic portfolio intelligence is an AI analyst that continuously watches your entire portfolio, instead of a dashboard that only shows balances when you log in. It connects to your accounts read-only, then re-prices your holdings, reads filings and news against the stocks you own, and runs risk, tax, and earnings scans in the background, surfacing what changed and why with the source behind every flag.',
+    a: 'Agentic portfolio intelligence combines portfolio analysis with ongoing research. In Helm, linked or manually entered holdings provide context for exposure, earnings and tax tools. Thesis monitoring starts when you confirm your reasons and enable tracking. Free includes one monitored thesis; Pro adds more and deeper portfolio research.',
   },
   {
     q: 'How is it different from a portfolio tracker?',
@@ -130,7 +130,7 @@ export default function PortfolioIntelligencePage() {
             Agentic portfolio intelligence: an AI analyst for your whole portfolio
           </h1>
           <p className="text-[19px] md:text-[21px] leading-[1.5] text-[var(--color-text-primary)] font-medium border-l-2 border-[var(--color-gold)] pl-5">
-            Most tools show you balances. An AI analyst watches your whole book for you, across risk, taxes, earnings, and the reasons you own each stock, and tells you what changed before it costs you.
+            Bring your holdings into one view, investigate exposure, and review the evidence behind your convictions. Start with one monitored thesis free; Pro adds more theses and deeper portfolio research.
           </p>
         </header>
 
@@ -139,7 +139,7 @@ export default function PortfolioIntelligencePage() {
           <section>
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-3">What is agentic portfolio intelligence?</h2>
             <p className="mb-3">
-              <span className="text-[var(--color-text-primary)] font-semibold">Agentic portfolio intelligence is an AI analyst that continuously watches your entire portfolio.</span> It connects to your accounts read-only, then works in the background: re-pricing your book, reading filings and news against the stocks you own, and running risk, tax, and earnings scans. Instead of a dashboard you have to interrogate, you get a standing read of what changed and why, with the source behind every flag.
+              <span className="text-[var(--color-text-primary)] font-semibold">Agentic portfolio intelligence combines portfolio analysis with ongoing research.</span> In Helm, linked or manually entered holdings provide context for exposure, earnings and tax tools. Thesis monitoring starts when you confirm your reasons and enable tracking. Free includes one monitored thesis; Pro adds more and deeper portfolio research.
             </p>
             <p>
               The word that matters is <span className="text-[var(--color-text-primary)] font-semibold">agentic</span>. A chatbot answers when you ask it. An agent works while you are away and hands you the result. And it is intelligence, not management: it never trades or moves your money. It keeps you informed and in control.

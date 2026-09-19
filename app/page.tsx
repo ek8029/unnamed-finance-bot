@@ -16,18 +16,18 @@ import HomeContent from '@/components/homepage/helm-home';
 export const metadata: Metadata = {
   title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
   description:
-    'An agent reads every filing touching a position you hold and hands you what changed, with its source. Free to start. Stock analysis needs no account.',
+    'Research a stock and track the reasons you own it against cited filings and news. One monitored thesis is free. Stock analysis needs no account.',
   alternates: { canonical: 'https://helmterminal.dev' },
   openGraph: {
     title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
     description:
-      'The agent reads every filing touching a position you hold and keeps the sentence that changed the picture, with its source. Exposure, taxes, earnings and thesis, across every account you link.',
+      'Review cited evidence for the theses you confirm and track, alongside portfolio exposure, taxes and earnings. Start with one monitored thesis free.',
     url: 'https://helmterminal.dev',
   },
   twitter: {
     title: 'Helm Terminal | Agentic Coverage of Your Whole Portfolio',
     description:
-      'The agent reads every filing touching a position you hold and keeps the sentence that changed the picture, with its source.',
+      'Research a stock, confirm your reasons for owning it, and track those reasons against cited evidence. Start with one monitored thesis free.',
   },
 };
 

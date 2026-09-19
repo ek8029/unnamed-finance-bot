@@ -176,7 +176,7 @@ export async function PATCH(
           if ((count ?? 0) >= FREE_THESIS_LIMIT) {
             return NextResponse.json(
               {
-                error: `Free accounts watch ${FREE_THESIS_LIMIT} thesis. Pro watches every position you own.`,
+                error: `Free accounts watch ${FREE_THESIS_LIMIT} thesis. Pro lets you monitor more theses.`,
                 code: 'PRO_REQUIRED',
               },
               { status: 403 },

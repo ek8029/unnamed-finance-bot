@@ -654,7 +654,7 @@ function ClassicThesesInner() {
     <div className="max-w-[1280px] 2xl:max-w-[1760px] mx-auto px-4 sm:px-6 py-8 space-y-8">
       <DemoConnectCta
         headline="Track the theses behind your real positions."
-        sub="Connect your brokerages and Helm watches every pillar, alerting you the morning one cracks, with the filing that broke it."
+        sub="Confirm why you own a stock, then turn on tracking to review evidence that supports or challenges those reasons. One monitored thesis is free."
       />
 
       {/* ── Section 1: Conviction header ── */}

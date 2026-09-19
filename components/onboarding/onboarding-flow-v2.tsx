@@ -130,7 +130,7 @@ const SCAN_TERMINAL_STEPS = [
 // Labelled like a capability sheet rather than an icon list: the label doubles as
 // the name of the surface it maps to, so the primer teaches the product.
 const AGENT_JOBS = [
-  { label: 'Monitoring', text: 'Watches every position for what moved, and why' },
+  { label: 'Monitoring', text: 'Checks the theses you confirm and track' },
   { label: 'Taxes', text: 'Finds tax-loss harvesting across all of your accounts' },
   { label: 'Earnings', text: 'Warns you ahead of earnings that hit your book' },
   { label: 'Thesis', text: 'Tracks the reasons you own each position and flags the moment one breaks' },
@@ -935,7 +935,7 @@ export function OnboardingFlowV2({
                       )}
 
                       <p className="mt-6 text-[13.5px] text-[var(--color-text-muted)] leading-relaxed" style={MONO}>
-                        Helm just did this on one ticker. Connect once and it watches every position you hold.
+                        Start with one thesis: confirm your reasons and turn on tracking. Connecting accounts adds portfolio context.
                       </p>
                     </>
                   ) : (
@@ -954,7 +954,7 @@ export function OnboardingFlowV2({
                       </h2>
                       <p className="mt-4 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
                         Drafted just now from {scan.ticker}&apos;s filings and Helm&apos;s read of the business. No filing has tested
-                        these yet. Helm checks every trading day from tomorrow and shows you the receipt the moment one does.
+                        these yet. Confirm the reasons that match your view and turn on tracking to start checking them against new evidence.
                       </p>
                       <div className="mt-6 rounded-md border border-[var(--color-border-base)] bg-[#0B0B0B] p-4">
                         <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)] mb-3.5" style={MONO}>
@@ -1320,7 +1320,7 @@ export function OnboardingFlowV2({
                   <p className="text-[15px] text-[var(--color-text-muted)] mt-3 leading-relaxed">
                     {adopted && scan
                       ? 'When new evidence tests a monitored reason, you can review the quote and its source in Helm. Timing depends on available filings and your notification settings.'
-                      : 'Keep a reason next to each name you own and Helm checks every filing and headline against it, then tells you what changed and why, with the source. Nothing arrives on a quiet day.'}
+                      : 'Confirm the reasons behind a thesis and turn on tracking. Helm checks available filings and reporting against those reasons and shows you the cited evidence. Free includes one monitored thesis; Pro adds more.'}
                   </p>
                   <div className="mt-6 border-b border-[var(--color-border-subtle)]">
                     {AGENT_JOBS.map(({ label, text }) => (

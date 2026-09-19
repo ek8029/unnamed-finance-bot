@@ -850,7 +850,7 @@ export default function BriefPage() {
                 Make this brief yours
               </div>
               <p className="m-0 text-[15px] leading-[1.6] text-[var(--color-text-secondary)]">
-                Pro turns the general brief above into a conviction-led read on what moved your book and why, and tracks the theses behind every position, leading your brief the morning a pillar cracks.
+                Pro turns the general brief above into a conviction-led read on what moved your book and why, and brings evidence from the theses you confirm and track into your brief.
               </p>
               <span className="mt-3 inline-block text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-gold)]" style={MONO}>
                 Upgrade to Pro →

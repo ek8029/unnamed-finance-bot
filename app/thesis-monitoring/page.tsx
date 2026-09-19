@@ -44,11 +44,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Can I monitor SEC filings for only the stocks I own?',
-    a: 'Yes. Helm reads SEC EDGAR filings, earnings, and news only for your holdings, and maps each item to the specific pillar of your thesis it affects. You get the filing that matters with the line that matters, not a firehose of every 8-K on the market.',
+    a: 'Choose a company, confirm your reasons, and enable thesis tracking. Helm checks relevant SEC filings and reporting against those reasons; a brokerage connection is optional. You get the filing that matters with the line that matters, not a firehose of every 8-K on the market.',
   },
   {
     q: 'Is there a free thesis tracker?',
-    a: 'Helm Terminal includes one ongoing monitored thesis with up to 12 months of cited history on Free, alongside portfolio aggregation, AI stock analysis, and the actions inbox. Helm Pro extends monitoring across your portfolio and adds the agent and shared-driver analysis at $20/month or $149/year.',
+    a: 'Helm Terminal includes one ongoing monitored thesis with up to 12 months of cited history on Free, alongside portfolio aggregation, AI stock analysis, and the actions inbox. Helm Pro adds monitoring for more theses you confirm and track and adds the agent and shared-driver analysis at $20/month or $149/year.',
   },
   {
     q: 'What is shared-driver risk?',
@@ -233,7 +233,7 @@ export default function ThesisMonitoringPage() {
           {/* CTA */}
           <section className="sovereign-card rounded p-6 md:p-8 text-center">
             <h2 className="text-[22px] font-bold text-[var(--color-text-primary)] mb-2">Watch the reasoning, not just the price.</h2>
-            <p className="mb-5 max-w-xl mx-auto">Start with one ongoing monitored thesis and up to 12 months of cited history on Free. Helm Pro extends monitoring across your portfolio at $20/month or $149/year.</p>
+            <p className="mb-5 max-w-xl mx-auto">Start with one ongoing monitored thesis and up to 12 months of cited history on Free. Helm Pro adds monitoring for more theses you confirm and track at $20/month or $149/year.</p>
             <div className="flex items-center justify-center gap-3">
               <Link href="/signup" className="px-5 py-2.5 bg-[var(--color-gold)] text-[var(--color-bg-base)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-all hover:brightness-110">Take the helm</Link>
               <Link href="/best-thesis-trackers" className="px-5 py-2.5 border border-[var(--color-border-base)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] font-bold text-[13px] uppercase tracking-[0.15em] rounded transition-colors">Compare tools</Link>

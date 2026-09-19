@@ -188,9 +188,9 @@ export default function HeroBlock({
           </h1>
 
           <p className="h13m-sub h13m-rise" style={{ animationDelay: '2.28s' }}>
-            Every 10-Q, 8-K, and earnings call, read end to end. The agent keeps what changed and
-            drops the rest. Start with one ticker, or link your brokerages and it reads every
-            position you hold.
+            Start with one stock and the reasons you own it. Confirm your thesis and turn on
+            tracking to review evidence from filings and reporting. Link your brokerages for
+            portfolio context, and choose Pro when you want to monitor more theses.
           </p>
 
           <form onSubmit={submit} className="h13m-form h13m-rise" style={{ animationDelay: '2.37s' }}>
@@ -217,7 +217,7 @@ export default function HeroBlock({
             {reading ? (
               <>
                 <span className="h13m-dot h13m-dot-live" />
-                <span>Reading {reading}. Every filing, front to back</span>
+                <span>Researching {reading}. Gathering available evidence</span>
               </>
             ) : (
               <>

@@ -52,10 +52,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://helmterminal.dev'),
   title: 'Helm Terminal | Agentic Thesis Monitoring for Your Book',
-  description: 'An agentic terminal that watches your whole portfolio: exposure, taxes, and the thesis behind every position, with cited evidence and free stock analysis.',
+  description: 'Research stocks, monitor the investment theses you confirm and track, and review portfolio exposure, earnings and tax tools. Start with one thesis free.',
   openGraph: {
     title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
-    description: 'An agentic AI analyst on every position. Helm monitors each thesis against SEC filings and news, surfaces tax-loss harvesting and earnings exposure, and tells you what to do, across all your accounts.',
+    description: 'Follow the evidence behind your investment convictions. Confirm and track a thesis, review cited filings and news, and investigate portfolio exposure with Helm.',
     url: 'https://helmterminal.dev',
     siteName: 'Helm Terminal',
     type: 'website',
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Helm Terminal | Agentic Thesis Monitoring for Your Whole Portfolio',
-    description: 'An agentic AI analyst on every position: thesis monitoring with cited evidence, tax-loss harvesting, and free AI stock analysis across all your accounts.',
+    description: 'Stock research and thesis monitoring with cited evidence. Start with one thesis free; Pro adds more monitoring and deeper portfolio research.',
     images: ['/opengraph-image'],
   },
   alternates: {

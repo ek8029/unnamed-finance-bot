@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       if ((owned ?? 0) >= FREE_THESIS_LIMIT) {
         return NextResponse.json(
           {
-            error: `Free accounts can hold ${FREE_THESIS_LIMIT} thesis. Pro tracks every position you own.`,
+            error: `Free accounts can hold ${FREE_THESIS_LIMIT} thesis. Pro lets you monitor more theses.`,
             code: 'PRO_REQUIRED',
           },
           { status: 403 },

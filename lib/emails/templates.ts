@@ -225,15 +225,15 @@ export function getTemplate(dayIndex: number, userName?: string): EmailTemplate 
 
     case 21: return {
       subject: 'Helm Pro: thesis monitoring and tax intelligence for $20/mo',
-      text: `Hey ${name},\n\nHelm Pro is $20/mo.\n\nWhat it adds:\n- Every position watched, every trading day, with cited evidence\n- The agent: reassessment, investigation, shared exposure\n- The Thesis Builder and the factor lens\n- Tax center with tax-loss harvesting, wash-sale aware\n- Earnings exposure across held positions\n- A conviction-led brief built around your book\n\nFree stays free: the full terminal, one thesis kept under watch, AI stock analysis, the daily brief and the actions inbox.\n\nhttps://helmterminal.dev/pricing\n\n- Helm Terminal`,
+      text: `Hey ${name},\n\nHelm Pro is $20/mo.\n\nWhat it adds:\n- Monitor more theses you confirm and track, with cited evidence\n- The agent: reassessment, investigation, shared exposure\n- The Thesis Builder and the factor lens\n- Tax center with tax-loss harvesting, wash-sale aware\n- Earnings exposure across held positions\n- A conviction-led brief built around your book\n\nFree stays free: the full terminal, one thesis kept under watch, AI stock analysis, the daily brief and the actions inbox.\n\nhttps://helmterminal.dev/pricing\n\n- Helm Terminal`,
       html: wrap(`
         <div style="text-align:center;">
         ${heading('<span style="font-weight:700;color:#E6B94D;">$20/mo.</span> Helm Pro.')}
-        ${subtext('Every position watched, the agent, earnings, and the tax center.')}
+        ${subtext('More monitored theses, the agent, earnings, and the tax center.')}
         </div>
         ${dividerLine()}
         ${sectionLabel('What Pro adds')}
-        ${bulletItem('Every position watched', 'Cited evidence the moment a thesis starts to break.')}
+        ${bulletItem('More monitored theses', 'Confirm your reasons and enable tracking to review evidence that supports or challenges them.')}
         ${bulletItem('The agent', 'Reassessment, investigation, shared exposure. Plus the Thesis Builder and the factor lens.')}
         ${bulletItem('Tax center', 'Harvestable losses with 30-day wash-sale screening.')}
         ${bulletItem('Earnings exposure', 'Know when your holdings report, before they move.')}

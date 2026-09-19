@@ -29,7 +29,7 @@ const ANNUAL_SAVING = MONTHLY_PRICE * 12 - ANNUAL_PRICE;
 // and scales if a tier is ever added back.
 
 const proFeatures = [
-  'Every position watched, not just one',
+  'Monitor more investment theses',
   'Thesis monitoring with cited evidence',
   'The agent: reassessment, investigation, shared exposure',
   'Tax center with tax-loss harvesting',
@@ -39,7 +39,7 @@ const proFeatures = [
   'Factor lens',
 ];
 
-const freeSummary = 'Full terminal, brokerage sync, AI analysis on any US ticker, the daily brief, actions inbox, and one thesis with the twelve months of evidence behind it.';
+const freeSummary = 'One monitored thesis, cited history, free stock analysis, and your portfolio dashboard. No brokerage connection required to start a thesis.';
 
 // Where they genuinely differ, say how, rather than printing a tick in both
 // columns. A row that reads "General" against "Conviction-led" tells you more
@@ -51,9 +51,9 @@ const LEDGER: { feature: string; free: string; pro: string }[] = [
   { feature: 'Actions inbox', free: 'Included', pro: 'Included' },
   { feature: 'Portfolio Wrapped', free: 'Included', pro: 'Included' },
   { feature: 'Daily brief', free: 'General', pro: 'Conviction-led, your book' },
-  { feature: 'Investment theses', free: 'One', pro: 'Every position you own' },
-  { feature: 'Twelve months of history behind a thesis', free: 'Included', pro: 'Included' },
-  { feature: 'Ongoing monitoring, cited evidence', free: 'One thesis', pro: 'Every position, every trading day' },
+  { feature: 'Investment theses', free: 'One', pro: 'More theses you choose to track' },
+  { feature: 'Up to twelve months of cited history', free: 'Included', pro: 'Included' },
+  { feature: 'Ongoing monitoring, cited evidence', free: 'One thesis', pro: 'Your tracked theses' },
   { feature: 'Harvestable loss figure', free: 'Included', pro: 'Included' },
   { feature: 'Which lots, and wash-sale screening', free: '—', pro: 'Across every account' },
   { feature: 'Earnings exposure', free: '—', pro: 'Across held positions' },
@@ -71,12 +71,12 @@ const faqItems = [
   {
     question: "What's included in the Free plan?",
     answer:
-      'The full terminal: portfolio dashboard with brokerage sync via Plaid, AI stock analysis on any US ticker, the general daily brief, the actions inbox, and Portfolio Wrapped. You also get one investment thesis and can read the twelve months of dated evidence behind it. Free forever, and no card is required.',
+      'The full terminal: portfolio dashboard with brokerage sync via Plaid, AI stock analysis on any US ticker, the general daily brief, the actions inbox, and Portfolio Wrapped. You also get one investment thesis with up to twelve months of dated evidence. Confirm your reasons and enable tracking to begin monitoring; a brokerage connection is optional. Free forever, and no card is required.',
   },
   {
     question: 'What does Pro add?',
     answer:
-      'Pro is $20 a month, or $149 a year, which is $91 less than paying monthly. Free gives you one thesis, the history behind it, and keeps watching it; Pro watches every position you own, every trading day, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
+      'Pro is $20 a month, or $149 a year, which is $91 less than paying monthly. Free gives you one thesis, the history behind it, and keeps watching it; Pro monitors more theses you confirm and track, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
     question: 'Can I cancel anytime?',
@@ -158,11 +158,11 @@ export default function PricingPage() {
         <AnimatedSection delay={0}>
           <p className="type-eyebrow text-[var(--color-gold)] mb-3">Pricing</p>
           <h1 className="type-h1 text-[var(--color-text-primary)] mb-3 max-w-2xl">
-            Your first thesis is free. Your whole portfolio is Pro.
+            Start with one thesis. Follow more with Pro.
           </h1>
           <p className="type-body text-[var(--color-text-secondary)] max-w-xl">
-            Start with a connected portfolio and one monitored thesis. Choose Pro when you
-            want ongoing coverage across your positions, deeper research, and tax intelligence.
+            Write down why you own a stock. Track the evidence for and against it.
+            Start with one thesis free, then choose Pro for more monitored theses and deeper portfolio research.
           </p>
         </AnimatedSection>
       </section>
@@ -286,6 +286,10 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
+                <p className="mt-5 mb-0 text-[13px] leading-[1.6] text-[var(--color-text-secondary)]">
+                  Monitoring starts with reasons you confirm and a thesis you choose to track.
+                  Link a brokerage or add positions manually for portfolio context.
+                </p>
               </div>
             </div>
           </div>
@@ -386,7 +390,7 @@ export default function PricingPage() {
         <AnimatedSection delay={200}>
           <p className="mt-4 mb-0 text-[13px] leading-[1.6] text-[var(--color-text-muted)]">
             Helm is not a registered investment adviser and does not give investment advice.
-            Every finding links to the primary source it came from.
+            Review the cited sources behind thesis evidence before making an investment decision.
           </p>
         </AnimatedSection>
       </section>
