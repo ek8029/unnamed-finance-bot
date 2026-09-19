@@ -1,4 +1,5 @@
 'use client';
+import { AiConsentPanel } from '@/components/ai-consent-panel';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
@@ -966,6 +967,7 @@ export default function DashboardShell({
           "bg-[var(--color-bg-base)] bg-depth flex-1",
           isChatPage && "min-h-0 flex flex-col"
         )}>
+          <AiConsentPanel compact />
           <ConnectBanner />
           {/* Trial lifecycle strip — countdown, last-48h urgency, post-lapse receipt */}
           <TrialBanner />

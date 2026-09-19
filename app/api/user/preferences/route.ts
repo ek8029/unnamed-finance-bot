@@ -86,6 +86,9 @@ export async function PATCH(request: Request) {
     const sanitized: Record<string, unknown> = {};
     for (const field of WRITABLE_PREFERENCE_FIELDS) {
       if (!(field in updates)) continue;
+      if ((field === 'analytics_enabled' || field === 'crash_reporting_enabled') && typeof updates[field] !== 'boolean') {
+        return NextResponse.json({ error: `${field} must be a boolean` }, { status: 400 });
+      }
       // The Updates card stamps this itself after it renders, so the value is
       // client-supplied and is never written as sent: it must be a parsable
       // timestamp string, and a future one is clamped to the server clock.

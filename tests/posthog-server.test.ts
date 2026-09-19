@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const schedule = vi.hoisted(() => vi.fn());
 vi.mock('next/server', () => ({ after: schedule }));
+// user_preferences has UNIQUE(user_id); maybeSingle is either one row or null.
+vi.mock('@/lib/supabase/server', () => ({ createServiceClient: async () => ({
+  from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { analytics_enabled: true }, error: null }) }) }) }),
+}) }));
 
 beforeEach(() => {
   vi.resetModules(); schedule.mockReset();

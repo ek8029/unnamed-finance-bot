@@ -35,6 +35,7 @@ export interface TrialRowLike {
   trial_ends_at: string | null;
   stripe_subscription_id: string | null;
   source?: string | null;
+  permanent_access?: 'complimentary' | 'lifetime' | null;
 }
 
 /**
@@ -46,5 +47,5 @@ export interface TrialRowLike {
  * window goes through here.
  */
 export function isTrialRow(row: TrialRowLike | null | undefined): boolean {
-  return !!row?.trial_ends_at && !row.stripe_subscription_id && row.source !== 'revenuecat';
+  return !!row?.trial_ends_at && !row.stripe_subscription_id && row.source !== 'revenuecat' && !row.permanent_access;
 }

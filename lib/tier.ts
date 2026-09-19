@@ -94,7 +94,7 @@ export async function getRealSubscriptionInfo(userId: string): Promise<Subscript
   const supabase = await createClient();
   const { data } = await supabase
     .from('user_subscriptions')
-    .select('tier, trial_ends_at, stripe_subscription_id, source')
+    .select('tier, trial_ends_at, stripe_subscription_id, source, permanent_access')
     .eq('user_id', userId)
     .maybeSingle();
 

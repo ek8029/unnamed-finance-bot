@@ -170,6 +170,9 @@ export async function getCachedClusters(
     return Array.isArray(data.clusters) ? (data.clusters as SynthCluster[]) : [];
   }
 
+  // Saved results remain readable while personal AI is paused.
+  const { hasAiConsent, AiConsentRequiredError } = await import('@/lib/ai-consent');
+  if (!(await hasAiConsent(db, userId))) throw new AiConsentRequiredError();
   const clusters = await clusterPillars(openai, inputs);
 
   const { error: writeError } = await db

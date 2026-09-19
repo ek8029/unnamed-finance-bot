@@ -70,8 +70,9 @@ export async function sendPush(
   if (to.length === 0) return { sent: 0, reason: 'no device' };
 
   const tickets = await sendExpoPush(to.map((t) => ({
-    to: t, title: message.title, body: message.body, sound: 'default',
-    data: { route: message.route, id: message.id ?? null, kind },
+    to: t, title: 'Helm update', body: 'Open Helm to see the latest in your account.', sound: 'default',
+    // The OS may display this after sign-out; financial details stay in-app.
+    data: { userId, route: message.route, kind },
   })));
 
   let sent = 0;

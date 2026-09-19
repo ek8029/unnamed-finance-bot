@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasAiConsent, AI_CONSENT_REQUIRED } from '@/lib/ai-consent';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
 import { draftPillars } from '@/lib/thesis-seed';
@@ -131,6 +132,8 @@ export async function POST(request: Request) {
       .eq('ticker', ticker)
       .maybeSingle();
 
+    // Public first drafts contain no private claims; rewrites do.
+    if (pillars.length && !(await hasAiConsent(supabase, user.id))) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
     const drafted = await draftPillars(ticker, {
       existingClaims: pillars.map((p: { claim: string }) => p.claim),
       assetClass: (sec?.asset_class as string | null) ?? null,

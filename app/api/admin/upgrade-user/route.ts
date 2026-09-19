@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const { error: upsertError } = await supabase
     .from('user_subscriptions')
     .upsert(
-      { user_id: profile.id, tier, updated_at: new Date().toISOString() },
+      { user_id: profile.id, tier, permanent_access: tier === 'pro' ? 'complimentary' : null, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' },
     );
 

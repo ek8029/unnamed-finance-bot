@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     // 3. Already-Pro guard
     const { data: subscription, error: subError } = await serviceClient
       .from('user_subscriptions')
-      .select('tier, stripe_customer_id, stripe_subscription_id, trial_ends_at, source')
+      .select('tier, stripe_customer_id, stripe_subscription_id, trial_ends_at, source, permanent_access')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -212,6 +212,7 @@ export async function POST(req: NextRequest) {
         ? {
             payment_method_collection: 'always' as const,
             subscription_data: {
+              metadata: { supabase_user_id: user.id },
               // One trial per person, ever. trial_ends_at doubles as the
               // has-trialed marker, so a user who already had the no-card
               // connect trial does not get a second 14 days on top of it.

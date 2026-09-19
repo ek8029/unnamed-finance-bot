@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body: { csv?: unknown; imageDataUrl?: unknown };
+  let body: { csv?: unknown; imageDataUrl?: unknown; aiConsent?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
     // $10k in Tesla" — and typing a position in a sentence is faster than
     // filling three fields per row. Same normaliser, so prose cannot smuggle a
     // number past the checks the CSV path applies.
+    if (body.aiConsent !== true) return NextResponse.json({ code: 'AI_CONSENT_REQUIRED', error: 'Allow OpenAI to read this import before continuing.' }, { status: 403 });
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: 'No holdings found. The file needs a symbol column and a quantity column.' },
@@ -235,6 +236,7 @@ export async function POST(req: NextRequest) {
   if (image.length > MAX_IMAGE_CHARS) {
     return NextResponse.json({ error: 'That image is too large. A normal screenshot is fine.' }, { status: 413 });
   }
+  if (body.aiConsent !== true) return NextResponse.json({ code: 'AI_CONSENT_REQUIRED', error: 'Allow OpenAI to read this import before continuing.' }, { status: 403 });
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ error: 'Image import is unavailable right now' }, { status: 503 });
   }

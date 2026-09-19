@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { hasAiConsent, AiConsentRequiredError } from '@/lib/ai-consent';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getQuote } from '@/lib/financial-data';
 import { getVixQuote } from '@/lib/vix';
@@ -137,6 +138,8 @@ async function generateRankedDigest(userId: string, userHoldings: string[]): Pro
  * zero balance on one provider already took this feature down once.
  */
 export async function generateDigest(userHoldings: string[], userId?: string): Promise<DigestResult> {
+  // Outside the fallback: denial must never fall through to another model.
+  if (!userId || !(await hasAiConsent(createCronServiceClient(), userId))) throw new AiConsentRequiredError();
   if (userId) {
     try {
       const r = await generateRankedDigest(userId, userHoldings);

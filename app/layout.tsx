@@ -7,7 +7,6 @@ const geist = Geist({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
-import Script from 'next/script';
 import "./globals.css";
 import "./helm-design.css";
 import "./helm-discovery.css";
@@ -226,13 +225,6 @@ export default function RootLayout({
         </a>
         <RecoveryRedirect />
         <Providers><PlatformSurface>{children}</PlatformSurface></Providers>
-        <Script
-          src="https://plausible.io/js/pa-O3gPqcGXLE6Ju_7Ulgsf6.js"
-          strategy="afterInteractive"
-        />
-        <Script id="plausible-init" strategy="afterInteractive">
-          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`}
-        </Script>
         <CookieConsent />
       </body>
     </html>

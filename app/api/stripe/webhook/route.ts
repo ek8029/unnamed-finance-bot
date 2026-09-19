@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getStripe, tierForPriceId, billingPeriodForPriceId } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
+import { reconcileSubscription } from '@/lib/billing-server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { captureServer } from '@/lib/posthog-server';
 import { billingInsertId, paidInvoiceProperties, subscriptionPeriodEnd } from '@/lib/stripe-event-data';
@@ -14,7 +15,7 @@ import { billingInsertId, paidInvoiceProperties, subscriptionPeriodEnd } from '@
  * Handled events:
  *   checkout.session.completed    → activate Pro
  *   customer.subscription.updated → sync renewal / cancel state
- *   customer.subscription.deleted → downgrade to free
+ *   customer.subscription.deleted → reconcile remaining Stripe/Apple/grant access
  *   invoice.payment_succeeded     → log + capture the conversion
  *   invoice.payment_failed        → log only
  *
@@ -106,7 +107,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   let currentPeriodEnd: string;
-  let stripeSubscriptionId: string | null = null;
   let stripePriceId: string | null = null;
   // Records that this person has HAD a trial, which is what makes "one trial
   // per person" enforceable at checkout. Nulling it on purchase, as this used
@@ -132,46 +132,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
 
     const sub = await getStripe().subscriptions.retrieve(subscriptionId);
-    stripeSubscriptionId = sub.id;
     stripePriceId = sub.items.data[0]?.price?.id ?? null;
     currentPeriodEnd = subscriptionPeriodEnd(sub, stripePriceId);
     trialEndsAt = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
   }
 
-  // Tier from the purchased price (source of truth). Only Pro is sellable, and
-  // the retired Max price also resolves to Pro, so the fallback is Pro too.
-  const tier = tierForPriceId(stripePriceId) ?? 'pro';
-
-  const supabase = await createServiceClient();
-
-  const { error } = await supabase
-    .from('user_subscriptions')
-    .upsert(
-      {
-        user_id: userId,
-        tier,
-        stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null,
-        stripe_subscription_id: stripeSubscriptionId,
-        stripe_price_id: stripePriceId,
-        billing_period: billingPeriod,
-        current_period_end: currentPeriodEnd,
-        cancel_at_period_end: false,
-        // Only ever SET this, never clear it. It is the has-trialed marker the
-        // checkout route reads to decide whether someone gets a free trial, so
-        // writing null on a no-trial purchase erased the record that they had
-        // already had one. That made a repeatable loop: trial, cancel, buy
-        // (charged, marker wiped), cancel, and the next purchase gets a fresh
-        // 14 days. Forever, one paid cycle per free one.
-        ...(trialEndsAt ? { trial_ends_at: trialEndsAt } : {}),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' },
-    );
-
-  if (error) {
-    console.error('[webhook][checkout.completed] DB upsert failed:', error);
-    throw error;
-  }
+  const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
+  if (!customerId) throw new Error('Checkout has no customer');
+  // A delayed checkout must not resurrect a cancelled subscription.
+  if (billingPeriod === 'lifetime' && session.payment_status !== 'paid') return;
+  const resolved = await reconcileSubscription(userId, { stripeCustomerId: customerId, requireRevenueCat: true,
+    legacyLifetime: billingPeriod === 'lifetime' });
+  if (resolved.tier === 'free') return; // Delayed checkout after expiry: no false Pro welcome.
 
   // Send Pro welcome email (non-blocking)
   try {
@@ -249,101 +221,33 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 }
 
 /**
- * customer.subscription.updated
- * Sync cancel_at_period_end and current_period_end — no tier change.
+ * Subscription changes reconcile current Stripe and Apple access together.
+ * The arriving event alone cannot downgrade another active subscription.
  */
-async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
-  const customerId =
-    typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
-
-  const supabase = await createServiceClient();
-
-  // Derive tier from the active price (the retired Max price reads as Pro).
-  const priceId = sub.items.data[0]?.price?.id ?? null;
-  const tier = tierForPriceId(priceId);
-
-  const { data, error } = await supabase
-    .from('user_subscriptions')
-    .update({
-      ...(tier ? { tier, stripe_price_id: priceId, billing_period: billingPeriodForPriceId(priceId) ?? tier } : {}),
-      cancel_at_period_end: sub.cancel_at_period_end,
-      current_period_end: subscriptionPeriodEnd(sub, priceId),
-      updated_at: new Date().toISOString(),
-    })
-    // Match by customer OR subscription id — a customer id can drift (e.g. re-created
-    // customer, or the row was seeded via a path that stored a different id), and
-    // matching only on customer silently dropped the cancel/renewal sync.
-    .or(`stripe_customer_id.eq.${customerId},stripe_subscription_id.eq.${sub.id}`)
-    .select('user_id');
-
-  if (error) {
-    console.error('[webhook][subscription.updated] DB update failed:', error);
-    throw error;
-  }
-
-  // A 0-row update is silent in supabase-js. Surface it: this is how a cross-mode
-  // (test vs live) or otherwise-orphaned subscription event slips through unnoticed.
-  if (!data || data.length === 0) {
-    console.warn(
-      `[webhook][subscription.updated] No user_subscriptions row matched customer ${customerId} — ` +
-        `ignored. Likely a test-mode subscription absent from this database.`,
-    );
-    return;
-  }
-
-  console.log(
-    `[webhook][subscription.updated] Synced for customer ${customerId} — ` +
-      `cancel_at_period_end=${sub.cancel_at_period_end}`,
-  );
+async function reconcileStripeEvent(sub: Stripe.Subscription) {
+  const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+  const db = await createServiceClient();
+  const { data, error } = await db.from('user_subscriptions').select('user_id')
+    .or(`stripe_customer_id.eq.${customerId},stripe_subscription_id.eq.${sub.id}`);
+  if (error) throw error;
+  const users = new Set<string>((data ?? []).map(row => row.user_id));
+  if (!users.size && sub.metadata?.supabase_user_id) users.add(sub.metadata.supabase_user_id);
+  if (!users.size) throw new Error('Subscription has no matching account yet');
+  for (const userId of users) await reconcileSubscription(userId, {
+    stripeCustomerId: customerId, requireRevenueCat: true,
+  });
+  return users;
 }
 
-/**
- * customer.subscription.deleted
- * Downgrade to free and clear all Stripe fields.
- */
+async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
+  await reconcileStripeEvent(sub);
+}
+
 async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
-  const customerId =
-    typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
-
-  const supabase = await createServiceClient();
-
-  const { data, error } = await supabase
-    .from('user_subscriptions')
-    .update({
-      tier: 'free',
-      stripe_subscription_id: null,
-      stripe_price_id: null,
-      billing_period: null,
-      current_period_end: null,
-      cancel_at_period_end: false,
-      updated_at: new Date().toISOString(),
-    })
-    // Match by customer OR subscription id (see subscription.updated) so a
-    // drifted customer id can't leave a cancelled user stuck on a paid tier.
-    .or(`stripe_customer_id.eq.${customerId},stripe_subscription_id.eq.${sub.id}`)
-    .select('user_id');
-
-  if (error) {
-    console.error('[webhook][subscription.deleted] DB update failed:', error);
-    throw error;
-  }
-
-  if (!data || data.length === 0) {
-    console.warn(
-      `[webhook][subscription.deleted] No user_subscriptions row matched customer ${customerId} — ` +
-        `ignored. Likely a test-mode subscription absent from this database.`,
-    );
-    return;
-  }
-
-  for (const row of data) {
-    if (row.user_id) captureServer('subscription_canceled', row.user_id, {
-      $insert_id: billingInsertId('subscription_canceled', sub.id),
-      subscription_id: sub.id,
-    });
-  }
-
-  console.log(`[webhook][subscription.deleted] Downgraded to free for customer ${customerId}`);
+  const users = await reconcileStripeEvent(sub);
+  for (const userId of users) captureServer('subscription_canceled', userId, {
+    $insert_id: billingInsertId('subscription_canceled', sub.id), subscription_id: sub.id,
+  });
 }
 
 /**

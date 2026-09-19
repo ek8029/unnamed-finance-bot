@@ -95,6 +95,8 @@ export async function composeWeeklyNote(
   db: SupabaseClient,
   userId: string,
 ): Promise<AnalystNoteDraft | null> {
+  const { hasAiConsent, AiConsentRequiredError } = await import('@/lib/ai-consent');
+  if (!(await hasAiConsent(db, userId))) throw new AiConsentRequiredError();
   const brief = await getPortfolioBrief(db, userId);
   if (!brief || brief.positionCount === 0) return null;
 

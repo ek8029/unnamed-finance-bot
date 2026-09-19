@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
       const { data: sub, error: subscriptionError } = await supabase
         .from('user_subscriptions')
-        .select('tier, trial_ends_at, stripe_subscription_id, source')
+        .select('tier, trial_ends_at, stripe_subscription_id, source, permanent_access')
         .eq('user_id', user.id)
         .maybeSingle();
       if (subscriptionError) { deferred++; continue; }

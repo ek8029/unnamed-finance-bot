@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPageLayout title="Privacy Policy" lastUpdated="August 24, 2026">
+    <LegalPageLayout title="Privacy Policy" lastUpdated="September 19, 2026">
       {/* 1. Introduction */}
       <section>
         <h2>1. Introduction</h2>
@@ -95,8 +95,8 @@ export default function PrivacyPage() {
 
         <h3>Usage Data</h3>
         <p>
-          We may collect anonymized usage analytics (pages visited, features used) to improve the product.
-          You can disable this in Settings &gt; Data &amp; Privacy.
+          When analytics is enabled, PostHog collects usage events (pages visited, features used and onboarding steps) linked to your account ID on the website and mobile app. We do not send your name or email with these events.
+          Anonymous website visits use a browser identifier to measure acquisition. Plausible also measures website page visits when analytics is enabled; our pageview events exclude URL query strings. You can disable analytics in Settings &gt; Data &amp; Privacy; that browser keeps your opt-out after sign-out.
         </p>
       </section>
 
@@ -173,6 +173,7 @@ export default function PrivacyPage() {
           <li><strong>Stripe</strong> - Web subscription billing</li>
           <li><strong>RevenueCat</strong> - iOS subscription management (purchase receipts from Apple)</li>
           <li><strong>Apple &amp; Google</strong> - Optional sign-in providers</li>
+          <li><strong>PostHog &amp; Plausible</strong> - Optional product and website usage analytics</li>
         </ul>
         <p>Each service operates under its own privacy policy and data handling practices.</p>
       </section>

@@ -72,6 +72,7 @@ interface SubRow {
   trial_ends_at: string | null;
   stripe_subscription_id: string | null;
   source?: string | null;
+  permanent_access?: 'complimentary' | 'lifetime' | null;
 }
 
 export async function entitledToMonitoring(
@@ -94,7 +95,7 @@ export async function entitledToMonitoring(
   for (let i = 0; i < userIds.length; i += CHUNK) {
     const { data, error } = await serviceClient
       .from('user_subscriptions')
-      .select('user_id, tier, trial_ends_at, stripe_subscription_id, source')
+      .select('user_id, tier, trial_ends_at, stripe_subscription_id, source, permanent_access')
       .in('user_id', userIds.slice(i, i + CHUNK));
     if (error) {
       console.error('[thesis-entitlement] lookup failed, failing open:', error.message);

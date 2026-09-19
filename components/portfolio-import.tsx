@@ -27,9 +27,11 @@ export function PortfolioImport({ onExtracted }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<ImportSkip[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [pending, setPending] = useState<{ csv: string } | { imageDataUrl: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const send = useCallback(async (payload: { csv: string } | { imageDataUrl: string }) => {
+  const send = useCallback(async (payload: { csv: string } | { imageDataUrl: string }, aiConsent = false) => {
+    if ('imageDataUrl' in payload && !aiConsent) { setPending(payload); return; }
     setBusy(true);
     setError(null);
     setSkipped([]);
@@ -37,10 +39,11 @@ export function PortfolioImport({ onExtracted }: Props) {
       const res = await fetch('/api/portfolio/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, aiConsent }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.code === 'AI_CONSENT_REQUIRED') { setPending(payload); return; }
         setError(data.error ?? 'Could not read that.');
         setSkipped(data.skipped ?? []);
         return;
@@ -91,6 +94,13 @@ export function PortfolioImport({ onExtracted }: Props) {
 
   return (
     <div className="mb-6">
+      {pending && (
+        <section aria-label="Allow AI import" className="mb-4 rounded-lg border p-4 space-y-3">
+          <p>Allow OpenAI to read this {('imageDataUrl' in pending) ? 'screenshot' : 'text'} and extract holdings? It may contain balances, positions and account details. Helm does not save the uploaded image. OpenAI may retain inputs for safety or legal purposes; API inputs are not used for training by default. You can enter holdings manually instead.</p>
+          <button type="button" disabled={busy} className="mr-4 underline" onClick={() => { const payload = pending; setPending(null); void send(payload, true); }}>Allow this import</button>
+          <button type="button" disabled={busy} className="underline" onClick={() => setPending(null)}>Cancel</button>
+        </section>
+      )}
       <div
         onPaste={onPaste}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}

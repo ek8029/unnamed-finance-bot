@@ -20,6 +20,8 @@ import { requestConnectionSync } from '@/lib/plaid/sync-client'
 import { PasswordSection } from './password-section'
 import { ProWaitlistButton } from '@/components/pro-waitlist-button'
 import posthog from 'posthog-js'
+import { AiConsentPanel } from '@/components/ai-consent-panel'
+import { prepareAppleDeletion, getAppleDeletionProof } from '@/lib/apple-delete-browser'
 import {
   User,
   Link,
@@ -334,6 +336,10 @@ export default function SettingsPage() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [isOAuthOnly, setIsOAuthOnly] = useState(false)
+  const [isAppleLinked, setIsAppleLinked] = useState(false)
+  useEffect(() => {
+    if (showDeleteModal && isAppleLinked) void prepareAppleDeletion().catch(() => {});
+  }, [showDeleteModal, isAppleLinked])
 
   // ── Export state ──
   const [exporting, setExporting] = useState(false)
@@ -417,6 +423,7 @@ export default function SettingsPage() {
         if (user) {
           const providers = user.app_metadata?.providers as string[] | undefined;
           setIsOAuthOnly(!providers?.includes('email'));
+          setIsAppleLinked(!!user.identities?.some(identity => identity.provider === 'apple'));
         }
       } catch (err) {
         console.error('Failed to load profile:', err)
@@ -635,10 +642,11 @@ export default function SettingsPage() {
     }
     setDeleting(true)
     try {
+      const appleProof = isAppleLinked ? await getAppleDeletionProof() : {};
       const res = await fetch('/api/auth/delete-account', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: deletePassword, confirmation: deleteConfirmation }),
+        body: JSON.stringify({ password: deletePassword, confirmation: deleteConfirmation, ...appleProof }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -646,8 +654,8 @@ export default function SettingsPage() {
       } else {
         showError('Deletion failed', data.error || 'Could not delete account')
       }
-    } catch {
-      showError('Deletion failed', 'An error occurred while deleting your account')
+    } catch (error) {
+      showError('Deletion failed', error instanceof Error ? error.message : 'An error occurred while deleting your account')
     } finally {
       setDeleting(false)
     }
@@ -1657,11 +1665,12 @@ export default function SettingsPage() {
   // ── Data & Privacy ──
   const renderPrivacy = () => (
     <div className="space-y-3.5">
+      <AiConsentPanel />
       <SettingsCard label="Data & privacy">
         <SettingsRow
           divider
           title="Analytics"
-          description="Help improve Helm with anonymous usage data"
+          description="Help improve Helm with usage data linked to your account ID"
           control={
             <Switch
               checked={settings.analyticsEnabled}
@@ -2004,7 +2013,8 @@ export default function SettingsPage() {
               <div className="p-3 bg-[var(--color-negative)]/5 border border-[var(--color-negative)]/20 rounded-lg">
                 <p className="text-[15px] text-[var(--color-text-secondary)] leading-relaxed">
                   This will permanently delete your account, all linked accounts, transaction history,
-                  portfolio data, insights, and settings. This cannot be undone.
+                  portfolio data, insights, and settings. This cannot be undone. Apple subscriptions must be cancelled separately in Apple’s subscription settings.
+                  {isAppleLinked && ' You will also confirm your Apple identity in a secure popup.'}
                 </p>
               </div>
 

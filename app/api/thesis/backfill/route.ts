@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { hasAiConsent, AiConsentRequiredError, AI_CONSENT_REQUIRED } from '@/lib/ai-consent';
 import { createClient } from '@/lib/supabase/server';
 import { scoreOneThesis, type Thesis } from '@/lib/score-theses';
 import { canBackfill } from '@/lib/thesis-rate-limit';
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     // in the scoring cron. Still rate limited below, because it costs EDGAR
     // fetches regardless of who asks.
 
+    if (!(await hasAiConsent(supabase, user.id))) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
     const body = await request.json() as { ticker?: unknown };
     const rawTicker = typeof body.ticker === 'string' ? body.ticker.trim().toUpperCase() : '';
     if (!rawTicker || !/^[A-Z.\-]{1,10}$/.test(rawTicker)) {
@@ -96,6 +98,7 @@ export async function POST(request: Request) {
     if (log.length > 0) console.log(`[thesis/backfill] ${ticker} ${user.id.slice(0, 8)}:`, log.join(' | '));
     return NextResponse.json({ ok: true, evidenceAdded, statusChanges });
   } catch (err) {
+    if (err instanceof AiConsentRequiredError) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
     console.error('[thesis/backfill] unhandled error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }

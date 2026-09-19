@@ -4,6 +4,7 @@
 // (clusters may only reference real pillars) and neutral (describes concentration,
 // never advises).
 import { NextResponse } from 'next/server';
+import { AiConsentRequiredError, AI_CONSENT_REQUIRED } from '@/lib/ai-consent';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
@@ -69,6 +70,7 @@ export async function GET() {
     const clusters = await getCachedClusters(supabase, openai, user.id, inputs);
     return NextResponse.json({ clusters, status: 'ok' });
   } catch (err) {
+    if (err instanceof AiConsentRequiredError) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
     console.error('[synthesis] unhandled error:', err);
     return NextResponse.json({ clusters: [], status: 'error' });
   }

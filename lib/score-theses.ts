@@ -260,6 +260,8 @@ export async function scoreOneThesis(
   }
 ): Promise<{ evidenceAdded: number; statusChanges: number; breaches: BreachEvent[]; usage: UsageLedger }> {
   const { ticker, id: thesisId, user_id, last_scanned_at } = thesis;
+  const { hasAiConsent, AiConsentRequiredError } = await import('@/lib/ai-consent');
+  if (!(await hasAiConsent(db, user_id))) throw new AiConsentRequiredError();
   const ledger = options?.ledger ?? emptyLedger();
   const injected = options?.candidates;
   const advance = async () => { if (!injected) await bumpLastScanned(db, thesisId); };

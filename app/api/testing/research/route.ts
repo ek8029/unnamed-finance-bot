@@ -5,6 +5,7 @@
 // accounts by design, so it must never exist on the public deployment.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { hasAiConsent, AI_CONSENT_REQUIRED } from '@/lib/ai-consent';
 import { createStaticServiceClient } from '@/lib/supabase/server';
 import { retrieveContext } from '@/lib/research/retrieve';
 import { getRecentFindings } from '@/lib/research/findings';
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
   if (!profile) return NextResponse.json({ error: `No account for ${email}` }, { status: 404 });
 
   try {
+    if (!(await hasAiConsent(db, String(profile.id)))) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
     const context = await retrieveContext(db, String(profile.id), query);
     const answer = await composeAnswer(context, Array.isArray(body.history) ? body.history : []);
     return NextResponse.json({

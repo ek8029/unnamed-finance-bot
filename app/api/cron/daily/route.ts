@@ -296,7 +296,7 @@ export async function GET(request: Request) {
         } else {
           const { data: subs } = await serviceClient
             .from('user_subscriptions')
-            .select('user_id, tier, trial_ends_at, stripe_subscription_id, source')
+            .select('user_id, tier, trial_ends_at, stripe_subscription_id, source, permanent_access')
             .neq('tier', 'free');
           eligible = (subs ?? [])
             .filter((s) => {

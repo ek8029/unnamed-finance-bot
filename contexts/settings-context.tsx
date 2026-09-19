@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 
 // ============================================================================
 // TYPES
@@ -221,6 +221,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const saveQueue = useRef(Promise.resolve())
+  const saveVersion = useRef(0)
 
   // Load settings from API (if authenticated) or localStorage on mount
   useEffect(() => {
@@ -304,10 +306,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
       // If authenticated, also save to API
       if (isAuthenticated) {
-        fetch('/api/user/preferences', {
+        const version = ++saveVersion.current
+        saveQueue.current = saveQueue.current.catch(() => {}).then(() => fetch('/api/user/preferences', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(settingsToApi(settings)),
+        })).then((response) => {
+          if (!response.ok) throw new Error('Settings were not saved')
+          if (version === saveVersion.current) window.dispatchEvent(new Event('helm:privacy-saved'))
         }).catch((error) => {
           console.error('Failed to save settings to API:', error)
         })
@@ -387,6 +393,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [settings.theme])
 
   const updateSettings = (updates: Partial<Settings>) => {
+    if (updates.analyticsEnabled !== undefined || updates.crashReportingEnabled !== undefined) {
+      window.dispatchEvent(new Event('helm:privacy-pending'))
+    }
     setSettings((prev) => ({ ...prev, ...updates }))
   }
 

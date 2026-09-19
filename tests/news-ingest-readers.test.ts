@@ -39,6 +39,8 @@ const companies = [
  * primary ticker cannot accidentally pass a re-aim test. No real DB is used. */
 function memoryDb() {
   const tables: Record<string, Row[]> = {
+    // Migration 074: one consent row per user, exactly one choice timestamp.
+    user_ai_consents: [{ user_id: 'user-1', version: '2026-09-07', granted_at: NOW, revoked_at: null }],
     market_news: [], market_events: [], securities: companies,
     holdings: companies.map(c => ({ ticker: c.ticker, user_id: 'user-1', total_value: 1000, portfolio_allocation_pct: 10 })),
     theses: [{ id: 'thesis-nvda', user_id: 'user-1', ticker: 'NVDA', tracked: true }, { id: 'thesis-aapl', user_id: 'user-1', ticker: 'AAPL', tracked: true }],
@@ -67,6 +69,11 @@ function memoryDb() {
       range(start: number, end: number) { offset = start; limit = end - start + 1; return q; },
       insert(rows: Row[]) { if (table !== 'market_news') throw new Error('Unexpected write'); insert = rows; return q; },
       update(value: Row) { if (table !== 'market_news') throw new Error('Unexpected write'); update = value; return q; },
+      async maybeSingle() {
+        const result = await q;
+        if (result.data.length > 1) return { data: null, error: { message: 'Multiple rows' } };
+        return { data: result.data[0] ?? null, error: null };
+      },
       async then(resolve: (value: any) => any) {
         if (insert) tables[table].push(...insert.map((r, i) => ({ id: `news-${tables[table].length + i}`, created_at: NOW, subject_verdict: null, subject_ticker: null, ...r })));
         let rows = tables[table].filter(r => filters.every(f => f(r)));

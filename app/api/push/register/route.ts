@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createStaticServiceClient } from '@/lib/supabase/server';
 import { isExpoPushToken } from '@/lib/push/expo';
+import { pushRevokeCapability, verifyPushRevoke } from '@/lib/push/revocation';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +25,11 @@ async function who(): Promise<string | null> {
 export async function POST(request: Request) {
   const userId = await who();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const body = (await request.json().catch(() => ({}))) as { token?: unknown; platform?: unknown; appVersion?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { token?: unknown; platform?: unknown; appVersion?: unknown; prepare?: unknown };
   if (!isExpoPushToken(body.token)) return NextResponse.json({ error: 'Not an Expo push token' }, { status: 400 });
+  if (body.prepare === true) {
+    return NextResponse.json({ ok: true, revokeCapability: pushRevokeCapability(userId, body.token) });
+  }
   const platform = body.platform === 'android' ? 'android' : 'ios';
   const now = new Date().toISOString();
   const db = createStaticServiceClient();
@@ -45,10 +49,13 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const userId = await who();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const body = (await request.json().catch(() => ({}))) as { token?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { token?: unknown; userId?: unknown; revokeCapability?: unknown };
   if (!isExpoPushToken(body.token)) return NextResponse.json({ error: 'Not an Expo push token' }, { status: 400 });
+  // A persisted capability only disables the exact old account/device pair;
+  // it still works after sign-out and cannot disable a token reassigned to B.
+  const userId = verifyPushRevoke(body.userId, body.token, body.revokeCapability)
+    ? body.userId : await who();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const db = createStaticServiceClient();
   const { error } = await db
     .from('push_tokens')

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasAiConsent, AI_CONSENT_REQUIRED } from '@/lib/ai-consent';
 import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, formatPortfolioContext, type PortfolioSummary } from '@/lib/portfolio-analysis';
 import { generateTaxReport, estimateTaxOnRealizedGains, type TaxHarvestReport } from '@/lib/tax-analysis';
@@ -563,6 +564,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!(await hasAiConsent(supabase, user.id))) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
   // Check daily analysis quota (free: 5/day, pro: fair-use ceiling)
   const quota = await checkAnalysisQuota(user.id);
   if (!quota.allowed) {

@@ -1100,6 +1100,7 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
   const [shotErr, setShotErr] = useState<string | null>(null);
 
   const runShot = async (file: File) => {
+    if (!window.confirm('Allow OpenAI to read this holdings screenshot? It may contain financial or account details. API inputs are not used for training by default but may be retained for safety or legal purposes. Cancel to enter holdings manually.')) return;
     setShotBusy(true);
     setShotErr(null);
     try {
@@ -1112,7 +1113,7 @@ function Onboarding({ flow, entry, profile, setProfile, taxExample, onDone }: {
       const r = await fetch('/api/portfolio/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageDataUrl: dataUrl }),
+        body: JSON.stringify({ imageDataUrl: dataUrl, aiConsent: true }),
       });
       const d = await r.json();
       if (!r.ok) { setShotErr(d.error ?? 'Could not read that image.'); return; }

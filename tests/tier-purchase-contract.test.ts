@@ -62,6 +62,7 @@ describe('tier purchase marker agrees with existing checkout eligibility', () =>
     ['card-required Stripe trial', { tier: 'pro', stripe_subscription_id: 'sub_trial', trial_ends_at: future }, false, 'pro', false],
     ['App Store with an old web trial', { tier: 'pro', source: 'revenuecat', trial_ends_at: past }, false, 'pro', false],
     ['permanent complimentary', { tier: 'pro', permanent_access: 'complimentary' }, false, 'pro', false],
+    ['complimentary with an expired trial marker', { tier: 'pro', permanent_access: 'complimentary', trial_ends_at: past }, false, 'pro', false],
     ['legacy Max complimentary', { tier: 'max', permanent_access: 'complimentary' }, false, 'pro', false],
   ] as const)('%s exposes purchase eligibility without changing its entitlement or trial terms', async (_, row, eligible, expectedTier, getsTrial) => {
     h.row = { ...base, ...row };

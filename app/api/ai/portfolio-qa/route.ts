@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasAiConsent, AI_CONSENT_REQUIRED } from '@/lib/ai-consent';
 import { createClient } from '@/lib/supabase/server';
 import { getPortfolioSummary, formatPortfolioContext } from '@/lib/portfolio-analysis';
 import { getFullTickerData, type TickerData } from '@/lib/financial-data';
@@ -147,6 +148,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!(await hasAiConsent(supabase, user.id))) return NextResponse.json(AI_CONSENT_REQUIRED, { status: 403 });
   // Daily analysis quota (free: 5/day, pro: fair-use ceiling). Shares the
   // analysis_usage ledger with /api/ai/analyze so one authed user cannot spend
   // an unbounded number of gpt-4o-mini calls by alternating endpoints. The

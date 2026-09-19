@@ -4,10 +4,11 @@ import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/stripe/webhook/route';
 
 const mocks = vi.hoisted(() => ({
-  capture: vi.fn(), from: vi.fn(), retrieve: vi.fn(), upsert: vi.fn(), update: vi.fn(), lookup: vi.fn(),
+  capture: vi.fn(), from: vi.fn(), retrieve: vi.fn(), upsert: vi.fn(), update: vi.fn(), lookup: vi.fn(), reconcile: vi.fn(),
 }));
 vi.mock('@/lib/supabase/server', () => ({ createServiceClient: async () => ({ from: mocks.from }) }));
 vi.mock('@/lib/posthog-server', () => ({ captureServer: mocks.capture }));
+vi.mock('@/lib/billing-server', () => ({ reconcileSubscription: mocks.reconcile }));
 vi.mock('@/lib/emails/resend', () => ({ resend: null, FROM_EMAIL: 'unused@example.test' }));
 vi.mock('@/lib/stripe', async () => {
   const { default: SDK } = await import('stripe');
@@ -29,6 +30,7 @@ const invoice = { id: 'in_fixture', customer: 'cus_fixture', amount_paid: 2000, 
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.reconcile.mockResolvedValue({ tier: 'pro' });
   vi.stubEnv('STRIPE_WEBHOOK_SECRET', secret);
   mocks.lookup.mockResolvedValue({ data: { user_id: 'user_fixture' }, error: null });
   mocks.upsert.mockResolvedValue({ error: null });
@@ -53,13 +55,15 @@ describe('signed Stripe webhook lifecycle with isolated services', () => {
   it('handles the item-level period shape observed in the live 2026 event', async () => {
     const modern = { ...subscription, current_period_end: undefined, items: { data: [{ price: { id: 'price_pro' }, current_period_end: period }] } };
     expect((await send('customer.subscription.updated', modern)).status).toBe(200);
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ current_period_end: new Date(period * 1000).toISOString() }));
+    expect(mocks.reconcile).toHaveBeenCalledWith('user_fixture', { stripeCustomerId: 'cus_fixture', requireRevenueCat: true });
+    expect(mocks.update).not.toHaveBeenCalled();
   });
   it('continues to accept older subscription-level periods', async () => {
     expect((await send('customer.subscription.updated', subscription)).status).toBe(200);
   });
-  it('requests retry before a database update when the event has no valid period', async () => {
-    expect((await send('customer.subscription.updated', { ...subscription, current_period_end: undefined })).status).toBe(500);
+  it('does not trust the stale event period; current provider state is authoritative', async () => {
+    expect((await send('customer.subscription.updated', { ...subscription, current_period_end: undefined })).status).toBe(200);
+    expect(mocks.reconcile).toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
   });
   it('does not report zero-dollar trial invoices as payment', async () => {
@@ -89,13 +93,25 @@ describe('signed Stripe webhook lifecycle with isolated services', () => {
     const response = await send('checkout.session.completed', { id: 'cs_fixture', customer: 'cus_fixture', subscription: 'sub_fixture', livemode: false,
       metadata: { supabase_user_id: 'user_fixture', billing_period: 'pro' } });
     expect(response.status).toBe(200);
-    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'user_fixture', stripe_customer_id: 'cus_fixture', tier: 'pro' }), { onConflict: 'user_id' });
+    expect(mocks.reconcile).toHaveBeenCalledWith('user_fixture', { stripeCustomerId: 'cus_fixture', requireRevenueCat: true, legacyLifetime: false });
+    expect(mocks.upsert).not.toHaveBeenCalled();
     expect(mocks.capture.mock.calls[0][0]).toBe(trialEnd ? 'trial_started' : 'checkout_completed');
   });
   it('requests retry when provisioning fails', async () => {
-    mocks.upsert.mockResolvedValue({ error: { message: 'Database unavailable' } });
-    expect((await send('checkout.session.completed', { id: 'cs_fixture', subscription: 'sub_fixture',
+    mocks.reconcile.mockRejectedValueOnce(new Error('Provider unavailable'));
+    expect((await send('checkout.session.completed', { id: 'cs_fixture', customer: 'cus_fixture', subscription: 'sub_fixture',
       metadata: { supabase_user_id: 'user_fixture', billing_period: 'pro' } })).status).toBe(500);
     expect(mocks.capture).not.toHaveBeenCalled();
+  });
+  it('reconciles both rails when Stripe ends instead of writing free', async () => {
+    expect((await send('customer.subscription.deleted', subscription)).status).toBe(200);
+    expect(mocks.reconcile).toHaveBeenCalledWith('user_fixture', { stripeCustomerId: 'cus_fixture', requireRevenueCat: true });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+  it('retries a provider outage without changing access or reporting cancellation', async () => {
+    mocks.reconcile.mockRejectedValueOnce(new Error('Provider unavailable'));
+    expect((await send('customer.subscription.deleted', subscription)).status).toBe(500);
+    expect(mocks.capture).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });

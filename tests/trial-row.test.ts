@@ -9,6 +9,9 @@ import { entitledToMonitoring } from '@/lib/thesis-entitlement';
 const past = '2026-08-25T00:00:00Z';
 
 describe('isTrialRow', () => {
+  it('does not expire a permanent grant with an old trial marker', () => {
+    expect(isTrialRow({ trial_ends_at: past, stripe_subscription_id: null, source: 'stripe', permanent_access: 'complimentary' })).toBe(false);
+  });
   it('a web trial with nothing behind it is a trial row', () => {
     expect(isTrialRow({ trial_ends_at: past, stripe_subscription_id: null, source: 'stripe' })).toBe(true);
   });

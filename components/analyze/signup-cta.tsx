@@ -24,7 +24,7 @@ export function AnalyzeSignupCta({
         concentrated you are, what moved today, and a daily brief on all of it. Free, no card.
       </p>
       <a
-        href="/signup"
+        href={`/signup?next=${encodeURIComponent(`/dashboard/analyze/${encodeURIComponent(ticker.trim().toUpperCase())}`)}`}
         onClick={() => posthog.capture('analyze_cta_clicked', { ticker, placement })}
         className="inline-block px-6 py-2.5 bg-[var(--color-gold)] hover:brightness-[1.08] text-[var(--color-text-inverse)] text-[15px] font-semibold rounded-md transition-all"
       >
