@@ -8,12 +8,8 @@ import posthog from 'posthog-js';
 /**
  * A ticker box that sits inside an article.
  *
- * The AI-research cluster lands about 500 search visitors a month and sent
- * three of them to signup. The readers arrive comparing chatbots, get the
- * answer from the first table, and leave. A card at the foot of the article
- * pointing at /analyze was clicked by one person in that month. This puts the
- * free analysis where the reader already is, on the stock they are already
- * thinking about, and records that it was used so the bridge can be measured.
+ * Readers can enter their own ticker or open an example without typing.
+ * Track those choices separately; a click is not a completed analysis.
  */
 export function AnalyzeTickerForm({
   source = 'blog',
@@ -62,6 +58,19 @@ export function AnalyzeTickerForm({
         >
           Analyze {ticker || 'it'} <ArrowRight className="h-4 w-4" />
         </button>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.875rem]">
+        <span className="text-[var(--color-text-muted)]">Or try an example:</span>
+        {['AAPL', 'MSFT', 'NVDA'].map((example) => (
+          <a
+            key={example}
+            href={`/analyze/${example}`}
+            onClick={() => posthog.capture('blog_example_clicked', { source, ticker: example })}
+            className="inline-flex min-h-[44px] items-center px-1 font-mono text-[var(--color-gold)] underline underline-offset-4 hover:text-[var(--color-gold-hi)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-gold)]"
+          >
+            {example}
+          </a>
+        ))}
       </div>
       <p className="mt-3 text-[0.875rem] text-[var(--color-text-muted)]">{note}</p>
     </form>
