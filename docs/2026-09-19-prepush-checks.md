@@ -49,21 +49,37 @@ mocks only the auth service boundary, no database writes or schema mocks.
 
 ## Still required before promotion / App Store release
 
-1. Verify Vercel Preview and Production environment settings. Available browser
-   shows Vercel's login screen; no Vercel connector, installed CLI session or
-   project link was available. A working LOCAL RevenueCat key does not prove a
-   hosted key exists. The local RevenueCat webhook secret is absent; its hosted
-   value cannot be inferred from that.
+1. Vercel inspected after Evan signed in: REVENUECAT_WEBHOOK_SECRET is present
+   for Production and Preview, but REVENUECAT_API_KEY / REVENUECAT_SECRET_API_KEY
+   are absent. No shared variables are linked. Add the verified lookup key to
+   the appropriate hosted environments before promoting the billing changes.
 2. Configure/verify Apple native revocation credentials and the web Services ID /
-   return URL. All those local environment fields are absent. Apple-linked
+   return URL. Those fields are absent both locally and in Vercel. Apple-linked
    deletion cannot be certified until configuration and sandbox tests succeed.
 3. Run actual authenticated purchase/restore/cancellation and Apple deletion on
    disposable test accounts and an iPhone. Verify App Store Connect disclosures
    and organization enrollment. These were not completed by compile/unit tests.
-4. Migrations 074, 075 and 076 exist locally but are not tracked by Git. Their
-   required database objects are present in the configured database. Review and
-   include their migration history in a separate authorized/coordinated unit;
-   they were left untouched under the shared-working-tree rules.
+4. Evan confirmed migrations are applied through 079. Required database objects
+   were independently checked. Do not reapply migrations. Files 074-076 remain
+   untracked in this local checkout: source-history housekeeping, not a missing
+   production migration. They were left untouched under the shared-tree rules.
+
+## Hosted deployment settings verified after sign-in
+
+Vercel project helmfintech is connected to ek8029/unnamed-finance-bot. Production
+tracks main; Preview covers all unassigned branches. Local work is on master,
+so its Git deployment is expected to be Preview; Evan's manual promotion remains
+unchanged. No remote environment value or deployment setting was modified.
+
+NEXT_PUBLIC_ONBOARDING_V3 and PLAID_TOKEN_KEY are scoped to Production only.
+Preview therefore does not currently have equivalent onboarding / encrypted
+Plaid-token configuration. Do not assume a preview smoke test covers those
+production paths. In particular lib/plaid/token-crypto.ts refuses to unseal a
+stored token without the key; changing that protection is not a workaround.
+
+Source: Vercel project Environment Variables (all environments, project plus
+shared tabs), Environments, and Git settings, inspected September 19, 2026.
+https://vercel.com/evans-projects-be98d386/helmfintech/settings/environment-variables
 
 Build warnings (non-blocking): deprecated middleware convention and Edge runtime;
 workspace-root warning is caused by the isolated snapshot's nested lockfile.
