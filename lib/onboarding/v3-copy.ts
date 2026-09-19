@@ -17,8 +17,8 @@ export const V3_COPY = {
     duplicate: 'That brokerage is already connected. Accounts shows the connection.',
     syncFailed: 'The connection is saved, but the first import did not finish. Accounts shows its status and the next sync runs on its own.',
     manual: {
-      heading: 'Add the positions you hold',
-      body: 'Three to five tickers is enough. No credentials, no account numbers. Connect a brokerage later to import the rest.',
+      heading: 'Start with one holding',
+      body: 'Add a ticker and the number of shares you own. Cost per share is optional. Add more positions or connect a brokerage later.',
     },
     plaid: {
       heading: 'Connect a brokerage',
