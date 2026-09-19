@@ -191,7 +191,7 @@ export async function middleware(request: NextRequest) {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com https://assets.apollo.io https://cdn.plaid.com https://us.i.posthog.com https://us-assets.i.posthog.com https://in.heycatch.ai`,
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://plausible.io https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com https://assets.apollo.io https://cdn.plaid.com https://us.i.posthog.com https://us-assets.i.posthog.com https://in.heycatch.ai https://appleid.cdn-apple.com`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
