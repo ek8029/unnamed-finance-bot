@@ -19,6 +19,27 @@ faq:
     a: "Yes. No individual needs a $24,000 terminal. A capable retail stack (Koyfin, TradingView, Finviz, Yahoo Finance, plus a portfolio-intelligence tool) costs between $0 and roughly $150 a month depending on which paid tiers you choose, a small fraction of Bloomberg's price."
 ---
 
+**For market data and fundamentals, start with Koyfin's free tier. For a terminal that knows your own accounts, Helm's free tier connects your brokerages read-only and reports concentration, tax-loss opportunities and earnings exposure on what you actually hold.** Most people end up running one of each. All nine options, and what each free plan actually includes, are compared below.
+
+*Disclosure: I build Helm, so read the Helm section knowing that. Prices are the providers' published figures, checked September 2026.*
+
+## Side-by-side comparison
+
+| Feature | Bloomberg | Koyfin | TradingView | Yahoo Finance | Helm Terminal |
+|---|---|---|---|---|---|
+| **Price** | $24,000/yr | $0-840/yr | $0-720/yr | $0-420/yr | Free to start |
+| **Real-time data** | All assets | Stocks, ETFs | Stocks, crypto, forex | Stocks, delayed | Stocks via portfolio |
+| **Charting** | Advanced | Advanced | Best in class | Basic | Portfolio charts |
+| **Screening** | Advanced | Advanced | Community scripts | Basic | AI-powered |
+| **Portfolio tracking** | Yes | Limited | No | Basic | Full (via Plaid) |
+| **AI analysis** | ASKB (new) | No | No | No | Core feature |
+| **Tax optimization** | No | No | No | No | Yes |
+| **Personal financial intelligence** | No | No | No | No | Core feature |
+| **Cash flow analysis** | No | No | No | No | Yes |
+| **Best for** | Institutions | Data research | Technical trading | Casual investors | Personal finance |
+
+<AnalyzeTicker source="blog_bloomberg_alts_table" prompt="Try the free analysis on a stock you own" note="Live price and SEC EDGAR fundamentals for any US ticker. No account needed, and daily free limits apply." />
+
 I've spent a lot of time around Bloomberg Terminals. As an econ student at Penn State, I got to use one through our university's finance lab, and I'll admit, the thing is impressive. Real-time data on essentially every financial instrument on earth, a news wire that breaks stories before anyone else, and enough analytical horsepower to keep a hedge fund running. It's the gold standard for a reason.
 
 It also costs $24,000 a year. Two-year lease minimum, so you're really committing $54,000 before you even start.
@@ -26,8 +47,6 @@ It also costs $24,000 a year. Two-year lease minimum, so you're really committin
 That's fine if you're running a desk at Goldman. It's completely insane if you're a regular person trying to manage a $200K portfolio.
 
 I started looking for alternatives about two years ago, and what I found was frustrating. Plenty of tools solve one piece of the puzzle really well, but nothing brought it all together the way Bloomberg does for institutions. That search is what led me to build Helm Terminal, so read the Helm section knowing that.
-
-The short version, if you want it now: for market data and fundamentals, start with Koyfin's free tier. For a terminal that knows your own accounts, Helm's free tier connects your brokerages read-only and reports concentration, tax-loss opportunities and earnings exposure on what you actually hold. Most people end up running one of each. Every option is covered below.
 
 <CTACard title="Open the free terminal" description="Connect a brokerage read-only or type positions in. The free tier has no card and no time limit." buttonText="Open the terminal" href="/signup" />
 
@@ -128,21 +147,6 @@ The catch is exactly what you'd expect from open source: there's a learning curv
 FinChat, now Fiscal.ai, took the "ask a question, get an answer" idea and pointed it at company fundamentals. You can ask for a segment breakdown, a KPI trend, or a quick model and get a sourced answer back instead of digging through filings yourself. For fundamental research on individual companies, it's genuinely fast.
 
 Like the others, it's a research tool, it knows everything about a company and nothing about your specific portfolio. Free tier to start, paid plans scale with depth.
-
-## Side-by-side comparison
-
-| Feature | Bloomberg | Koyfin | TradingView | Yahoo Finance | Helm Terminal |
-|---|---|---|---|---|---|
-| **Price** | $24,000/yr | $0-840/yr | $0-720/yr | $0-420/yr | Free to start |
-| **Real-time data** | All assets | Stocks, ETFs | Stocks, crypto, forex | Stocks, delayed | Stocks via portfolio |
-| **Charting** | Advanced | Advanced | Best in class | Basic | Portfolio charts |
-| **Screening** | Advanced | Advanced | Community scripts | Basic | AI-powered |
-| **Portfolio tracking** | Yes | Limited | No | Basic | Full (via Plaid) |
-| **AI analysis** | ASKB (new) | No | No | No | Core feature |
-| **Tax optimization** | No | No | No | No | Yes |
-| **Personal financial intelligence** | No | No | No | No | Core feature |
-| **Cash flow analysis** | No | No | No | No | Yes |
-| **Best for** | Institutions | Data research | Technical trading | Casual investors | Personal finance |
 
 ## So what should you actually use?
 
