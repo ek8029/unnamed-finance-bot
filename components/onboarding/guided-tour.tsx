@@ -28,7 +28,7 @@ const STEPS: TourStep[] = [
   {
     target: '[data-tour="brief"]',
     title: 'The Current — Daily Brief',
-    desc: 'An AI-written morning brief connecting market news to your holdings. Updated daily at 9:15 AM.',
+    desc: 'An AI-written morning brief connecting market news to your holdings. Written each market morning, before the open.',
     position: 'right',
   },
   {

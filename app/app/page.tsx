@@ -59,8 +59,8 @@ const SCREENS: AppScreen[] = [
     src: '/app/brief.png',
     tab: 'Brief',
     eyebrow: 'The Current',
-    title: 'Written at 9:15, before the open',
-    body: 'A brief on your holdings, not on the market. Built each morning from filings, reporting and the overnight move, fifteen minutes before the bell.',
+    title: 'Written before the open',
+    body: 'A brief on your holdings, not on the market. Built each market morning from filings, reporting and the overnight move, before the bell.',
     points: [
       'The band behind the day bar is what options are pricing, VIX divided by 16',
       'Signals tagged to the position they affect, marked supports or challenges',
@@ -111,7 +111,7 @@ const SCREENS: AppScreen[] = [
 const FACTS: { k: string; v: string }[] = [
   { k: 'Institutions', v: '12,000+' },
   { k: 'Brokerage access', v: 'Read only' },
-  { k: 'Brief lands', v: '9:15 AM ET' },
+  { k: 'Brief lands', v: 'Before the open' },
   { k: 'To start', v: 'Free' },
 ];
 

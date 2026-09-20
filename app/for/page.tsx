@@ -116,7 +116,7 @@ export default function ForHubPage() {
             Each page above starts from the same terminal. You connect brokerages read-only through Plaid, and
             Helm reads the whole book: exposure by position and account, the tax lots and the losses
             worth harvesting with wash-sale screening, upcoming earnings for what you hold, and a written brief
-            at 9:15 ET on what moved and what matters. Helm cannot trade or move money.
+            before the open on what moved and what matters. Helm cannot trade or move money.
           </p>
           <p>
             The persona pages differ in what they lead with. Engineers get RSU vesting and single-stock
