@@ -98,14 +98,21 @@ export function revenueCatAccess(body: unknown, now: number): ProviderAccess {
   const subscriber = record(record(body)?.subscriber);
   const entitlements = record(subscriber?.entitlements);
   if (!subscriber || !entitlements) throw new Error('Invalid RevenueCat customer response');
-  const pro = record(entitlements.pro);
-  if (!pro) return { active: false };
-  const product = typeof pro.product_identifier === 'string' ? pro.product_identifier : null;
-  if (!product) throw new Error('RevenueCat entitlement is missing its product');
-  const subscription = record(record(subscriber.subscriptions)?.[product]);
+  // An entitlement is keyed by its RevenueCat dashboard identifier, which here
+  // is 'Helm Terminal Pro'. Looking the key up as `pro` matched nothing, so
+  // every live App Store entitlement read as absent and reconciled to free.
+  // Select on the product instead, which is the access gate either way.
+  const held = Object.values(entitlements).map(record).filter((value): value is RCRecord => !!value);
+  if (!held.length) return { active: false };
+  // A malformed entitlement must never be read as "no entitlement".
+  if (held.some(value => typeof value.product_identifier !== 'string')) throw new Error('RevenueCat entitlement is missing its product');
   // This app currently sells exactly this App Store product. Other project
   // apps/products cannot grant access merely by reaching the same webhook.
-  if (product !== 'helm_pro_monthly' || subscription?.store !== 'app_store') return { active: false };
+  const product = 'helm_pro_monthly';
+  const pro = held.find(value => value.product_identifier === product);
+  if (!pro) return { active: false };
+  const subscription = record(record(subscriber.subscriptions)?.[product]);
+  if (subscription?.store !== 'app_store') return { active: false };
   const expires = pro.expires_date;
   const grace = pro.grace_period_expires_date ?? subscription.grace_period_expires_date;
   if (typeof expires !== 'string' || !Number.isFinite(Date.parse(expires))) throw new Error('Invalid RevenueCat expiration');

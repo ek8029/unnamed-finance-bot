@@ -41,7 +41,8 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 function apple(active: boolean) {
   vi.stubGlobal('fetch', vi.fn(async () => Response.json({ subscriber: { entitlements: active ? {
-    pro: { product_identifier: 'helm_pro_monthly', expires_date: expires },
+    // The identifier the live RevenueCat dashboard returns, not a guess.
+    'Helm Terminal Pro': { product_identifier: 'helm_pro_monthly', expires_date: expires },
   } : {}, subscriptions: active ? { helm_pro_monthly: { store: 'app_store' } } : {} } })));
 }
 describe('real reconciliation to provider and database boundary', () => {

@@ -185,10 +185,36 @@ describe('RevenueCat identity and entitlement parsing', () => {
   it('resolves known UUID aliases without interpreting anonymous identifiers as accounts', () => {
     expect(revenueCatUsers({ type: 'RENEWAL', app_user_id: '$RCAnonymousID:id', original_app_user_id: user, aliases: [user, other] })).toEqual([user, other]);
   });
+  // 'Helm Terminal Pro' is the entitlement identifier this project's RevenueCat
+  // dashboard actually returns, confirmed against the live customer API on
+  // 2026-09-20. The earlier mock used 'pro', so the suite passed while every
+  // real App Store entitlement was being read as absent.
+  const ENTITLEMENT = 'Helm Terminal Pro';
   function customer(expiry: string, changes: Record<string, unknown> = {}) {
-    return { subscriber: { entitlements: { pro: { product_identifier: 'helm_pro_monthly', expires_date: expiry, ...changes } },
+    return { subscriber: { entitlements: { [ENTITLEMENT]: { product_identifier: 'helm_pro_monthly', expires_date: expiry, ...changes } },
       subscriptions: { helm_pro_monthly: { store: 'app_store', unsubscribe_detected_at: null, refunded_at: null } } } };
   }
+  it('reads an entitlement whatever the dashboard named it', () => {
+    for (const name of [ENTITLEMENT, 'pro', 'Pro Access']) {
+      const body = { subscriber: { entitlements: { [name]: { product_identifier: 'helm_pro_monthly', expires_date: tomorrow } },
+        subscriptions: { helm_pro_monthly: { store: 'app_store' } } } };
+      expect(revenueCatAccess(body, now).active).toBe(true);
+    }
+  });
+  it('ignores an entitlement for another product while honouring this one', () => {
+    const body = { subscriber: { entitlements: {
+      'Some Other App': { product_identifier: 'other_app_yearly', expires_date: tomorrow },
+      [ENTITLEMENT]: { product_identifier: 'helm_pro_monthly', expires_date: tomorrow } },
+      subscriptions: { helm_pro_monthly: { store: 'app_store' } } } };
+    expect(revenueCatAccess(body, now).active).toBe(true);
+    const foreign = { subscriber: { entitlements: { 'Some Other App': { product_identifier: 'other_app_yearly', expires_date: tomorrow } },
+      subscriptions: { other_app_yearly: { store: 'app_store' } } } };
+    expect(revenueCatAccess(foreign, now).active).toBe(false);
+  });
+  it('treats an account with no entitlements as free and a product-less one as malformed', () => {
+    expect(revenueCatAccess({ subscriber: { entitlements: {}, subscriptions: {} } }, now).active).toBe(false);
+    expect(() => revenueCatAccess({ subscriber: { entitlements: { [ENTITLEMENT]: { expires_date: tomorrow } }, subscriptions: {} } }, now)).toThrow();
+  });
   it('preserves access through a billing grace period', () => {
     expect(revenueCatAccess(customer(new Date(now - 1).toISOString(), { grace_period_expires_date: tomorrow }), now).active).toBe(true);
   });
