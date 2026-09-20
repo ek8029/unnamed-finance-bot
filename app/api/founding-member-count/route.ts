@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    // Expose an aggregate, never public SELECT access to subscription records.
+    const supabase = await createServiceClient();
     const { count, error } = await supabase
       .from('user_subscriptions')
       .select('*', { count: 'exact', head: true })

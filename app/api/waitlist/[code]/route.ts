@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
     }
 
     const trimmed = code.trim().toUpperCase();
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     // Look up the referrer
     const { data: referrer } = await supabase

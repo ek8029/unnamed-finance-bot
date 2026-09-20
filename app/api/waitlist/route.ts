@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 
@@ -21,7 +21,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // The public form receives only its summary; the email table is private.
+    const supabase = await createServiceClient();
 
     // Check if already on waitlist
     const { data: existing, error: selectError } = await supabase
@@ -82,12 +83,20 @@ export async function POST(request: Request) {
       }
     }
 
+    // position is NOT NULL with no default in production. Supply it on INSERT,
+    // rather than relying on an UPDATE after an insert that cannot succeed.
+    const { count, error: countError } = await supabase.from('waitlist').select('*', { count: 'exact', head: true });
+    if (countError || count == null) {
+      return NextResponse.json({ error: 'Failed to join waitlist' }, { status: 500 });
+    }
+    const position = count + 1;
     const { data: inserted, error: insertError } = await supabase
       .from('waitlist')
       .insert({
         email: trimmed,
         referral_code: referralCode,
         referred_by: validReferrer,
+        position,
       })
       .select('id')
       .maybeSingle();
@@ -99,10 +108,6 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: 'Failed to join waitlist' }, { status: 500 });
     }
-
-    const { count } = await supabase.from('waitlist').select('*', { count: 'exact', head: true });
-    const position = count ?? 1;
-    await supabase.from('waitlist').update({ position }).eq('id', inserted.id);
 
     return NextResponse.json({
       position,
