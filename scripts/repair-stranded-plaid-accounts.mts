@@ -14,14 +14,29 @@
  *
  * DRY RUN BY DEFAULT. Nothing is written unless you pass --apply.
  *
+ * INTERNAL ACCOUNTS ARE SKIPPED BY DEFAULT. The internal account carries Plaid
+ * sandbox positions that hang entirely off stranded accounts, so repairing it
+ * empties the test book to zero while leaving its snapshot history behind. Pass
+ * --include-internal only when you actually want that.
+ *
  *   npx tsx scripts/repair-stranded-plaid-accounts.mts
  *   npx tsx scripts/repair-stranded-plaid-accounts.mts --apply
+ *   npx tsx scripts/repair-stranded-plaid-accounts.mts --apply --include-internal
+ *   npx tsx scripts/repair-stranded-plaid-accounts.mts --apply --user <uuid>
  */
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { isStrandedPlaidAccount } from '../lib/plaid-item-purge';
 
 const APPLY = process.argv.includes('--apply');
+const INCLUDE_INTERNAL = process.argv.includes('--include-internal');
+const ONLY_USER = (() => {
+  const i = process.argv.indexOf('--user');
+  return i >= 0 ? process.argv[i + 1] : null;
+})();
+
+/** Same exclusion every probe in this repo uses. */
+const INTERNAL = /evank8029|evank7029|helmterminal@gmail|@helmterminal\.dev|\+appreview/i;
 
 const env = Object.fromEntries(
   readFileSync('.env.local', 'utf8').split('\n')
@@ -41,26 +56,46 @@ function fatal(label: string, error: { message: string } | null): void {
   }
 }
 
+const { data: authList, error: authError } = await db.auth.admin.listUsers({ perPage: 1000 });
+fatal('listUsers', authError as { message: string } | null);
+const internalIds = new Set(
+  (authList?.users ?? []).filter(u => INTERNAL.test(u.email ?? '')).map(u => u.id),
+);
+
 const { data: items, error: itemsError } = await db.from('plaid_items').select('id');
 fatal('plaid_items', itemsError);
 const liveItems = new Set((items ?? []).map(i => i.id as string));
 
 const { data: accounts, error: accountsError } = await db
   .from('linked_accounts')
-  .select('id,user_id,account_name,account_number_last4,source,plaid_item_ref,is_active,current_balance,last_synced_at');
+  .select('id,user_id,account_name,account_number_last4,source,plaid_item_ref,is_active,last_synced_at');
 fatal('linked_accounts', accountsError);
 
-const stranded = (accounts ?? []).filter(a => a.is_active && isStrandedPlaidAccount(a, liveItems));
+const allStranded = (accounts ?? []).filter(a => a.is_active && isStrandedPlaidAccount(a, liveItems));
+
+const skippedInternal = allStranded.filter(a => internalIds.has(a.user_id as string));
+let stranded = INCLUDE_INTERNAL
+  ? allStranded
+  : allStranded.filter(a => !internalIds.has(a.user_id as string));
+if (ONLY_USER) stranded = stranded.filter(a => a.user_id === ONLY_USER);
+
+if (!INCLUDE_INTERNAL && skippedInternal.length > 0) {
+  const users = new Set(skippedInternal.map(a => a.user_id as string));
+  console.log(
+    `skipping ${skippedInternal.length} stranded account(s) on ${users.size} internal account(s). ` +
+      `Repairing them would empty the sandbox book. Pass --include-internal to override.\n`,
+  );
+}
 
 if (stranded.length === 0) {
-  console.log('No stranded accounts. Nothing to repair.');
+  console.log('No stranded accounts in scope. Nothing to repair.');
   process.exit(0);
 }
 
 const strandedIds = stranded.map(a => a.id as string);
 const { data: rows, error: holdingsError } = await db
   .from('holdings')
-  .select('id,account_id,ticker,shares,total_value')
+  .select('id,account_id,ticker,total_value')
   .in('account_id', strandedIds);
 fatal('holdings', holdingsError);
 
@@ -80,7 +115,7 @@ for (const a of stranded) {
   byUser.set(a.user_id as string, list);
 }
 
-console.log(`${APPLY ? 'APPLYING' : 'DRY RUN'} — stranded active plaid accounts: ${stranded.length} across ${byUser.size} user(s)\n`);
+console.log(`${APPLY ? 'APPLYING' : 'DRY RUN'} — stranded accounts in scope: ${stranded.length} across ${byUser.size} user(s)\n`);
 
 let totalRows = 0;
 let totalValue = 0;
@@ -98,15 +133,15 @@ for (const [userId, list] of byUser) {
   }
   console.log('');
 }
-console.log(`TOTAL: ${totalRows} frozen position row(s) worth ${usd(totalValue)}\n`);
+console.log(`TOTAL IN SCOPE: ${totalRows} frozen position row(s) worth ${usd(totalValue)}\n`);
 
 if (!APPLY) {
   console.log('Dry run only. Re-run with --apply to delete these positions and deactivate these accounts.');
   process.exit(0);
 }
 
-// Delete the positions first: holdings.account_id is NOT NULL and references
-// linked_accounts(id), so the rows must go before the account is touched.
+// Positions first: holdings.account_id is NOT NULL and references
+// linked_accounts(id), so the rows go before the account is touched.
 const { error: deleteError, count } = await db
   .from('holdings')
   .delete({ count: 'exact' })
@@ -115,11 +150,15 @@ fatal('holdings delete', deleteError);
 console.log(`deleted ${count ?? 0} frozen position row(s)`);
 
 // Deactivate rather than delete the account row. The positions were the defect;
-// the account itself is a record that the user once linked this institution,
-// and a `transactions` history may still hang off it.
+// the account itself records that the user once linked this institution, and a
+// `transactions` history may still hang off it.
 const { error: deactivateError } = await db
   .from('linked_accounts')
-  .update({ is_active: false, sync_status: 'disconnected', sync_error: 'Plaid connection removed; account no longer syncs' })
+  .update({
+    is_active: false,
+    sync_status: 'disconnected',
+    sync_error: 'Plaid connection removed; account no longer syncs',
+  })
   .in('id', strandedIds);
 fatal('linked_accounts deactivate', deactivateError);
 console.log(`deactivated ${strandedIds.length} stranded account(s)`);
