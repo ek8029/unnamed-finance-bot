@@ -157,7 +157,7 @@ const { error: deactivateError } = await db
   .update({
     is_active: false,
     sync_status: 'disconnected',
-    sync_error: 'Plaid connection removed; account no longer syncs',
+    sync_error: 'Superseded by a newer connection to the same institution; it stopped syncing and its frozen positions were cleared',
   })
   .in('id', strandedIds);
 fatal('linked_accounts deactivate', deactivateError);

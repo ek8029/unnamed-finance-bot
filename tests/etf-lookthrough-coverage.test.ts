@@ -12,14 +12,24 @@ import { getUnderlyingExposure, computePortfolioLookthrough, SINGLE_STOCK_MAP, L
  */
 const HELD_IN_PRODUCTION: Record<string, string> = {
   AMA: 'AMAT', AMAU: 'AMAT', AMDG: 'AMD', AMDL: 'AMD', AMZZ: 'AMZN',
-  AVGX: 'AVGO', CRWG: 'CRWV', GGLL: 'GOOGL', HYNX: 'SKHY', LRCU: 'LRCX',
-  METU: 'META', MRVU: 'MRVL', MSFL: 'MSFT', MSFU: 'MSFT', MULL: 'MU',
-  MUU: 'MU', NVDL: 'NVDA', SNDG: 'SNDK', SNXX: 'SNDK', TSLL: 'TSLA',
-  TSMX: 'TSM', WDCX: 'WDC',
+  AVGX: 'AVGO', CRWG: 'CRWV', GGLL: 'GOOGL', HYNX: 'SKHY', LINT: 'INTC',
+  LRCU: 'LRCX', METU: 'META', MRVU: 'MRVL', MSFL: 'MSFT', MSFU: 'MSFT',
+  MULL: 'MU', MUU: 'MU', NVDL: 'NVDA', SNDG: 'SNDK', SNXX: 'SNDK',
+  TSLL: 'TSLA', TSMX: 'TSM', WDCX: 'WDC',
 };
 
 /** Leveraged products over a basket rather than one stock. */
 const HELD_BASKETS = ['MAGX', 'SOXL', 'SPXL', 'TQQQ', 'USD'];
+
+/**
+ * Held in production and deliberately NOT mapped, because the underlying is
+ * not a ticker we can name from the fund name alone. Listed so the gap is on
+ * the record instead of looking like an oversight.
+ *
+ * RAM: "Roundhill T-REX 2X Long DRAM Daily Target ETF". DRAM is a memory
+ * basket, not a listed symbol. Mapping it needs the issuer's holdings file.
+ */
+const HELD_BUT_UNMAPPED = ['RAM'];
 
 describe('look-through covers what users actually hold', () => {
   it('resolves every single-stock product held in production', () => {
@@ -45,6 +55,15 @@ describe('look-through covers what users actually hold', () => {
     for (const product of [...Object.keys(HELD_IN_PRODUCTION), ...HELD_BASKETS]) {
       const exposure = getUnderlyingExposure(product, 10_000, 100_000);
       expect(exposure.length, `${product} exposure`).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps the deliberately unmapped products documented, not silently absent', () => {
+    // If one of these gains a mapping, move it into HELD_IN_PRODUCTION rather
+    // than deleting the assertion, so the list stays an accurate record.
+    for (const product of HELD_BUT_UNMAPPED) {
+      expect(product in SINGLE_STOCK_MAP, `${product} unexpectedly mapped`).toBe(false);
+      expect(product in LEVERAGED_ETF_MAP, `${product} unexpectedly mapped`).toBe(false);
     }
   });
 });

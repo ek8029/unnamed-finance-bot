@@ -106,6 +106,7 @@ export const SINGLE_STOCK_MAP: Record<string, SingleStockProduct> = {
   // read as zero while the position sat in the book at full value.
   MRVU: { underlying: 'MRVL', leverage: 2, name: 'Direxion Daily MRVL Bull 2X' },
   MUU: { underlying: 'MU', leverage: 2, name: 'Direxion Daily MU Bull 2X' },
+  LINT: { underlying: 'INTC', leverage: 2, name: 'Direxion Daily INTC Bull 2X' },
 
   // ── Leverage Shares 2x Long ──
   CRWG: { underlying: 'CRWV', leverage: 2, name: 'Leverage Shares 2x Long CoreWeave' },
