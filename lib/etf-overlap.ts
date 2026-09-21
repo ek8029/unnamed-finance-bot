@@ -49,6 +49,9 @@ export const OVERLAP_FUNDS: { ticker: string; name: string }[] = [
   { ticker: 'EEM', name: 'iShares MSCI Emerging Markets ETF' },
   { ticker: 'GDX', name: 'VanEck Gold Miners ETF' },
   { ticker: 'ARKK', name: 'ARK Innovation ETF' },
+  // MAGS carries seven equal-weighted names, which is its entire basket rather
+  // than a top ten, so its overlap figures are exact rather than a floor.
+  { ticker: 'MAGS', name: 'Roundhill Magnificent Seven ETF' },
 ];
 
 const FUND_NAMES: Record<string, string> = Object.fromEntries(

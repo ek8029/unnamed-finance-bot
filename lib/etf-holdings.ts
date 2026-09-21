@@ -91,6 +91,7 @@ export const SINGLE_STOCK_MAP: Record<string, SingleStockProduct> = {
   MSTX: { underlying: 'MSTR', leverage: 2, name: 'Defiance Daily MSTR 2X Long' },
   AVGX: { underlying: 'AVGO', leverage: 2, name: 'Defiance Daily AVGO 2X Long' },
   STXL: { underlying: 'STX', leverage: 2, name: 'Defiance Daily STX 2X Long' },
+  AMA: { underlying: 'AMAT', leverage: 2, name: 'Defiance Daily Target 2X Long AMAT' },
 
   // ── Defiance Daily Target Short/Inverse ──
   SMST: { underlying: 'MSTR', leverage: -1, name: 'Defiance Daily MSTR 1X Short' },
@@ -100,11 +101,19 @@ export const SINGLE_STOCK_MAP: Record<string, SingleStockProduct> = {
   WDCX: { underlying: 'WDC', leverage: 2, name: 'Tradr 2X Long WDC Daily' },
   LRCU: { underlying: 'LRCX', leverage: 2, name: 'Tradr 2X Long LRCX Daily' },
 
+  // ── Direxion Daily Single-Stock Bull, second wave ──
+  // Held in production and previously unmapped, so their underlying exposure
+  // read as zero while the position sat in the book at full value.
+  MRVU: { underlying: 'MRVL', leverage: 2, name: 'Direxion Daily MRVL Bull 2X' },
+  MUU: { underlying: 'MU', leverage: 2, name: 'Direxion Daily MU Bull 2X' },
+
   // ── Leverage Shares 2x Long ──
   CRWG: { underlying: 'CRWV', leverage: 2, name: 'Leverage Shares 2x Long CoreWeave' },
   ASMG: { underlying: 'ASML', leverage: 2, name: 'Leverage Shares 2x Long ASML' },
   // Launched 12 May 2026, Cboe. Verified against the issuer's product page.
   AMAU: { underlying: 'AMAT', leverage: 2, name: 'Leverage Shares 2X Long AMAT Daily' },
+  AMDG: { underlying: 'AMD', leverage: 2, name: 'Leverage Shares 2X Long AMD Daily' },
+  SNDG: { underlying: 'SNDK', leverage: 2, name: 'Leverage Shares 2X Long SNDK Daily' },
 
   // ── REX / T-REX 2x Long ──
   // Underlying is the SK Hynix ADR, which trades under SKHY. Verified against
@@ -193,6 +202,8 @@ export const LEVERAGED_ETF_MAP: Record<string, LeveragedProduct> = {
   // Dow Jones
   UDOW: { underlying: 'DIA', leverage: 3, name: 'ProShares UltraPro Dow30' },
   SDOW: { underlying: 'DIA', leverage: -3, name: 'ProShares UltraPro Short Dow30' },
+  // Magnificent Seven
+  MAGX: { underlying: 'MAGS', leverage: 2, name: 'Roundhill Daily 2X Long Magnificent Seven' },
   // Semiconductors
   SOXL: { underlying: 'SOXX', leverage: 3, name: 'Direxion Daily Semiconductor Bull 3X' },
   SOXS: { underlying: 'SOXX', leverage: -3, name: 'Direxion Daily Semiconductor Bear 3X' },
@@ -537,6 +548,16 @@ export const ETF_HOLDINGS: Record<string, ETFConstituent[]> = {
     { ticker: 'PATH', weight: 5.50 }, { ticker: 'RBLX', weight: 5.00 },
     { ticker: 'PLTR', weight: 4.80 }, { ticker: 'SHOP', weight: 4.50 },
     { ticker: 'TWLO', weight: 4.00 }, { ticker: 'U', weight: 3.80 },
+  ],
+  // ── Magnificent Seven ──
+  // Roundhill MAGS holds exactly these seven at EQUAL weight by mandate and
+  // rebalances quarterly, so 100/7 is the fund's design rather than a reading
+  // of one day's holdings file. Drift between rebalances is not modelled.
+  MAGS: [
+    { ticker: 'AAPL', weight: 14.29 }, { ticker: 'MSFT', weight: 14.29 },
+    { ticker: 'NVDA', weight: 14.29 }, { ticker: 'AMZN', weight: 14.29 },
+    { ticker: 'GOOGL', weight: 14.29 }, { ticker: 'META', weight: 14.29 },
+    { ticker: 'TSLA', weight: 14.26 },
   ],
 };
 

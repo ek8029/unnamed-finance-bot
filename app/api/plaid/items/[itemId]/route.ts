@@ -3,6 +3,7 @@ import { openToken } from '@/lib/plaid/token-crypto';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
+import { purgePlaidItem } from '@/lib/plaid-item-purge';
 
 /**
  * DELETE /api/plaid/items/[itemId]
@@ -50,44 +51,13 @@ export async function DELETE(
       );
     }
 
-    // 2. Delete holdings for accounts linked to this item
-    const { data: linkedAccounts } = await supabase
-      .from('linked_accounts')
-      .select('id')
-      .eq('plaid_item_ref', plaidItem.id)
-      .eq('user_id', user.id);
-
-    if (linkedAccounts && linkedAccounts.length > 0) {
-      const accountIds = linkedAccounts.map(a => a.id);
-
-      // Delete holdings and transactions for these accounts in bulk
-      await supabase
-        .from('holdings')
-        .delete()
-        .in('account_id', accountIds)
-        .eq('user_id', user.id);
-
-      await supabase
-        .from('transactions')
-        .delete()
-        .in('account_id', accountIds)
-        .eq('user_id', user.id);
-    }
-
-    // 3. Delete linked accounts
-    await supabase
-      .from('linked_accounts')
-      .delete()
-      .eq('plaid_item_ref', plaidItem.id)
-      .eq('user_id', user.id);
-
-    // 4. Delete the plaid item (leave a surviving trail in case a loss is later disputed)
+    // 2. Delete the item and everything hanging off it. The ordering and the
+    // reason it cannot be a bare item delete both live in lib/plaid-item-purge.ts.
     console.warn(`[plaid][disconnect] item ${itemId} removed by user ${user.id} (${plaidItem.institution_name ?? 'unknown'})`);
-    await supabase
-      .from('plaid_items')
-      .delete()
-      .eq('id', itemId)
-      .eq('user_id', user.id);
+    const purge = await purgePlaidItem(supabase, user.id, plaidItem.id);
+    for (const f of purge.failures) {
+      console.error(`[plaid][disconnect] ${f.table} cleanup failed for item ${itemId}: ${f.message}`);
+    }
 
     return NextResponse.json({
       success: true,

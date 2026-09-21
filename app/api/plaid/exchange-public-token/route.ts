@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
+import { purgePlaidItem, type PurgeClient } from '@/lib/plaid-item-purge';
 
 export async function POST(request: Request) {
   try {
@@ -208,11 +209,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Connection did not save. Please try again.' }, { status: 500 });
     }
 
-    // New connection is verified persisted — now it is safe to remove the superseded
-    // item. Linked accounts + holdings cascade-delete via FK. If this delete fails,
-    // the user simply keeps a harmless duplicate (far better than zero connections).
+    // New connection is verified persisted — now it is safe to remove the
+    // superseded item. If this delete fails, the user simply keeps a harmless
+    // duplicate (far better than zero connections).
+    //
+    // This used to be a bare `plaid_items` delete, with a comment claiming
+    // "linked accounts + holdings cascade-delete via FK". They do not:
+    // linked_accounts.plaid_item_ref is ON DELETE SET NULL (migration 067), so
+    // the accounts survived with a null reference and kept their positions,
+    // which then froze — no sync could reach them and the stale-position prune
+    // only considers accounts present in a Plaid response. That stranded 91
+    // positions worth $1.42M across 3 users before it was caught.
     if (duplicateItem) {
-      await supabase.from('plaid_items').delete().eq('id', duplicateItem.id);
+      // Cast at the boundary: structurally comparing this route's Supabase
+      // client against PurgeClient exceeds tsc's instantiation depth (TS2589).
+      // The shape is exercised for real in tests/plaid-item-purge.test.ts.
+      const purge = await purgePlaidItem(supabase as unknown as PurgeClient, user.id, duplicateItem.id);
+      for (const f of purge.failures) {
+        console.error(`[plaid][exchange] ${f.table} cleanup failed for superseded item ${duplicateItem.id}: ${f.message}`);
+      }
     }
 
     // The automatic no-card trial that used to fire here is gone. It existed to
