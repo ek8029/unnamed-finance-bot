@@ -4,7 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { plaidClient, mapPlaidAccountType } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
 import { extractPlaidError } from '@/lib/plaid-errors';
-import { purgePlaidItem, type PurgeClient } from '@/lib/plaid-item-purge';
+import { purgePlaidItem, isItemCoveredBy, type PurgeClient } from '@/lib/plaid-item-purge';
 
 export async function POST(request: Request) {
   try {
@@ -49,25 +49,25 @@ export async function POST(request: Request) {
     const slug = institutionName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     // --- Duplicate item detection ---
-    // Check if user already has a plaid_item for the same institution
-    let duplicateItem: { id: string; institution_name: string | null } | null = null;
+    // Every existing item for this institution, not the first one found. A user
+    // can legitimately hold two items at one institution (two logins, or an
+    // account recovered from a legacy token), and "same institution" does not
+    // mean "same accounts". Which of these, if any, is superseded is decided
+    // after the new connection persists, by comparing account sets.
+    let existingItems: { id: string; institution_name: string | null }[] = [];
     if (plaidInstitutionId) {
       const { data: existing } = await supabase
         .from('plaid_items')
         .select('id, institution_name')
         .eq('user_id', user.id)
-        .eq('plaid_institution_id', plaidInstitutionId)
-        .limit(1)
-        .maybeSingle();
-
-      if (existing) {
-        duplicateItem = existing;
-        // Defer deleting the old item until the new connection is fully persisted
-        // (see below). Deleting first made a transient insert failure permanent:
-        // the user lost their working connection and got nothing back, ending at
-        // zero items. Insert-then-delete keeps the old connection as a safety net.
-      }
+        .eq('plaid_institution_id', plaidInstitutionId);
+      existingItems = existing ?? [];
+      // Defer deleting any old item until the new connection is fully persisted
+      // (see below). Deleting first made a transient insert failure permanent:
+      // the user lost their working connection and got nothing back, ending at
+      // zero items. Insert-then-delete keeps the old connection as a safety net.
     }
+    const duplicateItem = existingItems[0] ?? null;
 
     // Try to find existing institution by plaid ID or slug
     let institutionId: string;
@@ -220,13 +220,34 @@ export async function POST(request: Request) {
     // which then froze — no sync could reach them and the stale-position prune
     // only considers accounts present in a Plaid response. That stranded 91
     // positions worth $1.42M across 3 users before it was caught.
-    if (duplicateItem) {
+    //
+    // An old item is purged only when every one of its active accounts is
+    // present in the accounts Plaid just returned, matched on mask + subtype
+    // (a fresh Link issues new Plaid account_ids, so those cannot be compared).
+    // An old item carrying an account the new link does not cover is kept: the
+    // response already tells the user they can keep both or disconnect one.
+    for (const old of existingItems) {
+      const { data: oldAccounts, error: oldErr } = await supabase
+        .from('linked_accounts')
+        .select('account_number_last4, account_subtype')
+        .eq('plaid_item_ref', old.id)
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      if (oldErr) {
+        console.error(`[plaid][exchange] could not read accounts of existing item ${old.id}; keeping it: ${oldErr.message}`);
+        continue;
+      }
+      const newIdentities = plaidAccounts.map(a => ({ account_number_last4: a.mask ?? null, account_subtype: a.subtype ?? null }));
+      if (!isItemCoveredBy(oldAccounts ?? [], newIdentities)) {
+        console.log(`[plaid][exchange] keeping existing item ${old.id}: new link does not cover all of its accounts`);
+        continue;
+      }
       // Cast at the boundary: structurally comparing this route's Supabase
       // client against PurgeClient exceeds tsc's instantiation depth (TS2589).
       // The shape is exercised for real in tests/plaid-item-purge.test.ts.
-      const purge = await purgePlaidItem(supabase as unknown as PurgeClient, user.id, duplicateItem.id);
+      const purge = await purgePlaidItem(supabase as unknown as PurgeClient, user.id, old.id);
       for (const f of purge.failures) {
-        console.error(`[plaid][exchange] ${f.table} cleanup failed for superseded item ${duplicateItem.id}: ${f.message}`);
+        console.error(`[plaid][exchange] ${f.table} cleanup failed for superseded item ${old.id}: ${f.message}`);
       }
     }
 

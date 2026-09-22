@@ -53,6 +53,9 @@ interface Account {
   sync_status: string;
   last_synced_at?: string;
   source?: string;
+  /** The Plaid item this account belongs to; null for manual accounts. Two
+   *  items can share an institution, so this is the only safe join key. */
+  plaid_item_ref?: string | null;
 }
 
 interface Holding {

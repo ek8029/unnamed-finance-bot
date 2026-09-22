@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { purgePlaidItem, isStrandedPlaidAccount, type PurgeClient } from '../lib/plaid-item-purge';
+import { purgePlaidItem, isStrandedPlaidAccount, isItemCoveredBy, accountIdentityKey, type PurgeClient } from '../lib/plaid-item-purge';
 
 const USER = 'd80b9593-96f3-478c-9d71-269928664eda';
 const ITEM = '3f3e5c38-0000-4000-8000-000000000001';
@@ -133,6 +133,52 @@ describe('purgePlaidItem', () => {
     const result = await purgePlaidItem(client, USER, ITEM);
 
     expect(result.failures.map(f => f.table)).toContain('linked_accounts(select)');
+  });
+});
+
+describe('isItemCoveredBy', () => {
+  // The real case that motivated this: one user, two Charles Schwab items.
+  // Item A holds PCRA Trust 0917 + 9253; item B holds ROTH 401K 8440. A fresh
+  // Link issues new Plaid account_ids, so identity comes from mask + subtype.
+  const pcra = [
+    { account_number_last4: '0917', account_subtype: 'ira' },
+    { account_number_last4: '9253', account_subtype: 'ira' },
+  ];
+  const roth401k = [{ account_number_last4: '8440', account_subtype: 'roth 401k' }];
+
+  it('covers an item when every one of its accounts is in the new link', () => {
+    expect(isItemCoveredBy(pcra, [...pcra, ...roth401k])).toBe(true);
+    expect(isItemCoveredBy(roth401k, [...pcra, ...roth401k])).toBe(true);
+  });
+
+  it('does NOT cover the PCRA item when the user re-links only the Roth 401K', () => {
+    expect(isItemCoveredBy(pcra, roth401k)).toBe(false);
+  });
+
+  it('does NOT cover the Roth 401K item when the user re-links only PCRA', () => {
+    expect(isItemCoveredBy(roth401k, pcra)).toBe(false);
+  });
+
+  it('requires every account, not just some, so a partial re-link keeps the old item', () => {
+    expect(isItemCoveredBy(pcra, [pcra[0], ...roth401k])).toBe(false);
+  });
+
+  it('never covers an item that has no active accounts to compare', () => {
+    // A row we cannot describe is not one we can prove superseded.
+    expect(isItemCoveredBy([], pcra)).toBe(false);
+  });
+
+  it('matches subtype case-insensitively and treats missing mask and subtype as empty', () => {
+    expect(accountIdentityKey({ account_number_last4: '1234', account_subtype: 'Roth 401K' }))
+      .toBe(accountIdentityKey({ account_number_last4: '1234', account_subtype: 'roth 401k' }));
+    expect(accountIdentityKey({})).toBe('|');
+    expect(accountIdentityKey({ account_number_last4: null, account_subtype: null })).toBe('|');
+  });
+
+  it('distinguishes two accounts sharing a mask but not a subtype', () => {
+    const ira = [{ account_number_last4: '5555', account_subtype: 'ira' }];
+    const roth = [{ account_number_last4: '5555', account_subtype: 'roth' }];
+    expect(isItemCoveredBy(ira, roth)).toBe(false);
   });
 });
 

@@ -63,6 +63,10 @@ export async function GET() {
       // the health endpoint; without this it had no way to show a hand-entered
       // book at all.
       source: account.source,
+      // Which Plaid item this account belongs to. A user can hold two items at
+      // one institution, so matching accounts to their connection by
+      // institution name attached every card to whichever item came last.
+      plaid_item_ref: account.plaid_item_ref ?? null,
     }));
 
     // Build balance history from net worth snapshots with cash flow

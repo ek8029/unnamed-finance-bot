@@ -24,6 +24,7 @@ interface Account {
   sync_status: string;
   last_synced_at?: string;
   source?: string;
+  plaid_item_ref?: string | null;
 }
 
 interface HealthItem {
@@ -200,7 +201,16 @@ export default function AccountsPage() {
     ? accounts.find((a) => a.id === selectedAccountId) || null
     : null;
 
-  // Map an institution name → its Plaid health item (for reconnect / error state).
+  // Resolve an account to its Plaid health item, for reconnect / disconnect /
+  // error state. Keyed by item id: a user can hold two items at one institution,
+  // and keying by institution name attached every card to whichever item came
+  // last, so Disconnect on one card could remove the other connection. Name is
+  // kept only as a fallback for rows that predate plaid_item_ref.
+  const healthByItemId = useMemo(() => {
+    const map = new Map<string, HealthItem>();
+    for (const item of connectionHealth.items) map.set(item.id, item);
+    return map;
+  }, [connectionHealth.items]);
   const healthByInstitution = useMemo(() => {
     const map = new Map<string, HealthItem>();
     for (const item of connectionHealth.items) {
@@ -208,9 +218,14 @@ export default function AccountsPage() {
     }
     return map;
   }, [connectionHealth.items]);
+  function healthFor(account: Account): HealthItem | undefined {
+    if (account.source === 'manual') return undefined;
+    if (account.plaid_item_ref) return healthByItemId.get(account.plaid_item_ref);
+    return healthByInstitution.get(account.institution.toLowerCase());
+  }
 
   function cardState(account: Account) {
-    const health = account.source === 'manual' ? undefined : healthByInstitution.get(account.institution.toLowerCase());
+    const health = healthFor(account);
     return { state: accountConnectionState(account, health?.status, { loading: healthLoading, error: healthError, syncing }), health };
   }
 
@@ -565,7 +580,7 @@ export default function AccountsPage() {
                 <NextLink href="/dashboard/transactions" className="text-[13px] text-[var(--color-gold)] hover:underline">View transaction history ↗</NextLink>
               </div>
               {(() => {
-                const health = selectedAccount.source === 'manual' ? undefined : healthByInstitution.get(selectedAccount.institution.toLowerCase());
+                const health = healthFor(selectedAccount);
                 if (!health?.id) return null;
                 return (
                   <div className="pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between gap-2">

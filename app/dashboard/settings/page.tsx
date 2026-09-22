@@ -1267,8 +1267,14 @@ export default function SettingsPage() {
         ) : (
           <>
             {connectionHealth.items.map((item) => {
-              const institutionAccounts = accounts.filter(
-                (a) => a.institution.toLowerCase() === item.institution_name?.toLowerCase()
+              // Each card lists the accounts on ITS item. Matching by institution
+              // name put every Schwab account on every Schwab card when a user
+              // held two items there, and the Disconnect confirmation then implied
+              // removing accounts that lived on the other connection.
+              const institutionAccounts = accounts.filter((a) =>
+                a.plaid_item_ref
+                  ? a.plaid_item_ref === item.id
+                  : a.institution.toLowerCase() === item.institution_name?.toLowerCase()
               )
               const accountSummary = summarizeAccountBalances(institutionAccounts)
               const color = getInstitutionColor(item.institution_name || 'Unknown')

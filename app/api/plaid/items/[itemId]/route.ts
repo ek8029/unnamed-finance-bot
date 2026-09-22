@@ -3,7 +3,7 @@ import { openToken } from '@/lib/plaid/token-crypto';
 import { createClient } from '@/lib/supabase/server';
 import { plaidClient } from '@/lib/plaid';
 import { logPlaidSuccess, logPlaidError } from '@/lib/plaid-logger';
-import { purgePlaidItem } from '@/lib/plaid-item-purge';
+import { purgePlaidItem, type PurgeClient } from '@/lib/plaid-item-purge';
 
 /**
  * DELETE /api/plaid/items/[itemId]
@@ -54,7 +54,10 @@ export async function DELETE(
     // 2. Delete the item and everything hanging off it. The ordering and the
     // reason it cannot be a bare item delete both live in lib/plaid-item-purge.ts.
     console.warn(`[plaid][disconnect] item ${itemId} removed by user ${user.id} (${plaidItem.institution_name ?? 'unknown'})`);
-    const purge = await purgePlaidItem(supabase, user.id, plaidItem.id);
+    // Cast at the boundary: structurally comparing this route's Supabase client
+    // against PurgeClient exceeds tsc's instantiation depth (TS2589). The shape
+    // is exercised for real in tests/plaid-item-purge.test.ts.
+    const purge = await purgePlaidItem(supabase as unknown as PurgeClient, user.id, plaidItem.id);
     for (const f of purge.failures) {
       console.error(`[plaid][disconnect] ${f.table} cleanup failed for item ${itemId}: ${f.message}`);
     }

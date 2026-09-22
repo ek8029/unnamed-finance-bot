@@ -109,6 +109,39 @@ export async function purgePlaidItem(
 }
 
 /**
+ * Does a newly linked set of Plaid accounts fully cover an existing item's
+ * accounts, so that deleting the existing item loses nothing?
+ *
+ * A fresh Link of the same institution gets new Plaid account_ids, so identity
+ * has to come from what the institution itself reports: the account mask (last
+ * four) and subtype. An existing item is covered only when every one of its
+ * active accounts appears in the new link under the same mask and subtype.
+ *
+ * This exists because "same institution" was being treated as "same accounts".
+ * A user with two Schwab items, one holding the PCRA accounts and one holding a
+ * Roth 401K, could re-link only the Roth 401K and have the PCRA item purged,
+ * because the duplicate check matched on institution alone and took the first
+ * row it found.
+ */
+export interface AccountIdentity {
+  account_number_last4?: string | null;
+  account_subtype?: string | null;
+}
+
+export function accountIdentityKey(a: AccountIdentity): string {
+  return `${a.account_number_last4 ?? ''}|${(a.account_subtype ?? '').toLowerCase()}`;
+}
+
+export function isItemCoveredBy(
+  existingAccounts: readonly AccountIdentity[],
+  newAccounts: readonly AccountIdentity[],
+): boolean {
+  if (existingAccounts.length === 0) return false;
+  const have = new Set(newAccounts.map(accountIdentityKey));
+  return existingAccounts.every(a => have.has(accountIdentityKey(a)));
+}
+
+/**
  * Is this account stranded? True when it came from Plaid but no longer points
  * at a live item, which means nothing will ever refresh or prune it.
  *
