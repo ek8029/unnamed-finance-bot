@@ -85,13 +85,16 @@ describe('plaid-sync route', () => {
     vi.stubEnv('CRON_SECRET', 'test-secret');
   });
 
+  // The route pulls in the sync, insights and analyst-note graph on import,
+  // which under full-suite load can exceed the default 5-second budget even
+  // though the test itself only exercises the bearer check.
   it('rejects a wrong bearer in-process', async () => {
     const { GET } = await import('../app/api/cron/plaid-sync/route');
     const res = await GET(new Request('http://cron.internal/api/cron/plaid-sync', {
       headers: { Authorization: 'Bearer wrong' },
     }));
     expect(res.status).toBe(401);
-  });
+  }, 30_000);
 });
 
 describe('market-morning route', () => {

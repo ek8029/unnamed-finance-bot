@@ -82,6 +82,33 @@ describe('syncPlaidItem provider freshness', () => {
     expect(logged.some((l) => l.endpoint === 'itemGet' && l.code === 'PROVIDER_STALE')).toBe(true);
   });
 
+  it('does not flip a parked item back to active on a cached 200 when the feed is stale', async () => {
+    // The 2026-09-09 failure: login_required since 08-10, accountsGet answers
+    // 200 from Plaid's cache, and the "token works" write erased the signal.
+    plaid.itemGet.mockResolvedValue({ data: {
+      item: { error: null },
+      status: { investments: { last_successful_update: '2026-07-30T14:16:05Z', last_failed_update: '2026-08-10T01:03:31Z' } },
+    } });
+    const { syncPlaidItem } = await import('../lib/plaid-sync');
+    await syncPlaidItem(supabase as never, 'user-1', item);
+
+    const statusWrites = writes.filter((w) => w.table === 'plaid_items' && (w.payload as { status?: string })?.status);
+    expect(statusWrites).toHaveLength(0);
+  });
+
+  it('still flips the item back to active when the feed is fresh', async () => {
+    plaid.itemGet.mockResolvedValue({ data: {
+      item: { error: null },
+      status: { investments: { last_successful_update: new Date().toISOString() } },
+    } });
+    const { syncPlaidItem } = await import('../lib/plaid-sync');
+    await syncPlaidItem(supabase as never, 'user-1', item);
+
+    const statusWrites = writes.filter((w) => w.table === 'plaid_items' && (w.payload as { status?: string })?.status);
+    expect(statusWrites).toHaveLength(1);
+    expect(statusWrites[0].payload).toEqual({ status: 'active', error_code: null, error_message: null });
+  });
+
   it('leaves a fresh item healthy and records nothing', async () => {
     plaid.itemGet.mockResolvedValue({ data: {
       item: { error: null },
