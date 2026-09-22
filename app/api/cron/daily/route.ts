@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { syncPlaidItem, computeSnapshots, type PlaidItemForSync, type SyncResult } from '@/lib/plaid-sync';
-import { extractPlaidError } from '@/lib/plaid-errors';
-import { nudgeReconnects } from '@/lib/plaid/nudge-reconnect';
-import { updatePortfolioPerformance } from '@/lib/market-sync';
-import { generateInsights } from '@/lib/insights-engine';
 import { runDigestCron } from '@/lib/digest-cron';
-import { composeWeeklyNote, saveAnalystNote } from '@/lib/research/analyst-note';
-import { commitStandingSnapshots } from '@/lib/research/standing-questions';
-import { isOpenAccessWindow } from '@/lib/tier';
-import { isTrialRow } from '@/lib/tier-shared';
-import { beat } from '@/lib/agent/heartbeat';
 import { POST as runDripEmails } from '@/app/api/emails/drip/route';
 import { GET as runWatchlistAlerts } from '@/app/api/cron/watchlist-alerts/route';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-// This is the people run: briefs, drips, alerts, Plaid sync, the scans, and on
-// Fridays the analyst note. The vendor-paced market refresh has its own cron
-// (/api/cron/market-morning) so it can never again spend this run's clock.
+// This is the people run: briefs, drips, alerts, watch digests. Two things
+// used to share its 300 seconds and each has since been given its own clock:
+// the vendor-paced market refresh (/api/cron/market-morning, 12:45 UTC), and
+// the Plaid sync with the scans and the Friday note (/api/cron/plaid-sync,
+// 13:00 UTC). The digest ran first here and on 2026-09-22 took 3.8 minutes,
+// which left the Plaid loop 66 seconds before Vercel killed the function with
+// 11 of 24 items never reached. Nothing in this file now touches a book.
 export const maxDuration = 300;
-
-interface CronSyncResult extends SyncResult {
-  user_id: string;
-}
 
 export async function GET(request: Request) {
   const startTime = Date.now();
@@ -39,20 +28,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json(
-        { error: 'Missing required environment variables' },
-        { status: 500 },
-      );
-    }
-
-    const serviceClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
     // ── AI digest FIRST — highest user-facing priority ──
 
     let digestResult = { generated: 0, skipped: 0, log: [] as string[], emailed: [] as string[] };
@@ -63,7 +38,7 @@ export async function GET(request: Request) {
       log.push(`[digest] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // ── Email jobs — must run before dedup can early-return ──
+    // ── Email jobs ──
     //
     // Called in-process, never fetched. The self-fetch through
     // NEXT_PUBLIC_APP_URL went dead on 2026-05-21: the variable is http:// in
@@ -107,245 +82,12 @@ export async function GET(request: Request) {
       log.push(`[watch] Failed: ${err instanceof Error ? err.message : 'unknown'}`);
     }
 
-    // ── Dedup — only gates Plaid sync + market data, never emails ──
-
-    const { data: lastRun } = await serviceClient
-      .from('portfolio_performance')
-      .select('calculated_at')
-      .order('calculated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (lastRun?.calculated_at) {
-      const hoursSince = (Date.now() - new Date(lastRun.calculated_at).getTime()) / (1000 * 60 * 60);
-      const forceRun = new URL(request.url).searchParams.get('force') === 'true';
-      if (hoursSince < 20 && !forceRun) {
-        return NextResponse.json({ message: 'Cron already ran recently', skipped: true, drip_emails_sent: dripResult.sent, watchlist_alerts_sent: watchlistResult.sent });
-      }
-    }
-
-    const { data: plaidItems, error: itemsError } = await serviceClient
-      .from('plaid_items')
-      .select('*')
-      .eq('status', 'active');
-
-    if (itemsError) {
-      console.error('[cron/daily] Error fetching plaid items:', itemsError);
-      return NextResponse.json({ error: 'Failed to fetch plaid items', drip_emails_sent: dripResult.sent }, { status: 500 });
-    }
-
-    if (!plaidItems || plaidItems.length === 0) {
-      log.push('No active Plaid items found - nothing to sync');
-      return NextResponse.json({ success: true, log, drip_emails_sent: dripResult.sent, duration_ms: Date.now() - startTime });
-    }
-
-    log.push(`Found ${plaidItems.length} active Plaid item(s)`);
-
-    const userItemMap = new Map<string, typeof plaidItems>();
-    for (const item of plaidItems) {
-      const existing = userItemMap.get(item.user_id) || [];
-      existing.push(item);
-      userItemMap.set(item.user_id, existing);
-    }
-
-    const syncResults: CronSyncResult[] = [];
-
-    for (const item of plaidItems) {
-      try {
-        const syncItem: PlaidItemForSync = {
-          id: item.id,
-          plaid_access_token: item.plaid_access_token,
-          transactions_cursor: item.transactions_cursor,
-          institution_name: item.institution_name,
-          available_products: item.available_products || [],
-          billed_products: item.billed_products || [],
-          consented_products: item.consented_products || [],
-        };
-
-        const result = await syncPlaidItem(serviceClient, item.user_id, syncItem);
-        syncResults.push({ ...result, user_id: item.user_id });
-        log.push(
-          `[sync] ${item.institution_name || item.id}: ` +
-          `+${result.transactions?.added ?? 0} txns, ` +
-          `~${result.transactions?.modified ?? 0} modified, ` +
-          `-${result.transactions?.removed ?? 0} removed, ` +
-          `${result.holdings_synced ?? 0} holdings`,
-        );
-      } catch (error) {
-        // Store what Plaid said, not axios's "Request failed with status code
-        // 400": the code is what tells a reader whether the item needs a
-        // reconnect or just a retry.
-        const pe = extractPlaidError(error);
-        const msg = pe?.errorMessage || (error instanceof Error ? error.message : String(error));
-        log.push(`[sync] ${item.institution_name || item.id}: FAILED - ${pe?.errorCode ?? 'UNKNOWN'} ${msg}`);
-        syncResults.push({
-          item_id: item.id,
-          user_id: item.user_id,
-          institution: item.institution_name,
-          success: false,
-          error: msg,
-          transactions: { added: 0, modified: 0, removed: 0 },
-          holdings_synced: 0,
-        });
-
-        await serviceClient
-          .from('plaid_items')
-          .update({
-            status: pe?.errorCode === 'ITEM_LOGIN_REQUIRED' ? 'login_required' : 'error',
-            error_code: pe?.errorCode ?? null,
-            error_message: msg,
-          })
-          .eq('id', item.id);
-      }
-    }
-
-    // A connection only its owner can fix: one push a week to their phone while it stays broken.
-    let reconnectPushes = 0;
-    try {
-      reconnectPushes = await nudgeReconnects(serviceClient, log);
-    } catch (error) {
-      log.push(`[reconnect] pass failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    // The market refresh (daily bars, sector enrichment) runs on its own cron,
-    // /api/cron/market-morning at 12:45 UTC, so a rate-limited vendor never
-    // again decides whether the scans below get to run. News comes from the
-    // five-minute news-watch poller.
-
-    let insightsGenerated = 0;
-
-    for (const userId of userItemMap.keys()) {
-      try {
-        // Only syncPlaidItem's successful balance import marks accounts fresh.
-        // Snapshot generation says nothing about failed or manual accounts.
-        const snapshotsSaved = await computeSnapshots(serviceClient, userId);
-        log.push(snapshotsSaved
-          ? `[snapshots] Computed for user ${userId.slice(0, 8)}...`
-          : `[snapshots] Failed for user ${userId.slice(0, 8)}...; retaining any previously saved history`);
-
-        try {
-          await updatePortfolioPerformance(serviceClient, userId);
-          log.push(`[perf] Updated portfolio_performance for user ${userId.slice(0, 8)}...`);
-
-          // Write a daily portfolio snapshot for the chart. Include the
-          // per-holding detail (holdings_snapshot was always in the schema but
-          // never populated): share counts are what let a return calc tell a
-          // deposit from a gain, so an honest vs-benchmark series needs them.
-          const { data: userHoldings } = await serviceClient
-            .from('holdings')
-            .select('ticker, shares, total_value, total_cost_basis, unrealised_gain_loss')
-            .eq('user_id', userId);
-
-          if (userHoldings && userHoldings.length > 0) {
-            const totalValue = userHoldings.reduce((s: number, h: { total_value: number }) => s + Number(h.total_value), 0);
-            const totalGainLoss = userHoldings.reduce((s: number, h: { unrealised_gain_loss: number | null }) => s + Number(h.unrealised_gain_loss || 0), 0);
-            const totalCostBasis = userHoldings.reduce((s: number, h: { total_cost_basis: number | null }) => s + Number(h.total_cost_basis || 0), 0);
-            const today = new Date().toISOString().split('T')[0];
-
-            await serviceClient
-              .from('portfolio_snapshots')
-              .upsert({
-                user_id: userId,
-                snapshot_date: today,
-                total_value: totalValue,
-                total_gain_loss: totalGainLoss,
-                total_cost_basis: totalCostBasis,
-                holdings_snapshot: userHoldings.map((h: { ticker: string; shares: number | null; total_value: number }) => ({
-                  ticker: h.ticker,
-                  shares: h.shares != null ? Number(h.shares) : null,
-                  value: Number(h.total_value),
-                })),
-              }, { onConflict: 'user_id,snapshot_date' });
-
-            log.push(`[snapshots] Wrote portfolio_snapshots for user ${userId.slice(0, 8)}...`);
-          }
-        } catch (error) {
-          console.error(`[cron/daily] Error computing portfolio performance for ${userId}:`, error);
-        }
-
-        const count = await generateInsights(serviceClient, userId);
-        insightsGenerated += count;
-        log.push(`[insights] Generated ${count} for user ${userId.slice(0, 8)}...`);
-
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log.push(`[post-sync] User ${userId.slice(0, 8)}... failed: ${msg}`);
-      }
-    }
-
-    // The scans ran: stamp it, so a surface can say so only when it is true.
-    await beat(serviceClient, 'daily-scans', { users: userItemMap.size, insights: insightsGenerated, reconnectPushes, ms: Date.now() - startTime });
-
-    // ── Weekly analyst note (Fridays ET) — the agent writes each pro user a
-    //    short memo from the week's findings. Capped and per-user tolerant so
-    //    a bad book can't take the cron down. ──
-    let analystNotesWritten = 0;
-    const etWeekday = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(new Date());
-    if (etWeekday === 'Fri') {
-      try {
-        // Non-free subscriptions, minus expired never-paid trials (mirrors
-        // getSubscriptionInfo, which is session-bound and unusable here).
-        // During the open-access window everyone reads as Pro, so the note
-        // goes to every user with a book instead (same cap).
-        let eligible: { user_id: string }[];
-        if (isOpenAccessWindow()) {
-          const { data: hu } = await serviceClient.from('holdings').select('user_id');
-          eligible = [...new Set((hu ?? []).map((h) => h.user_id as string))]
-            .map((user_id) => ({ user_id }))
-            .slice(0, 8);
-        } else {
-          const { data: subs } = await serviceClient
-            .from('user_subscriptions')
-            .select('user_id, tier, trial_ends_at, stripe_subscription_id, source, permanent_access')
-            .neq('tier', 'free');
-          eligible = (subs ?? [])
-            .filter((s) => {
-              if (s.trial_ends_at && isTrialRow(s)) {
-                return new Date(s.trial_ends_at).getTime() > Date.now();
-              }
-              return true;
-            })
-            .slice(0, 8);
-        }
-
-        for (const sub of eligible) {
-          try {
-            const draft = await composeWeeklyNote(serviceClient, sub.user_id);
-            if (!draft) continue;
-            const { error } = await saveAnalystNote(serviceClient, sub.user_id, draft);
-            if (error) {
-              log.push(`[note] Save failed for ${String(sub.user_id).slice(0, 8)}...: ${error.message}`);
-              // Table not migrated yet — no point trying the rest.
-              if (error.message.includes('analyst_notes')) break;
-              continue;
-            }
-            // Only now is it safe to advance the watched-question snapshots:
-            // the note that reports their new findings is durably stored. Any
-            // earlier and a failure above would mark those findings seen
-            // without ever telling the user about them.
-            await commitStandingSnapshots(serviceClient, draft.pendingSnapshots);
-            analystNotesWritten++;
-            log.push(`[note] Wrote weekly note for ${String(sub.user_id).slice(0, 8)}... (${draft.citations.length} citations)`);
-          } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            log.push(`[note] Compose failed for ${String(sub.user_id).slice(0, 8)}...: ${msg}`);
-          }
-        }
-      } catch (error) {
-        console.error('[cron/daily] Weekly note pass failed:', error);
-      }
-    }
-
     const summary = {
       success: true,
       duration_ms: Date.now() - startTime,
-      items_synced: syncResults.filter(r => r.success).length,
-      items_failed: syncResults.filter(r => !r.success).length,
-      users_processed: userItemMap.size,
-      insights_generated: insightsGenerated,
       briefs_emailed: digestResult.emailed.length,
-      analyst_notes_written: analystNotesWritten,
       drip_emails_sent: dripResult.sent,
+      watchlist_alerts_sent: watchlistResult.sent,
       digests_generated: digestResult.generated,
       log,
     };
