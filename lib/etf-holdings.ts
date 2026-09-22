@@ -205,6 +205,10 @@ export const LEVERAGED_ETF_MAP: Record<string, LeveragedProduct> = {
   SDOW: { underlying: 'DIA', leverage: -3, name: 'ProShares UltraPro Short Dow30' },
   // Magnificent Seven
   MAGX: { underlying: 'MAGS', leverage: 2, name: 'Roundhill Daily 2X Long Magnificent Seven' },
+  // Memory. RAM is 2x the shares of DRAM, the Roundhill Memory ETF, not a
+  // listed stock: the prospectus objective is "200% of the daily performance
+  // of DRAM". DRAM is actively managed and rebalances quarterly.
+  RAM: { underlying: 'DRAM', leverage: 2, name: 'Roundhill T-REX 2X Long DRAM Daily Target' },
   // Semiconductors
   SOXL: { underlying: 'SOXX', leverage: 3, name: 'Direxion Daily Semiconductor Bull 3X' },
   SOXS: { underlying: 'SOXX', leverage: -3, name: 'Direxion Daily Semiconductor Bear 3X' },
@@ -559,6 +563,22 @@ export const ETF_HOLDINGS: Record<string, ETFConstituent[]> = {
     { ticker: 'NVDA', weight: 14.29 }, { ticker: 'AMZN', weight: 14.29 },
     { ticker: 'GOOGL', weight: 14.29 }, { ticker: 'META', weight: 14.29 },
     { ticker: 'TSLA', weight: 14.26 },
+  ],
+  // ── Memory ──
+  // Roundhill Memory ETF, issuer factsheet as of 06/30/2026: 17 holdings, the
+  // ten largest listed here (sum 98.89). The issuer's weight "combines stock
+  // position with position held via total return swaps", so a Korean ordinary
+  // plus its swap is one line. Samsung, Kioxia, GigaDevice, Nanya and Winbond
+  // have no US listing; the placeholders follow the EEM convention. SK hynix is
+  // the SKHY ADR that HYNX already resolves to, so the two products aggregate.
+  // The last three weights were read from a column-shifted PDF; confirm against
+  // the issuer holdings CSV before quoting them as measured.
+  DRAM: [
+    { ticker: 'MU', weight: 25.81 }, { ticker: 'SAMSUNG', weight: 25.04 },
+    { ticker: 'SKHY', weight: 23.99 }, { ticker: 'SNDK', weight: 5.21 },
+    { ticker: 'KIOXIA', weight: 4.36 }, { ticker: 'WDC', weight: 4.30 },
+    { ticker: 'STX', weight: 4.19 }, { ticker: 'GIGADEVICE', weight: 3.07 },
+    { ticker: 'NANYA', weight: 1.81 }, { ticker: 'WINBOND', weight: 1.11 },
   ],
 };
 

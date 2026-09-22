@@ -18,18 +18,18 @@ const HELD_IN_PRODUCTION: Record<string, string> = {
   TSLL: 'TSLA', TSMX: 'TSM', WDCX: 'WDC',
 };
 
-/** Leveraged products over a basket rather than one stock. */
-const HELD_BASKETS = ['MAGX', 'SOXL', 'SPXL', 'TQQQ', 'USD'];
+/** Leveraged products over a basket rather than one stock. RAM was mapped on
+ *  2026-09-22 once the issuer confirmed it is 2x the Roundhill Memory ETF
+ *  (DRAM), and DRAM gained a constituent list from the 06/30/2026 factsheet. */
+const HELD_BASKETS = ['MAGX', 'RAM', 'SOXL', 'SPXL', 'TQQQ', 'USD'];
 
 /**
  * Held in production and deliberately NOT mapped, because the underlying is
  * not a ticker we can name from the fund name alone. Listed so the gap is on
- * the record instead of looking like an oversight.
- *
- * RAM: "Roundhill T-REX 2X Long DRAM Daily Target ETF". DRAM is a memory
- * basket, not a listed symbol. Mapping it needs the issuer's holdings file.
+ * the record instead of looking like an oversight. Empty as of 2026-09-22;
+ * add here rather than silently skipping when the next one appears.
  */
-const HELD_BUT_UNMAPPED = ['RAM'];
+const HELD_BUT_UNMAPPED: string[] = [];
 
 describe('look-through covers what users actually hold', () => {
   it('resolves every single-stock product held in production', () => {
@@ -84,6 +84,28 @@ describe('the six products that were missing', () => {
     expect(exposure[0].leverage).toBe(leverage);
     // 10k of a 2x product in a 100k book is 10% allocation, 20% effective.
     expect(exposure[0].effectiveWeight).toBeCloseTo(20, 6);
+  });
+
+  it('decomposes RAM into the DRAM memory basket at 2x', () => {
+    const exposure = getUnderlyingExposure('RAM', 10_000, 100_000);
+    const tickers = exposure.map(e => e.ticker);
+    expect(tickers).toContain('MU');
+    expect(tickers).toContain('SKHY');
+    // 10% allocation at 2x over a top ten summing 98.89% is 19.78% effective.
+    const total = exposure.reduce((s, e) => s + e.effectiveWeight, 0);
+    expect(total).toBeCloseTo(19.78, 1);
+  });
+
+  it('aggregates SK hynix exposure from HYNX and RAM under one ticker', () => {
+    const exposure = computePortfolioLookthrough(
+      [{ ticker: 'HYNX', totalValue: 5_000 }, { ticker: 'RAM', totalValue: 5_000 }],
+      10_000,
+    );
+    const skhy = exposure.get('SKHY')!;
+    expect(skhy.sources).toContain('HYNX');
+    expect(skhy.sources.some(s => s.startsWith('RAM'))).toBe(true);
+    // 50% at 2x from HYNX = 100; 50% at 2x times 23.99% from RAM = 23.99.
+    expect(skhy.indirectWeight).toBeCloseTo(123.99, 1);
   });
 
   it('decomposes MAGX into the seven Magnificent Seven names at 2x', () => {

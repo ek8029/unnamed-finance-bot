@@ -52,6 +52,8 @@ export const OVERLAP_FUNDS: { ticker: string; name: string }[] = [
   // MAGS carries seven equal-weighted names, which is its entire basket rather
   // than a top ten, so its overlap figures are exact rather than a floor.
   { ticker: 'MAGS', name: 'Roundhill Magnificent Seven ETF' },
+  // DRAM is actively managed; issuer factsheet 06/30/2026, ten of 17 names.
+  { ticker: 'DRAM', name: 'Roundhill Memory ETF' },
 ];
 
 const FUND_NAMES: Record<string, string> = Object.fromEntries(
