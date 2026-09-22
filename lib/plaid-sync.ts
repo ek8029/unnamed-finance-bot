@@ -12,6 +12,7 @@ import { extractPlaidError } from '@/lib/plaid-errors';
 import { summarizeCashFlow, countsAsCashFlow } from '@/lib/cash-flow';
 import { aggregateHoldingLots } from '@/lib/holdings-aggregate';
 import { planStalePrune } from '@/lib/holdings-prune';
+import { evaluateProviderFreshness } from '@/lib/plaid-staleness';
 import { canonicalTicker } from '@/lib/ticker-alias';
 import { InvestmentTransaction, RemovedTransaction, Transaction } from 'plaid';
 import {
@@ -117,6 +118,41 @@ export async function syncPlaidItem(
       pe?.errorMessage || (error instanceof Error ? error.message : 'Balance sync failed'),
     );
     throw error;
+  }
+
+  // --- 1b. Is the data Plaid just served actually fresh? ---
+  //
+  // A working token is not a working feed. Plaid answers every request above
+  // from its last successful pull of the institution, and when that pull has
+  // been failing it says so only in item/get's status block, not as an item
+  // error. One user's Edward Jones item served the same 2026-07-30 snapshot
+  // for eight weeks while step 1 stamped his accounts healthy every morning.
+  // When the provider's own timestamp is stale, the accounts are marked for
+  // reconnect (an update-mode re-link is what restarts Plaid's polling) and
+  // the run says so, instead of reporting a refresh that did not happen.
+  // Nothing here can throw: a failed item/get leaves the healthy stamp alone.
+  try {
+    const itemGet = await plaidClient.itemGet({ access_token: accessToken });
+    const freshness = evaluateProviderFreshness(
+      (itemGet.data as { status?: Parameters<typeof evaluateProviderFreshness>[0] }).status,
+      new Date(),
+    );
+    if (freshness.stale) {
+      const { error: staleError } = await supabase
+        .from('linked_accounts')
+        .update({ sync_status: 'reconnect', sync_error: freshness.reason })
+        .eq('plaid_item_ref', item.id)
+        .eq('user_id', userId);
+      if (staleError) console.error('[plaid-sync] could not mark stale accounts:', staleError.message);
+      warnings.push(`Balances refreshed, but ${item.institution_name ?? 'the institution'} has not sent Plaid new data since ${freshness.lastSuccessfulUpdate.slice(0, 10)}.`);
+      await logPlaidError(userId, 'itemGet', 'PROVIDER_STALE', freshness.reason, {
+        item_id: item.id,
+        last_successful_update: freshness.lastSuccessfulUpdate,
+        age_days: Math.round(freshness.ageDays),
+      });
+    }
+  } catch (error) {
+    console.warn('[plaid-sync] item/get freshness check skipped:', error instanceof Error ? error.message : error);
   }
 
   // --- 2. Sync transactions (incremental) ---
