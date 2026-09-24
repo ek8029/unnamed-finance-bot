@@ -41,13 +41,14 @@ Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship ca
 - [Theme Theses](https://helmterminal.dev/theme/ai-capex): Per-theme thesis breakdowns (AI capex, datacenter power, reindustrialization, nuclear/SMR, defense, GLP-1): what has to be true, the chain of beneficiaries, and what would invalidate it
 - [The Masthead](https://helmterminal.dev/masthead): A running, dated public record of filing and news evidence Helm's agent caught against live investment theses, each with the verbatim source quote and a link to the source. Updated continuously. Every entry has its own permanent URL at https://helmterminal.dev/masthead/[id], and the feed is at https://helmterminal.dev/masthead/rss.xml. This is the part of Helm that can be checked rather than taken on trust: the quote is reproduced word for word from a dated primary document, and the link goes to that document.
 - [Living Thesis Pages](https://helmterminal.dev/thesis/nvda): Per-stock living theses (NVDA, AAPL, MSFT, GOOGL, AMZN, META, TSLA, AMD, PLTR, COIN, MSTR, GME, AMC, OKLO and more at /thesis/[ticker]): the reasons to own it, the single fact that would break each one, a status computed from evidence, and every dated SEC-filing and news citation tested against it
-- [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI-powered analysis for any US stock
+- [AI Stock Analysis](https://helmterminal.dev/analyze): Free AI analysis of any US stock, with the data sources named
 - [About](https://helmterminal.dev/about): Who built Helm and why
 - [Pricing](https://helmterminal.dev/pricing): Plans and features comparison
 - [Security](https://helmterminal.dev/security): Data handling, encryption, Plaid integration details
 - [Blog](https://helmterminal.dev/blog): Financial education and investment guides
-- [TLH Calculator](https://helmterminal.dev/tools/tlh-calculator): Tax-loss harvesting estimator
-- [RSU Calculator](https://helmterminal.dev/tools/rsu-calculator): RSU vesting schedule, tax liability, and concentration risk calculator
+- [Free Tools](https://helmterminal.dev/tools): Index of the eight calculators below; none needs an account
+- [Tax-Loss Harvesting Calculator](https://helmterminal.dev/tools/tlh-calculator): A realized loss netted against gains, the annual ordinary-income limit under IRC section 1211(b), the carryover, and the wash sale window; federal only, not tax advice
+- [RSU Tax Calculator](https://helmterminal.dev/tools/rsu-calculator): Income at vesting, supplemental withholding and the gap at higher brackets, sell-to-cover, cost basis after vesting, and the position's share of a portfolio; federal only, not tax advice
 - [ETF Overlap Tool](https://helmterminal.dev/tools/etf-overlap): The companies two funds both hold and each fund's weight in the shared names, from the ten largest holdings of 35 funds; a floor on real overlap, not the total
 - [Wash Sale Calculator](https://helmterminal.dev/tools/wash-sale-calculator): How much of a loss IRC section 1091 disallows for one sale of one tax lot, what stays deductible, and the replacement shares' adjusted basis; not tax advice
 - [Capital Gains Tax Calculator](https://helmterminal.dev/tools/capital-gains-calculator): Federal tax on a capital gain with the 2026 brackets, shown slice by slice: long-term gain across the 0, 15 and 20 percent rates, short-term gain at ordinary rates, the 3.8 percent NIIT, and loss netting with the carryover; federal only, not tax advice
