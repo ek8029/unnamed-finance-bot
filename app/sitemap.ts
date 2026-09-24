@@ -37,6 +37,18 @@ async function latestEvidenceByTicker(): Promise<Record<string, string>> {
   }
 }
 
+// [slug, date of last content change]. Keep in step with edits to app/tools/<slug>.
+const TOOL_PAGES: [string, string][] = [
+  ['tlh-calculator', '2026-09-24'],
+  ['rsu-calculator', '2026-09-24'],
+  ['etf-overlap', '2026-09-24'],
+  ['wash-sale-calculator', '2026-09-24'],
+  ['capital-gains-calculator', '2026-09-16'],
+  ['dividend-income-calculator', '2026-09-16'],
+  ['portfolio-beta-calculator', '2026-09-16'],
+  ['monte-carlo-retirement-calculator', '2026-09-16'],
+];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = 'https://helmterminal.dev';
   const evidenceDates = await latestEvidenceByTicker();
@@ -65,14 +77,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/security/isp`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/data-deletion`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/wrapped`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/tools/tlh-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/rsu-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/etf-overlap`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/wash-sale-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/capital-gains-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/dividend-income-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/portfolio-beta-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/tools/monte-carlo-retirement-calculator`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    // Tools carry the date of their last real content change, not now(). A
+    // lastModified that is always "today" is a signal Google learns to ignore,
+    // and the RSU calculator's 2026-09-11 retitle went five weeks without a
+    // recrawl under it. Bump the date when the page's content changes.
+    ...TOOL_PAGES.map(([slug, updated]) => ({
+      url: `${base}/tools/${slug}`,
+      lastModified: new Date(`${updated}T00:00:00Z`),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
     { url: `${base}/for/engineers`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/founders`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/for/investors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
@@ -84,7 +98,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const blogPosts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
     url: `${base}/blog/${post.slug}`,
-    lastModified: new Date(post.date),
+    // A post edited after publication carries `updated` in its frontmatter,
+    // and that is the date Google should see; the publish date never moves.
+    lastModified: new Date(post.updated ?? post.date),
     changeFrequency: 'monthly',
     priority: 0.7,
   }));

@@ -24,6 +24,35 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://helmterminal.dev/tools/etf-overlap' },
 };
 
+// Rendered as FAQPage schema and as the visible FAQ section. Every answer
+// restates a fact the explainer above it already makes; nothing new is claimed.
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: 'What is ETF overlap?',
+    a: 'ETF overlap is the part of two funds that is the same company held twice. Funds built on the same market draw from the same pool of large companies, so holding both gives one set of exposure to those names, weighted by what each fund assigns to them, not two.',
+  },
+  {
+    q: 'How does an ETF overlap calculator work?',
+    a: 'It takes the holdings list of each fund, matches the companies that appear in both, and reports the weight each fund gives the shared names. This tool compares the ten largest holdings of each of the 35 funds on file and shows the common names with both weights.',
+  },
+  {
+    q: 'Why does the tool report two overlap percentages instead of one?',
+    a: 'A shared holding rarely carries the same weight in both funds. A concentrated technology fund can weight a chipmaker several times more heavily than a broad index fund does, so each percentage states what share of that specific fund sits in the names both funds hold.',
+  },
+  {
+    q: 'Does overlap between funds in different accounts still count?',
+    a: 'Yes. Overlap is about the companies, not the account. An index fund in a retirement account and a sector fund in a brokerage account that both hold the same company add to the same exposure, and no single statement adds those positions up.',
+  },
+  {
+    q: 'Is a high overlap percentage bad?',
+    a: 'Not by itself. Two funds tracking the same index overlap almost entirely by design, and holding both adds a second line on a statement rather than a second source of return. The figure describes how concentrated a pair of funds is in the same companies; what it means depends on why each fund is held.',
+  },
+  {
+    q: 'Why are only the ten largest holdings compared?',
+    a: 'The ten largest positions carry the most weight in a concentrated fund and are what the data on file covers. The tool does not read the full basket, so it cannot report total overlap and does not estimate one. Two funds can share nothing in their top tens and still hold many of the same companies further down.',
+  },
+];
+
 export default function ETFOverlapPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] relative overflow-hidden">
@@ -43,6 +72,15 @@ export default function ETFOverlapPage() {
               operatingSystem: 'Web',
               offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
               creator: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: FAQ.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: { '@type': 'Answer', text: f.a },
+              })),
             },
             {
               '@context': 'https://schema.org',
@@ -122,6 +160,17 @@ export default function ETFOverlapPage() {
               accounts you connect and maps fund holdings back to the underlying companies, working from the same
               look-through data this page uses.
             </p>
+          </div>
+          <div>
+            <h2 className="type-h2 mb-2.5">Frequently asked questions</h2>
+            <div className="space-y-6">
+              {FAQ.map((f) => (
+                <div key={f.q}>
+                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">{f.q}</h3>
+                  <p>{f.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -26,6 +26,35 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://helmterminal.dev/tools/wash-sale-calculator' },
 };
 
+// Rendered as FAQPage schema and as the visible FAQ section. Every answer
+// restates a fact the explainer above it already makes; nothing new is claimed.
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: 'What is the wash sale rule?',
+    a: 'Under IRC section 1091, a loss on a sale of stock or securities is disallowed when the same or a substantially identical security is acquired within 30 days before or 30 days after the sale. Counting the sale date, that is a 61-day window. In the ordinary case the disallowed amount is added to the basis of the replacement shares, so the deduction is delayed rather than cancelled.',
+  },
+  {
+    q: 'How is the disallowed loss calculated?',
+    a: 'Proportionally. Selling 100 shares at a $1,000 loss and buying 40 back inside the window disallows 40 percent of the loss, leaving $600 deductible. Buying all 100 back disallows the whole loss. Buying more than 100 still matches only 100 shares as replacement property, and the disallowance is capped at the loss.',
+  },
+  {
+    q: 'Is a disallowed wash sale loss gone forever?',
+    a: 'Usually not. Section 1091(d) adds the disallowed amount to the basis of the replacement shares, so it comes back when those shares are sold. The exception is a replacement bought inside an IRA or Roth IRA: under Rev. Rul. 2008-5 the loss is disallowed and the IRA basis is not increased, so the deduction never returns.',
+  },
+  {
+    q: 'Does the wash sale rule apply across accounts?',
+    a: 'Yes. The rule is tested across everything one taxpayer owns, so a dividend reinvestment in another account, an automatic purchase inside a retirement account, or a purchase by a spouse counts the same as a deliberate repurchase. A calculation is only as complete as the list of purchases behind it.',
+  },
+  {
+    q: 'Does the replacement lot inherit the holding period?',
+    a: 'Yes. Under IRC section 1223(3) the replacement shares take on the period the sold shares were held. A lot bought yesterday can already be long term if the position it replaced was held for years, and a brokerage statement usually shows the purchase date rather than the tacked holding period.',
+  },
+  {
+    q: 'Are two ETFs tracking the same index substantially identical?',
+    a: 'The IRS has never defined substantially identical for funds, and two different index funds tracking the same index have never been ruled on. The calculator prices the loss on the sale entered; whether a given replacement triggers the rule is a judgment the statute leaves open.',
+  },
+];
+
 export default function WashSaleCalculatorPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] text-[var(--color-text-primary)] relative overflow-hidden">
@@ -45,6 +74,15 @@ export default function WashSaleCalculatorPage() {
               operatingSystem: 'Web',
               offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
               creator: { '@type': 'Organization', name: 'Helm Terminal', url: 'https://helmterminal.dev' },
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: FAQ.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: { '@type': 'Answer', text: f.a },
+              })),
             },
             {
               '@context': 'https://schema.org',
@@ -150,6 +188,17 @@ export default function WashSaleCalculatorPage() {
               account you have not connected stays invisible. Both limits are stated on the result rather than
               buried.
             </p>
+          </div>
+          <div>
+            <h2 className="type-h2 mb-2.5">Frequently asked questions</h2>
+            <div className="space-y-6">
+              {FAQ.map((f) => (
+                <div key={f.q}>
+                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">{f.q}</h3>
+                  <p>{f.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
