@@ -37,6 +37,13 @@ async function latestEvidenceByTicker(): Promise<Record<string, string>> {
   }
 }
 
+// Static marketing and legal pages. One date for the cluster, bumped when any of
+// them changes: blunt, but it replaces a lastModified that read "today" every
+// day, which Google discounts and which made every IndexNow sweep pick up the
+// whole site. The programmatic clusters below (analyze, compare, thesis-risks,
+// when-to-sell) keep new Date() because their prices and evidence do change daily.
+const STATIC_UPDATED = new Date('2026-09-24T00:00:00Z');
+
 // [slug, date of last content change]. Keep in step with edits to app/tools/<slug>.
 const TOOL_PAGES: [string, string][] = [
   ['tlh-calculator', '2026-09-24'],
@@ -54,29 +61,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const evidenceDates = await latestEvidenceByTicker();
 
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: base, lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${base}/analyze`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
-    { url: `${base}/compare`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/app`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${base}/for`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${base}/pricing`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${base}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/thesis-monitoring`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/portfolio-intelligence`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${base}/glossary`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
-    { url: `${base}/masthead`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
-    { url: `${base}/best-thesis-trackers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/how-helm-detects-thesis-drift`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/vela-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${base}/mythesis-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${base}/usethesis-alternative`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.6 },
-    { url: `${base}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${base}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${base}/security`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${base}/security/isp`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${base}/data-deletion`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${base}/wrapped`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: base, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 1.0 },
+    { url: `${base}/analyze`, lastModified: STATIC_UPDATED, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${base}/compare`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/app`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/for`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/pricing`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/about`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/blog`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/thesis-monitoring`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/portfolio-intelligence`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/glossary`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/masthead`, lastModified: STATIC_UPDATED, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${base}/best-thesis-trackers`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/how-helm-detects-thesis-drift`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/vela-alternative`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/mythesis-alternative`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/usethesis-alternative`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/privacy`, lastModified: STATIC_UPDATED, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/terms`, lastModified: STATIC_UPDATED, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/security`, lastModified: STATIC_UPDATED, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/security/isp`, lastModified: STATIC_UPDATED, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/data-deletion`, lastModified: STATIC_UPDATED, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${base}/wrapped`, lastModified: STATIC_UPDATED, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/tools`, lastModified: new Date('2026-09-24T00:00:00Z'), changeFrequency: 'monthly', priority: 0.7 },
     // Tools carry the date of their last real content change, not now(). A
     // lastModified that is always "today" is a signal Google learns to ignore,
@@ -88,13 +95,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
-    { url: `${base}/for/engineers`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/for/founders`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/for/investors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/for/high-net-worth`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/advisors`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/llms.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
-    { url: `${base}/llms-full.txt`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${base}/for/engineers`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/for/founders`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/for/investors`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/for/high-net-worth`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/advisors`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/llms.txt`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${base}/llms-full.txt`, lastModified: STATIC_UPDATED, changeFrequency: 'monthly', priority: 0.2 },
   ];
 
   const blogPosts: MetadataRoute.Sitemap = getAllPosts().map((post) => ({

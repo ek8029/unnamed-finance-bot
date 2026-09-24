@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const HOST = 'https://helmterminal.dev';
+import { submitToIndexNow } from '@/lib/indexnow';
 
 /**
  * POST /api/indexnow
@@ -20,8 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const INDEXNOW_KEY = process.env.INDEXNOW_KEY;
-  if (!INDEXNOW_KEY) {
+  if (!process.env.INDEXNOW_KEY) {
     console.error('[indexnow] INDEXNOW_KEY not configured');
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
@@ -33,27 +31,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No URLs provided' }, { status: 400 });
   }
 
-  try {
-    const res = await fetch('https://api.indexnow.org/indexnow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        host: 'helmterminal.dev',
-        key: INDEXNOW_KEY,
-        keyLocation: `${HOST}/${INDEXNOW_KEY}.txt`,
-        urlList: urls.map(u => u.startsWith('http') ? u : `${HOST}${u}`),
-      }),
-    });
-
-    return NextResponse.json({
-      submitted: urls.length,
-      status: res.status,
-      ok: res.ok,
-    });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'IndexNow request failed' },
-      { status: 500 },
-    );
+  // One implementation, shared with the admin actions: same payload, same
+  // endpoint fallback, same key handling.
+  const out = await submitToIndexNow(urls);
+  if (out.error && out.status === undefined) {
+    return NextResponse.json({ error: out.error }, { status: 500 });
   }
+  return NextResponse.json({
+    submitted: urls.length,
+    status: out.status,
+    ok: out.ok,
+    endpoint: out.endpoint,
+  });
 }
