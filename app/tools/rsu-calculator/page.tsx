@@ -37,6 +37,33 @@ const SCHEDULES = [
 
 type ScheduleValue = (typeof SCHEDULES)[number]['value'];
 
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: 'How are RSUs taxed?',
+    a: 'RSUs are taxed as ordinary income when they vest, not when they are granted. The amount included in income is the fair market value of the shares on the vesting date, added to wages on Form W-2. There is no way to defer this income to a later year by choice; the vesting date set in the grant agreement controls the timing.',
+  },
+  {
+    q: 'What is the RSU tax rate?',
+    a: 'There is no separate RSU tax rate. Vested RSU income is taxed at the same federal ordinary income rates as salary, based on total taxable income for the year, with a top marginal rate of 37 percent. Employers generally withhold at a flat 22 percent supplemental wage rate, which can be lower than the marginal rate actually owed. State income tax, where it applies, is added on top.',
+  },
+  {
+    q: 'How much tax is withheld when RSUs vest?',
+    a: 'Employers withhold federal income tax on RSU income as a supplemental wage: a flat 22 percent on supplemental wages up to $1,000,000 for the calendar year, and 37 percent on the amount above that threshold. This withholding rate does not adjust for an individual employee’s actual marginal bracket, so it can end up lower or higher than the tax truly owed on the income.',
+  },
+  {
+    q: 'What is the cost basis of RSUs?',
+    a: 'The cost basis of vested RSU shares is the fair market value that was already included in ordinary income at vesting. Any later increase or decrease in price between the vesting date and the sale date is a separate capital gain or loss, not additional ordinary income.',
+  },
+  {
+    q: 'Are RSUs taxed twice?',
+    a: 'No, but the two-part structure can look that way. The value at vesting is taxed once, as ordinary income; the change in value after vesting, if any, is taxed separately as a capital gain or loss when the shares are eventually sold. Because the vesting-date value becomes the cost basis, that same dollar amount is not taxed again at sale.',
+  },
+  {
+    q: 'What happens if you sell RSUs immediately after they vest?',
+    a: 'Selling at or near the vesting-date price typically produces little or no additional capital gain or loss, since the cost basis equals the price used to calculate the ordinary income at vest. The ordinary income tax on the vesting itself still applies whether the shares are sold or held. Any gain or loss from a near-immediate sale would be short-term, since the holding period only begins at vesting.',
+  },
+];
+
 function fmt(n: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -295,6 +322,20 @@ export default function RSUCalculatorPage() {
           }),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: FAQ.map((f) => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
+          }),
+        }}
+      />
 
       {/* Nav */}
       <SiteNav />
@@ -304,14 +345,12 @@ export default function RSUCalculatorPage() {
 
           {/* Header */}
           <div className="mb-12">
-            <div className="type-eyebrow text-[var(--color-gold)] mb-4">RSU Vesting Calculator</div>
+            <div className="type-eyebrow text-[var(--color-gold)] mb-4">Free tool</div>
             <h1 className="font-sans mb-3">
-              What are your RSUs<br />
-              <span className="text-[var(--color-gold)]">actually worth</span>
-              <br />after taxes?
+              RSU Tax <span className="text-[var(--color-gold)]">Calculator</span>
             </h1>
             <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed">
-              Model your vesting schedule, estimate tax liability, and check concentration risk.
+              What are your RSUs actually worth after taxes?
             </p>
           </div>
 
@@ -566,7 +605,7 @@ export default function RSUCalculatorPage() {
                       <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-positive)]" />
                     </div>
                     <div className="text-[15px] text-[var(--color-text-muted)]">
-                      {concentrationPct.toFixed(1)}% of portfolio — within typical concentration guidelines.
+                      {concentrationPct.toFixed(1)}% of portfolio, within typical concentration guidelines.
                     </div>
                   </div>
                 )}
@@ -661,23 +700,138 @@ export default function RSUCalculatorPage() {
       </div>
 
       {/* SEO content */}
-      <section className="relative z-10 container mx-auto px-6 py-16 max-w-2xl">
+      <section className="relative z-10 container mx-auto px-6 pb-16 max-w-3xl">
         <div className="space-y-10 text-[var(--color-text-secondary)] text-[15px] leading-relaxed">
           <div>
-            <h2 className="type-h2 mb-2.5">How are RSUs taxed?</h2>
-            <p>Restricted Stock Units are taxed as ordinary income when they vest — not when they&rsquo;re granted. The taxable amount is the fair market value of the shares on the vesting date multiplied by the number of shares vesting. Your employer withholds federal and state income taxes, Social Security, and Medicare at vest. If the default withholding (often 22% federal) is lower than your marginal rate, you&rsquo;ll owe the difference at tax time.</p>
+            <h2 className="type-h2 mb-2.5">How RSUs are taxed at vesting</h2>
+            <p>
+              This describes the federal rules for individuals. It is not tax advice. Restricted stock units are
+              not taxed when they are granted. Tax is triggered on each vesting date, when the shares actually
+              become the employee&rsquo;s property. The amount included in income is the fair market value of the
+              shares that vest, multiplied by the number of shares, and it is treated as ordinary income, the same
+              as a cash bonus. That income is added to wages and reported on Form W-2 for the year of the vest, not
+              the year of the grant. This is different from stock options, where the taxable event and its timing
+              can depend on when the option is exercised. With RSUs, the grant date mostly matters for setting the
+              vesting schedule; the tax clock does not start until shares actually vest.
+            </p>
           </div>
+
           <div>
-            <h2 className="type-h2 mb-2.5">What is a typical RSU vesting schedule?</h2>
-            <p>The most common schedule is a 4-year vest with a 1-year cliff: 25% of shares vest after 12 months, then the remaining 75% vest monthly or quarterly over the next 36 months. Some companies use a 4-year quarterly schedule with no cliff, and others use 3-year monthly vesting. The schedule is defined in your grant agreement.</p>
+            <h2 className="type-h2 mb-2.5">Withholding at vesting</h2>
+            <p>
+              Employers withhold on RSU income using the IRS rules for supplemental wages, the same category that
+              covers bonuses and commissions. Per{' '}
+              <a
+                href="https://www.irs.gov/publications/p15"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-gold)] hover:underline"
+              >
+                IRS Publication 15
+              </a>
+              , the flat federal withholding rate on supplemental wages is 22 percent. Once an employee&rsquo;s
+              supplemental wages for the calendar year exceed $1,000,000, the withholding rate on the amount above
+              that threshold rises to 37 percent. This is a payroll withholding rate, not a description of the
+              employee&rsquo;s actual marginal tax bracket.
+            </p>
           </div>
+
           <div>
-            <h2 className="type-h2 mb-2.5">Why concentration risk matters</h2>
-            <p>If your RSU grant represents a large percentage of your net worth, you have concentration risk: your financial outcomes are tied to a single company&rsquo;s stock price. A commonly cited guideline is keeping any single position under 10% of a total portfolio, though the right threshold depends on your situation. Selling shares as they vest and reinvesting in broad market funds is one widely discussed way investors reduce single-stock exposure. This is educational information, not financial advice.</p>
+            <h2 className="type-h2 mb-2.5">Why withholding is often short of the real bill</h2>
+            <p>
+              A flat 22 percent withholding rate can undershoot the actual tax owed once RSU income is stacked on
+              top of salary. RSU income counts as ordinary wages, and federal ordinary rates rise well above 22
+              percent for higher earners, up to a top marginal rate of{' '}
+              <a
+                href="https://www.irs.gov/publications/p15"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-gold)] hover:underline"
+              >
+                37 percent
+              </a>
+              . An employee whose marginal rate sits above 22 percent will typically have less withheld at vesting
+              than the eventual tax on that income, which shows up as a balance due when the return is filed unless
+              it is covered by other withholding or an estimated payment.
+            </p>
           </div>
+
           <div>
-            <h2 className="type-h2 mb-2.5">How Helm tracks RSU exposure</h2>
-            <p>Helm connects to your brokerage and tracks your actual RSU positions alongside the rest of your portfolio. Instead of manually updating spreadsheets, Helm shows your real-time concentration in any single stock, flags when positions exceed your risk threshold, and surfaces tax-aware context on your holdings, all in one terminal.</p>
+            <h2 className="type-h2 mb-2.5">Sell-to-cover and shares withheld</h2>
+            <p>
+              Many employers cover the withholding obligation with a mechanism called sell-to-cover: a portion of
+              the vesting shares, equal in value to the taxes due, is sold automatically on the vest date, and only
+              the remaining shares are deposited into the employee&rsquo;s brokerage account. That sold portion
+              typically appears as shares withheld for taxes on the vest confirmation or pay stub, separate from the
+              total shares that vested. Some plans instead deliver all vested shares and require the employee to
+              cover the withholding from other cash. Either way, the withholding shown on the vest confirmation is
+              the same 22 or 37 percent supplemental rate described above, applied to the value of the shares that
+              vested; it is a payroll mechanic, not a separate calculation of the tax actually owed.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="type-h2 mb-2.5">Cost basis after vesting</h2>
+            <p>
+              Per{' '}
+              <a
+                href="https://www.irs.gov/publications/p525"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-gold)] hover:underline"
+              >
+                IRS Publication 525
+              </a>
+              , the fair market value that was included in ordinary income at vesting becomes the cost basis of the
+              shares. Because that value was already taxed once as income, only the change in price between the
+              vesting date and the eventual sale date is a capital gain or loss. A sale at exactly the vesting-date
+              price produces no additional gain or loss; a sale above or below that price produces a gain or loss
+              equal to the difference, multiplied by the number of shares sold.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="type-h2 mb-2.5">Short-term versus long-term after vesting</h2>
+            <p>
+              The holding period for RSU shares starts on the vesting date, not the grant date. Per{' '}
+              <a
+                href="https://www.irs.gov/taxtopics/tc409"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--color-gold)] hover:underline"
+              >
+                IRS Topic 409
+              </a>
+              , a sale within one year of vesting is a short-term gain or loss, taxed at ordinary income rates; a
+              sale more than one year after vesting is a long-term gain or loss, taxed at the 0, 15 or 20 percent
+              long-term rates. State income tax applies on top of the federal treatment described here and varies by
+              state.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="type-h2 mb-2.5">A worked example</h2>
+            <p>
+              Consider 500 shares vesting when the stock&rsquo;s fair market value is $100 per share. The income
+              added to wages is 500 shares multiplied by $100, or $50,000. Withholding at the flat 22 percent
+              supplemental rate is $50,000 multiplied by 0.22, or $11,000. If the employee&rsquo;s actual marginal
+              federal rate on that income is 32 percent, the real federal liability is closer to $50,000 multiplied
+              by 0.32, or $16,000, leaving a gap of roughly $5,000 between what was withheld and what is owed. Under
+              sell-to-cover, about $11,000 worth of shares, or 110 shares at $100, are sold to fund the withholding,
+              and the remaining 390 shares are deposited into the account.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="type-h2 mb-2.5">Frequently asked questions</h2>
+            <div className="space-y-6">
+              {FAQ.map((f) => (
+                <div key={f.q}>
+                  <h3 className="text-[15px] font-semibold text-[var(--color-text-primary)] mb-1.5">{f.q}</h3>
+                  <p>{f.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
