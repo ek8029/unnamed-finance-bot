@@ -157,9 +157,22 @@ Analysis methodology: real-time Finazon price data and SEC EDGAR fundamentals ar
 
 Side-by-side ticker comparison at `helmterminal.dev/compare/[TICKER1]-vs-[TICKER2]`. Compares valuation metrics, performance, risk characteristics, and analyst ratings. 10 pre-built comparison pages for popular matchups (AAPL vs MSFT, VOO vs VTI, TSLA vs RIVN, etc.).
 
+## Free Tools
+
+Eight calculators at `helmterminal.dev/tools`, none requiring an account. Each answers one question and links the statute or IRS publication behind any figure it uses. The tax calculators describe federal rules for individuals and are not tax advice.
+
+- Capital Gains Tax Calculator (`/tools/capital-gains-calculator`): federal tax on a realized gain, short-term versus long-term, the 0, 15 and 20 percent thresholds by filing status, and the net investment income tax
+- Tax-Loss Harvesting Calculator (`/tools/tlh-calculator`): a realized loss netted against gains, the annual ordinary-income limit under IRC 1211(b), and the carryover
+- Wash Sale Calculator (`/tools/wash-sale-calculator`): the portion of a loss disallowed under IRC 1091 when replacement shares are bought inside the 61-day window, and the adjusted basis of the new lot
+- RSU Tax Calculator (`/tools/rsu-calculator`): income at vesting, supplemental withholding, the gap at higher brackets, sell-to-cover, and position size against a portfolio
+- ETF Overlap Tool (`/tools/etf-overlap`): the companies two funds both hold among their ten largest holdings, with each fund's weight in the shared names
+- Dividend Income Calculator (`/tools/dividend-income-calculator`): annual and monthly income from a position and yield, with an optional reinvestment path
+- Portfolio Beta Calculator (`/tools/portfolio-beta-calculator`): the weighted-average beta of a set of positions
+- Monte Carlo Retirement Calculator (`/tools/monte-carlo-retirement-calculator`): how many simulated return paths a balance, contribution and withdrawal plan survives
+
 ## Blog Content
 
-26+ educational articles at `helmterminal.dev/blog/` covering:
+More than 90 educational articles at `helmterminal.dev/blog/` (the full index with descriptions is regenerated in `helmterminal.dev/llms.txt`), covering:
 
 - **Tax-loss harvesting**: Complete guide with wash-sale rules, ETF swap pairs, worked examples with $10K scenarios, $500K compounding math, state tax differentials
 - **Bloomberg terminal alternatives**: Honest comparison of Koyfin, Yahoo Finance, TradingView, Morningstar, and Helm with 10-dimension feature table
