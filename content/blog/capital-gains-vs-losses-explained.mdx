@@ -3,6 +3,7 @@ title: "Capital Gains vs Losses: The Tax Math Most Investors Get Wrong"
 seoTitle: "Capital Gains vs Losses: The Tax Math Explained"
 description: "Short-term vs long-term, the $3K deduction trick, wash sale traps, and the exact 2026 tax rates. With worked examples."
 date: "2026-03-30"
+updated: "2026-09-24"
 author: "Evan Kim"
 tags: ["capital gains", "taxes", "tax-loss harvesting", "investing", "capital losses"]
 published: true
@@ -24,7 +25,7 @@ faq:
   - q: "Where does Helm show gains and losses?"
     a: "Helm reads connected brokerage accounts through Plaid on a read-only basis and works at the lot level, so each position shows its own basis, holding period and unrealized gain or loss. The tax center groups those into short-term and long-term, flags lots currently underwater, and screens the wash-sale window across every connected account. The tax center is part of Helm Pro."
 ---
-Capital gains and capital losses are the tax consequences of selling investments for more or less than you paid for them. Understanding how capital gains tax works — and how capital losses can offset them — is essential for any investor who wants to keep more of their returns. The difference between smart and naive tax management can easily amount to 1-2% of portfolio value annually.
+Capital gains and capital losses are the tax consequences of selling investments for more or less than you paid for them. Understanding how capital gains tax works, and how capital losses can offset them, is essential for any investor who wants to keep more of their returns. The difference between smart and naive tax management can easily amount to 1-2% of portfolio value annually.
 
 This guide covers everything you need to know about capital gains and losses in 2026: how they are calculated, how they are taxed, and how to use them strategically.
 
@@ -75,7 +76,7 @@ A capital loss occurs when you sell an asset for less than your cost basis.
 
 Capital losses directly offset capital gains dollar-for-dollar:
 
-1. **Short-term losses first offset short-term gains** (most beneficial — offsets income taxed at up to 37%)
+1. **Short-term losses first offset short-term gains** (most beneficial: offsets income taxed at up to 37%)
 2. **Long-term losses first offset long-term gains** (offsets income taxed at 15-20%)
 3. **Net losses of one type offset gains of the other type**
 4. **If net losses exceed gains**: Deduct up to $3,000 against ordinary income per year
@@ -97,7 +98,7 @@ In this example, the investor realized $20,000 in total gains but owes zero capi
 
 ## Tax-Loss Harvesting: Turning Losses into Tax Savings
 
-Tax-loss harvesting is the practice of deliberately selling investments at a loss to offset gains elsewhere in your portfolio — then reinvesting the proceeds in a similar (but not identical) investment to maintain your market exposure.
+Tax-loss harvesting is the practice of deliberately selling investments at a loss to offset gains elsewhere in your portfolio, then reinvesting the proceeds in a similar (but not identical) investment to maintain your market exposure.
 
 ### How Tax-Loss Harvesting Works
 
@@ -117,7 +118,7 @@ The IRS prevents you from selling at a loss and immediately rebuying the same se
 - Receiving the stock via DRIP (dividend reinvestment) within 30 days
 
 **What does NOT trigger a wash sale:**
-- Selling a Vanguard S&P 500 fund and buying a Schwab S&P 500 fund (different fund, same index — the IRS has not explicitly ruled this is "substantially identical," though this is debated)
+- Selling a Vanguard S&P 500 fund and buying a Schwab S&P 500 fund (different fund, same index: the IRS has not explicitly ruled this is "substantially identical," though this is debated)
 - Selling an individual stock and buying a sector ETF that contains it
 - Waiting 31 days to repurchase
 
@@ -125,11 +126,11 @@ The IRS prevents you from selling at a loss and immediately rebuying the same se
 
 | Action | Details |
 |--------|---------|
-| Current holding | VTI (Vanguard Total Stock Market) — down $8,000 from purchase |
+| Current holding | VTI (Vanguard Total Stock Market), down $8,000 from purchase |
 | Sell VTI | Realize $8,000 capital loss |
 | Buy ITOT | iShares Core S&P Total US Stock Market (similar exposure, different fund) |
 | Tax benefit | $8,000 loss offsets other gains or $3,000/year against income |
-| Portfolio impact | Minimal — still holds broad US stock market exposure |
+| Portfolio impact | Minimal: still holds broad US stock market exposure |
 
 ### When Tax-Loss Harvesting Makes Sense
 
@@ -143,7 +144,7 @@ The IRS prevents you from selling at a loss and immediately rebuying the same se
 - You are in the 0% capital gains bracket (no tax to offset)
 - Transaction costs exceed the tax benefit (very small losses)
 - You cannot find an adequate replacement investment
-- The position is in a tax-advantaged account (IRA, 401k) — losses are not deductible
+- The position is in a tax-advantaged account (IRA, 401k): losses are not deductible
 
 ## Cost Basis Methods
 
@@ -155,7 +156,7 @@ Default method. Assumes you sell the oldest shares first. Often results in the l
 
 ### Specific Identification
 
-You choose exactly which lot to sell. Optimal for tax planning — sell highest-cost-basis shares first to minimize gains, or sell lots with losses for harvesting.
+You choose exactly which lot to sell. Optimal for tax planning: sell highest-cost-basis shares first to minimize gains, or sell lots with losses for harvesting.
 
 ### Average Cost
 
@@ -167,7 +168,7 @@ Only available for mutual funds. Averages the cost basis of all shares. Simple b
 
 ### For RSU Holders
 
-When [RSU shares](/blog/rsu-tax-strategies) vest, your cost basis equals the market price on the vesting date. If the stock subsequently drops below your vesting price, you have a harvestable capital loss — even though you never "bought" the shares in the traditional sense.
+When [RSU shares](/blog/rsu-tax-strategies) vest, your cost basis equals the market price on the vesting date. If the stock subsequently drops below your vesting price, you have a harvestable capital loss, even though you never "bought" the shares in the traditional sense.
 
 This is one of the most commonly missed tax-loss harvesting opportunities for tech workers.
 
@@ -200,7 +201,7 @@ Effective capital gains management requires knowing:
 
 When holdings are spread across [multiple brokerage accounts](/blog/how-to-track-multiple-brokerage-accounts), this tracking becomes complex. Each brokerage reports its own 1099-B, but none can see your tax picture across all accounts.
 
-Helm Terminal aggregates your holdings across all accounts and tracks current market values — making it straightforward to identify which positions have unrealized losses available for harvesting and which have gains you might want to defer.
+Helm Terminal aggregates your holdings across all accounts and tracks current market values, making it straightforward to identify which positions have unrealized losses available for harvesting and which have gains you might want to defer.
 
 ## Year-End Capital Gains Checklist
 
@@ -208,7 +209,7 @@ Before December 31 each year:
 
 - [ ] Calculate year-to-date realized gains across all taxable accounts
 - [ ] Identify positions with unrealized losses for potential harvesting
-- [ ] Check holding periods — are any positions about to cross the 1-year long-term threshold?
+- [ ] Check holding periods: are any positions about to cross the 1-year long-term threshold?
 - [ ] Review mutual fund capital gains distribution estimates (they create gains even if you do not sell)
 - [ ] Consider accelerating gains into the current year if you expect to be in a higher bracket next year
 - [ ] Consider deferring gains if you expect to be in a lower bracket next year
@@ -218,13 +219,13 @@ Before December 31 each year:
 
 Managing capital gains and losses effectively requires real-time visibility into your portfolio's cost basis and unrealized positions across every account. Waiting until tax time to discover you owe $15,000 in capital gains is a planning failure.
 
-Helm Terminal keeps your complete portfolio picture current — showing where gains and losses sit across all your investment accounts so you can make tax-smart decisions throughout the year, not just in December.
+Helm Terminal keeps your complete portfolio picture current, showing where gains and losses sit across all your investment accounts so you can make tax-smart decisions throughout the year, not just in December.
 
 [Try Helm free](/signup) to see your complete capital gains picture across all accounts.
 
 ## The Bottom Line
 
-Capital gains taxes are one of the largest drags on investment returns — and one of the most controllable. By understanding the difference between short-term and long-term rates, systematically harvesting losses, using specific lot identification, and timing realizations thoughtfully, you can keep significantly more of what your portfolio earns. The tax code penalizes the uninformed. Do not be uninformed.
+Capital gains taxes are one of the largest drags on investment returns, and one of the most controllable. By understanding the difference between short-term and long-term rates, systematically harvesting losses, using specific lot identification, and timing realizations thoughtfully, you can keep significantly more of what your portfolio earns. The tax code penalizes the uninformed. Do not be uninformed.
 
 ---
 
@@ -232,8 +233,8 @@ Capital gains taxes are one of the largest drags on investment returns — and o
 
 - [How to Find Tax-Loss Harvesting Opportunities](/blog/tax-loss-harvesting-guide)
 - [RSU Tax Strategies for Tech Employees](/blog/rsu-tax-strategies)
-- [TLH Calculator — Estimate Your Tax Savings](/tools/tlh-calculator)
+- [TLH Calculator: Estimate Your Tax Savings](/tools/tlh-calculator)
 - [The Wash Sale Rule: What It Actually Disallows](/blog/wash-sale-rule)
 - [Capital Loss Carryover: How It Works, With the Math](/blog/capital-loss-carryover)
 - [How to Calculate Cost Basis on Stocks and Funds](/blog/how-to-calculate-cost-basis)
-- [Wash Sale Calculator — Disallowed Loss and New Basis](/tools/wash-sale-calculator)
+- [Wash Sale Calculator: Disallowed Loss and New Basis](/tools/wash-sale-calculator)

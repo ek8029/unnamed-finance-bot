@@ -1,7 +1,8 @@
 ---
 title: "How to Track Multiple Brokerage Accounts in One Place"
-description: "Fidelity + Schwab + Robinhood in one view. 7 aggregation tools compared — what each actually connects to, and which ones show real portfolio risk."
+description: "Fidelity + Schwab + Robinhood in one view. 7 aggregation tools compared: what each actually connects to, and which ones show real portfolio risk."
 date: "2026-03-28"
+updated: "2026-09-24"
 author: "Evan Kim"
 tags: ["portfolio management", "brokerage accounts", "portfolio aggregator", "investing tools"]
 published: true
@@ -19,7 +20,7 @@ faq:
   - q: "How many accounts can Helm connect?"
     a: "There is no per-account limit and pricing does not change with the number of accounts or the amount of money in them. Helm connects brokerage, retirement and bank accounts through Plaid on a read-only basis and presents them as one portfolio. Helm is free to start, and the flat price applies whether the book is one account or ten."
 ---
-Managing multiple brokerage accounts is increasingly common — and increasingly difficult. Between your 401(k), Roth IRA, taxable brokerage, HSA, old employer retirement plans, and perhaps a crypto account, the average investor now holds assets across 4-6 different platforms. Each has its own login, its own interface, and its own incomplete view of your financial picture.
+Managing multiple brokerage accounts is increasingly common, and increasingly difficult. Between your 401(k), Roth IRA, taxable brokerage, HSA, old employer retirement plans, and perhaps a crypto account, the average investor now holds assets across 4-6 different platforms. Each has its own login, its own interface, and its own incomplete view of your financial picture.
 
 The result? You lose visibility into your total allocation, miss concentration risks, duplicate positions unknowingly, and cannot answer basic questions like "what is my overall stock-to-bond ratio?" without an hour of spreadsheet work.
 
@@ -40,25 +41,25 @@ There are legitimate reasons to hold investments across several platforms:
 | Crypto | Coinbase, Kraken | Specialized platforms |
 | Robo-advisor | Betterment, Wealthfront | Automated investing |
 
-This fragmentation is not carelessness — it is structural. The financial system forces you into multiple accounts by design.
+This fragmentation is not carelessness. It is structural. The financial system forces you into multiple accounts by design.
 
 ## The Problems with Fragmented Portfolios
 
 ### Invisible Concentration Risk
 
-When your RSU shares are in E*Trade, your 401(k) is in Fidelity with a tech-heavy target date fund, and your taxable account holds QQQ, you might unknowingly have 60%+ in technology — far more concentration than you would ever choose deliberately.
+When your RSU shares are in E*Trade, your 401(k) is in Fidelity with a tech-heavy target date fund, and your taxable account holds QQQ, you might unknowingly have 60%+ in technology, far more concentration than you would ever choose deliberately.
 
 This hidden concentration only becomes visible when you see all positions on one screen.
 
 ### Impossible Rebalancing
 
-You cannot [rebalance your portfolio](/blog/what-is-portfolio-rebalancing) if you do not know your current allocation. And you cannot know your current allocation without aggregating all accounts. Most people skip rebalancing entirely because the prerequisite step — calculating total allocation — is too tedious.
+You cannot [rebalance your portfolio](/blog/what-is-portfolio-rebalancing) if you do not know your current allocation. And you cannot know your current allocation without aggregating all accounts. Most people skip rebalancing entirely because the prerequisite step (calculating total allocation) is too tedious.
 
 ### Suboptimal Asset Location
 
 Asset location (placing tax-inefficient investments in tax-advantaged accounts) is one of the easiest ways to improve after-tax returns by 0.5-1.0% annually. But it requires seeing your total portfolio as one unit and deliberately placing specific assets in specific account types.
 
-Without aggregation, most people just buy the same thing in every account — leaving significant after-tax returns on the table.
+Without aggregation, most people just buy the same thing in every account, leaving significant after-tax returns on the table.
 
 ### Duplicated Positions
 
@@ -149,11 +150,11 @@ Purpose-built tools connect to all your accounts via secure API connections (typ
 [Helm Terminal](/) was designed specifically for the multi-account problem. It connects to all your brokerage and bank accounts through Plaid's secure API, providing:
 
 - **Unified portfolio view**: Every holding from every account on one screen
-- **Real-time allocation analysis**: See exactly how your total portfolio breaks down — with current market prices from [Polygon.io data](/analyze)
+- **Real-time allocation analysis**: See exactly how your total portfolio breaks down, with current market prices from [Polygon.io data](/analyze)
 - **Intelligence alerts**: Get notified when your portfolio drifts, concentrations build, or significant changes occur
 - **Account-level and portfolio-level views**: Drill into individual accounts or see the complete picture
 
-The platform uses read-only connections — it can see your holdings but never move your money.
+The platform uses read-only connections. It can see your holdings but never move your money.
 
 ## Setting Up Your Aggregated View
 
@@ -174,7 +175,7 @@ Before connecting anything, list every account that holds investments or signifi
 
 ### Step 2: Connect Primary Accounts
 
-Start with your largest accounts — these drive the majority of your allocation and represent the most important visibility gap.
+Start with your largest accounts. These drive the majority of your allocation and represent the most important visibility gap.
 
 ### Step 3: Verify Holdings Accuracy
 
@@ -200,9 +201,9 @@ With everything connected, you can finally answer:
 Understandably, connecting financial accounts to any platform raises security concerns. Key points to evaluate:
 
 - **Read-only access**: Ensure the platform cannot initiate transfers or trades
-- **Plaid or equivalent**: Established aggregation providers handle credentials securely — the platform never sees your password
+- **Plaid or equivalent**: Established aggregation providers handle credentials securely; the platform never sees your password
 - **Encryption**: Data in transit (TLS) and at rest (AES-256) should be standard
-- **No credential storage**: Modern aggregation uses tokenized access — revoking is as simple as disconnecting in your brokerage settings
+- **No credential storage**: Modern aggregation uses tokenized access; revoking is as simple as disconnecting in your brokerage settings
 
 The risk of not seeing your complete picture (making bad allocation decisions, missing concentration risks) often exceeds the incremental security risk of read-only aggregation through established providers.
 
@@ -236,13 +237,13 @@ Even after consolidation, most people maintain 3-5 accounts minimum. Aggregation
 
 The gap between where your money sits and where you can see it is where costly mistakes hide. Concentration risks, allocation drift, and tax inefficiency all thrive in fragmentation.
 
-Helm Terminal closes that gap by giving you a single, intelligent view across every account — updated daily with real market data and alerts when something needs your attention.
+Helm Terminal closes that gap by giving you a single, intelligent view across every account, updated daily with real market data and alerts when something needs your attention.
 
 [Try Helm free](/signup) to see your complete portfolio across all your brokerage accounts in one dashboard.
 
 ## The Bottom Line
 
-You did not choose to have multiple brokerage accounts — the financial system imposed it. But you can choose to see through the fragmentation with the right aggregation tool. The investors who make the best decisions are the ones with the clearest visibility into their complete picture. Stop logging into five platforms to guess at your allocation. Aggregate, analyze, and act from a single source of truth.
+You did not choose to have multiple brokerage accounts. The financial system imposed it. But you can choose to see through the fragmentation with the right aggregation tool. The investors who make the best decisions are the ones with the clearest visibility into their complete picture. Stop logging into five platforms to guess at your allocation. Aggregate, analyze, and act from a single source of truth.
 
 ---
 
