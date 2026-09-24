@@ -134,6 +134,16 @@ export default function ETFOverlapPage() {
             </p>
           </div>
           <div>
+            <h2 className="type-h2 mb-2.5">Compared with Morningstar X-Ray</h2>
+            <p>
+              Morningstar&rsquo;s Instant X-Ray is the tool most people know for this job. It reads a whole portfolio
+              of funds and reports the stocks that repeat across them, along with sector and style breakdowns, and
+              it lives inside a Morningstar account. This page answers the narrower two-fund question, compares the
+              ten largest holdings rather than the full basket, and needs no account. For the portfolio-wide
+              version of the same look-through across the accounts you hold, see the last section on this page.
+            </p>
+          </div>
+          <div>
             <h2 className="type-h2 mb-2.5">Why the two percentages differ</h2>
             <p>
               A shared holding rarely carries the same weight in both funds. A concentrated technology fund can

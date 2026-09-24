@@ -7,6 +7,7 @@ interface LegalFooterProps {
 }
 
 const links = [
+  { label: 'Tools', href: '/tools' },
   { label: 'Privacy', href: '/privacy' },
   { label: 'Terms', href: '/terms' },
   { label: 'Security', href: '/security' },

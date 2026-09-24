@@ -77,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/security/isp`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/data-deletion`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },
     { url: `${base}/wrapped`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/tools`, lastModified: new Date('2026-09-24T00:00:00Z'), changeFrequency: 'monthly', priority: 0.7 },
     // Tools carry the date of their last real content change, not now(). A
     // lastModified that is always "today" is a signal Google learns to ignore,
     // and the RSU calculator's 2026-09-11 retitle went five weeks without a
