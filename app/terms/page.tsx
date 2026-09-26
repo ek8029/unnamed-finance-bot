@@ -15,7 +15,8 @@ export default function TermsPage() {
         <p>
           By accessing or using Helm (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service.
           If you do not agree, you may not use the Service. These terms constitute a legally binding agreement
-          between you and Helm.
+          between you and Helm Financial, Corp., a Delaware corporation that owns and operates Helm Terminal
+          (&ldquo;Helm&rdquo;).
         </p>
       </section>
 

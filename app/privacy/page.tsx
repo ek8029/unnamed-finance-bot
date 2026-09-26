@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <section>
         <h2>1. Introduction</h2>
         <p>
-          Helm (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) operates the Helm financial intelligence
+          Helm Financial, Corp., a Delaware corporation (&ldquo;Helm,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;), operates the Helm financial intelligence
           platform at <strong>helmterminal.dev</strong> and the <strong>Helm Terminal</strong> iOS app.
           This Privacy Policy covers both. It explains what information we collect,
           how we use it, and your rights regarding your data. We are committed to protecting your financial

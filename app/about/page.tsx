@@ -204,6 +204,11 @@ export default function AboutPage() {
             </p>
 
             <p>
+              Helm Terminal is made and operated by Helm Financial, Corp., a Delaware corporation
+              I founded to build it.
+            </p>
+
+            <p>
               I built Helm because my own money was spread across several brokerages and
               none of them could see the others. The reasons I had bought things lived in
               my head or in a spreadsheet I stopped updating, and nothing anywhere was

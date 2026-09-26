@@ -93,6 +93,12 @@ export function LegalFooter({ variant = 'full' }: LegalFooterProps) {
             <FooterLink key={link.href} href={link.href}>{link.label}</FooterLink>
           ))}
         </div>
+        {/* The legal entity behind the product name. App Store sellers must
+            match the company providing a financial service, so the site says
+            who that is on every page. */}
+        <p className="mt-4 text-center text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono">
+          &copy; 2026 Helm Financial, Corp.
+        </p>
       </div>
     </footer>
   );

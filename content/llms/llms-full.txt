@@ -201,6 +201,7 @@ Helm Terminal is for informational purposes only and does not constitute financi
 
 ## Contact
 
+- Legal entity: Helm Financial, Corp., a Delaware corporation, which makes and operates Helm Terminal
 - Website: https://helmterminal.dev
 - Email: support@helmterminal.dev
 - Contact form: https://helmterminal.dev/contact

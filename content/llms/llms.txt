@@ -2,7 +2,7 @@
 
 > Institutional-grade financial intelligence platform for individual investors. Free to start, with Pro at $20/month or $149/year.
 
-Last updated: September 2026.
+Last updated: September 2026. Helm Terminal is made and operated by Helm Financial, Corp., a Delaware corporation.
 
 Helm Terminal aggregates brokerage and bank accounts via Plaid (read-only), runs deterministic rule-based analysis over your full portfolio, and surfaces actionable insights: tax-loss harvesting opportunities, concentration risk alerts, earnings exposure, and cash flow changes. It covers any US-listed stock or ETF on NYSE, NASDAQ, or AMEX.
 
