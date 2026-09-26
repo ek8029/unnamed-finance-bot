@@ -211,6 +211,15 @@ describe('RevenueCat identity and entitlement parsing', () => {
       subscriptions: { other_app_yearly: { store: 'app_store' } } } };
     expect(revenueCatAccess(foreign, now).active).toBe(false);
   });
+  it('honours the annual product and reports its period', () => {
+    const body = { subscriber: { entitlements: { [ENTITLEMENT]: { product_identifier: 'helm_pro_annual', expires_date: tomorrow } },
+      subscriptions: { helm_pro_annual: { store: 'app_store', unsubscribe_detected_at: null, refunded_at: null } } } };
+    const access = revenueCatAccess(body, now);
+    expect(access.active).toBe(true);
+    expect(access.productId).toBe('helm_pro_annual');
+    expect(access.period).toBe('annual');
+    expect(revenueCatAccess(customer(tomorrow), now).period).toBe('monthly');
+  });
   it('treats an account with no entitlements as free and a product-less one as malformed', () => {
     expect(revenueCatAccess({ subscriber: { entitlements: {}, subscriptions: {} } }, now).active).toBe(false);
     expect(() => revenueCatAccess({ subscriber: { entitlements: { [ENTITLEMENT]: { expires_date: tomorrow } }, subscriptions: {} } }, now)).toThrow();

@@ -106,11 +106,12 @@ export function revenueCatAccess(body: unknown, now: number): ProviderAccess {
   if (!held.length) return { active: false };
   // A malformed entitlement must never be read as "no entitlement".
   if (held.some(value => typeof value.product_identifier !== 'string')) throw new Error('RevenueCat entitlement is missing its product');
-  // This app currently sells exactly this App Store product. Other project
+  // This app sells exactly these App Store products. Other project
   // apps/products cannot grant access merely by reaching the same webhook.
-  const product = 'helm_pro_monthly';
-  const pro = held.find(value => value.product_identifier === product);
+  const PRODUCTS: Record<string, 'monthly' | 'annual'> = { helm_pro_monthly: 'monthly', helm_pro_annual: 'annual' };
+  const pro = held.find(value => typeof value.product_identifier === 'string' && value.product_identifier in PRODUCTS);
   if (!pro) return { active: false };
+  const product = pro.product_identifier as string;
   const subscription = record(record(subscriber.subscriptions)?.[product]);
   if (subscription?.store !== 'app_store') return { active: false };
   const expires = pro.expires_date;
@@ -120,7 +121,7 @@ export function revenueCatAccess(body: unknown, now: number): ProviderAccess {
   return {
     active: expiry > now && !subscription.refunded_at,
     productId: product,
-    period: 'monthly', expiresAt: new Date(expiry).toISOString(),
+    period: PRODUCTS[product], expiresAt: new Date(expiry).toISOString(),
     cancelAtPeriodEnd: !!subscription.unsubscribe_detected_at,
   };
 }
