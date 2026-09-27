@@ -6,7 +6,6 @@ import {
   TAX_RATE,
   LTCG_RATE_DEFAULT,
   TAX_INSIGHT_HIGH_PRIORITY_LOSS,
-  CONCENTRATION_THRESHOLDS,
   SPENDING_SPIKE_FACTOR,
   SPENDING_SPIKE_MIN_DOLLARS,
   CREDIT_CARD_ALERT_THRESHOLD,
@@ -18,6 +17,7 @@ import {
   ANNUAL_LOSS_DEDUCTION_CAP,
 } from '@/lib/financial-config';
 import { estimateCappedTlhSavings, isHarvestableLoss } from '@/lib/tax-analysis';
+import { concentrationLines, lineSource, readRiskProfile } from '@/lib/concentration-lines';
 import { formatCategoryName } from '@/lib/utils';
 import { detectRecurringCharges, persistRecurringCharges, toMonthlyAmount } from '@/lib/recurring-detection';
 
@@ -285,7 +285,7 @@ export async function generateInsights(
   userId: string,
 ): Promise<number> {
   try {
-    const [accountsRes, holdingsRes, currentTxRes, prevTxRes, existingInsightsRes, suppressed] =
+    const [accountsRes, holdingsRes, currentTxRes, prevTxRes, existingInsightsRes, suppressed, riskProfile] =
       await Promise.all([
         supabase
           .from('linked_accounts')
@@ -323,6 +323,9 @@ export async function generateInsights(
         // Findings already dismissed and still inside their life. Checked in the
         // candidate loop below so a dismissal is not undone by the next run.
         readDismissedFindings(supabase, userId),
+        // The concentration line the person chose, or null for Helm's default.
+        // Never throws; a missing column (before migration 081) reads as null.
+        readRiskProfile(supabase, userId),
       ]);
 
     const accounts = accountsRes.data || [];
@@ -371,7 +374,11 @@ export async function generateInsights(
       }
     }
 
-    // Rule 2: Portfolio concentration (with ETF look-through)
+    // Rule 2: Portfolio concentration (with ETF look-through), measured
+    // against the line the person chose, or Helm's default when they have not
+    // (lib/concentration-lines.ts). The same line the phone draws.
+    const lines = concentrationLines(riskProfile);
+    const whose = lineSource(lines);
     const totalPortfolio = holdings.reduce(
       (s: number, h: { total_value: number }) => s + Number(h.total_value), 0,
     );
@@ -406,7 +413,7 @@ export async function generateInsights(
 
         // Owning one thing is not a concentration finding, and the count has to
         // be of positions: two lots of the same ticker is still one thing.
-        if (totalWeight > CONCENTRATION_THRESHOLDS.critical / 100 && positions.size > 1) {
+        if (totalWeight > lines.position / 100 && positions.size > 1) {
           const pctDisplay = Math.round(totalWeight * 100);
           const sources = hasIndirect ? ` (${ltEntry.sources.join(', ')})` : '';
           candidates.push({
@@ -415,8 +422,8 @@ export async function generateInsights(
             title: `${p.ticker} is ${pctDisplay}% of your portfolio${hasIndirect ? ' (including ETF exposure)' : ''}`,
             description: hasIndirect
               ? `Your total ${p.ticker} exposure is ${pctDisplay}% when including indirect holdings through ETFs and leveraged products${sources}. Direct position: $${Math.round(p.value).toLocaleString('en-US')}.`
-              : `A single position making up more than ${CONCENTRATION_THRESHOLDS.critical}% of your portfolio increases risk. ${p.ticker} currently represents $${Math.round(p.value).toLocaleString('en-US')} of your $${Math.round(totalPortfolio).toLocaleString('en-US')} portfolio.`,
-            recommended_action: `Single-position concentration above ${CONCENTRATION_THRESHOLDS.critical}% increases idiosyncratic risk. This ${p.ticker} figure of ${pctDisplay}%${hasIndirect ? ' reflects combined direct and ETF holdings' : ''} is above that level.`,
+              : `${p.ticker} is above ${whose} of ${lines.position}% for a single position. It represents $${Math.round(p.value).toLocaleString('en-US')} of your $${Math.round(totalPortfolio).toLocaleString('en-US')} portfolio.`,
+            recommended_action: `${whose.charAt(0).toUpperCase()}${whose.slice(1)} is ${lines.position}% of the book in one position. This ${p.ticker} figure of ${pctDisplay}%${hasIndirect ? ' reflects combined direct and ETF holdings' : ''} is above it.`,
             confidence_score: 0.95,
             source_type: 'rule_based',
             related_entity_type: 'holding',
@@ -431,13 +438,13 @@ export async function generateInsights(
         // held under a broker variant "hidden ETF exposure" when it was held
         // outright.
         const isDirectlyHeld = positions.has(ticker);
-        if (!isDirectlyHeld && entry.totalWeight > CONCENTRATION_THRESHOLDS.critical) {
+        if (!isDirectlyHeld && entry.totalWeight > lines.position) {
           candidates.push({
             insight_type: 'portfolio',
             priority: entry.totalWeight > 40 ? 'high' : 'medium',
             title: `Hidden ${ticker} exposure: ${Math.round(entry.totalWeight)}% via ETFs`,
             description: `You don't hold ${ticker} directly, but your ETF holdings give you ${Math.round(entry.totalWeight)}% effective exposure through ${entry.sources.join(', ')}.`,
-            recommended_action: `Combined ETF holdings give ${Math.round(entry.totalWeight)}% effective ${ticker} exposure through ${entry.sources.join(', ')}, above the ${CONCENTRATION_THRESHOLDS.critical}% single-name concentration threshold.`,
+            recommended_action: `Combined ETF holdings give ${Math.round(entry.totalWeight)}% effective ${ticker} exposure through ${entry.sources.join(', ')}, above ${whose} of ${lines.position}% for a single name.`,
             confidence_score: 0.90,
             source_type: 'rule_based',
             related_entity_type: 'holding',

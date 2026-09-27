@@ -30,6 +30,10 @@ export const WRITABLE_PREFERENCE_FIELDS = [
   'filing_status', 'tax_bracket', 'tax_state',
   'first_look',
   'updates_seen_at',
+  // The concentration line the person chose (migration 081,
+  // lib/concentration-lines.ts). Validated in the route: a known profile or
+  // null to clear it.
+  'risk_profile',
 ] as const;
 
 /** What each unsubscribe link switches off.

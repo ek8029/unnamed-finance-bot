@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { WRITABLE_PREFERENCE_FIELDS } from '@/lib/preference-fields';
 import { parseFirstLook } from '@/lib/onboarding/first-look';
 import { parseUpdatesSeenAt } from '@/lib/agent/updates-seen';
+import { parseRiskProfile } from '@/lib/concentration-lines';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -53,6 +54,8 @@ export async function GET() {
       refresh_interval: 5,
       analytics_enabled: true,
       crash_reporting_enabled: true,
+      // Not chosen: Helm's default concentration line (lib/concentration-lines).
+      risk_profile: null,
     };
 
     return NextResponse.json({
@@ -96,6 +99,18 @@ export async function PATCH(request: Request) {
         const at = parseUpdatesSeenAt(updates[field]);
         if (at === null) return NextResponse.json({ error: 'updates_seen_at must be a parsable ISO timestamp' }, { status: 400 });
         sanitized[field] = at;
+        continue;
+      }
+      // A known profile, or null to go back to Helm's default line. Anything
+      // else is refused rather than stored, or the check constraint in 081
+      // would reject the whole upsert and lose the other fields with it.
+      if (field === 'risk_profile') {
+        const raw = updates[field];
+        const parsed = parseRiskProfile(raw);
+        if (raw !== null && parsed === null) {
+          return NextResponse.json({ error: 'risk_profile must be aggressive, moderate, passive or null' }, { status: 400 });
+        }
+        sanitized[field] = parsed;
         continue;
       }
       if (field === 'first_look') {
