@@ -5,6 +5,7 @@ import { getQuote } from '@/lib/financial-data';
 import { getVixQuote } from '@/lib/vix';
 import { rateLimit } from '@/lib/rate-limit';
 import { getUserTier, tierAtLeast } from '@/lib/tier';
+import { briefDigestFields } from '@/lib/digest-preview';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
 import { composeThesisBrief } from '@/lib/thesis-brief';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
@@ -470,9 +471,9 @@ export async function GET() {
         dividendsThisWeek,
         positionNews: [],
         generalNews: [],
-        // Free: hide AI digest
-        digest: isPro ? (digestRow?.digest ?? null) : null,
-        digestGeneratedAt: isPro ? (digestRow?.generated_at ?? null) : null,
+        // Free: the written digest is Pro. A free account gets the preview its
+        // morning email already carries, built by the same function.
+        ...briefDigestFields(isPro, digestRow),
         isPro,
         pillarSummary,
         thesisIntelligence,

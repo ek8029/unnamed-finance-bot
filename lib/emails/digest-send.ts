@@ -6,6 +6,7 @@
 import { getDigestTemplate } from '@/lib/emails/templates';
 import { FROM_EMAIL } from '@/lib/emails/resend';
 import { unsubUrl } from '@/lib/emails/unsubscribe';
+import { digestPreview } from '@/lib/digest-preview';
 
 // When a brief day is now lives with the rest of the trading calendar.
 export { isWeekendET } from '@/lib/market-calendar';
@@ -34,7 +35,7 @@ export function digestEmailPayload(
   const unsub = unsubUrl(user.id, 'brief');
   const tpl = getDigestTemplate({
     firstName: user.firstName,
-    digestPreview: digest.split('\n\n')[0].slice(0, 200),
+    digestPreview: digestPreview(digest),
     briefUrl: 'https://helmterminal.dev/dashboard/brief',
     unsub,
     material,
