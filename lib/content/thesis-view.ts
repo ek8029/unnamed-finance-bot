@@ -69,7 +69,7 @@ export function headline(d: ScoringThesisData): string {
   const conv = convergence(worst.mechanisms);
   const base = mover ? mover.label : 'Multiple reports';
   return conv.converging
-    ? `${base} — and ${conv.adverseMechanisms - 1} more independent ${conv.adverseMechanisms - 1 === 1 ? 'issue' : 'issues'} on the same pillar`
+    ? `${base}, and ${conv.adverseMechanisms - 1} more independent ${conv.adverseMechanisms - 1 === 1 ? 'issue' : 'issues'} on the same pillar`
     : base;
 }
 
