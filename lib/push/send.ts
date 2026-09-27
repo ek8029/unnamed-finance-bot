@@ -13,6 +13,35 @@ import type { PushMessage } from '@/lib/push/voice';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, any, any>;
 
+/**
+ * What the lock screen shows, one line per kind. Never a figure and never a
+ * ticker: the OS can display a notification after sign-out, on a locked phone
+ * on a desk, so financial details stay in the app. Each line still says which
+ * kind of thing happened, which "Helm update / Open Helm to see the latest"
+ * did not, so a person can tell a brief from a broken reason without opening.
+ */
+export const PUBLIC_COPY: Record<PushKind, { title: string; body: string }> = {
+  brief: { title: 'Your morning brief is ready', body: 'Written before the open, from what you hold.' },
+  move: { title: 'A position moved today', body: 'Open Helm to see which one and by how much.' },
+  breach: { title: 'A position crossed a line', body: 'Open Helm to see where your book sits against it.' },
+  investigated: { title: 'Helm looked into a move', body: 'It read what drove it and checked it against your reasons.' },
+  filing: { title: 'Helm read a new filing', body: 'It checked the filing against the reasons you hold it.' },
+  reconnect: { title: 'A connection stopped updating', body: 'Reconnect it in Helm so your book stays current.' },
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The item a tap should open, as an opaque id the app resolves after sign-in:
+ * a thesis id for the thesis route, a connection id for reconnect. Anything
+ * that is not a UUID is dropped, which is what keeps a ticker (the book
+ * route's id) out of the payload: the payload travels through Expo and Apple.
+ */
+export function pushRef(message: Pick<PushMessage, 'route' | 'id'>): string | undefined {
+  if (message.route !== 'thesis' && message.route !== 'reconnect') return undefined;
+  return message.id && UUID.test(message.id) ? message.id : undefined;
+}
+
 export interface SendPushResult {
   sent: number;
   /** Why nothing went, in words a log can carry. */
@@ -69,10 +98,13 @@ export async function sendPush(
   const to = (tokens ?? []).map((t: { token: string }) => t.token);
   if (to.length === 0) return { sent: 0, reason: 'no device' };
 
+  const copy = PUBLIC_COPY[kind];
+  const ref = pushRef(message);
   const tickets = await sendExpoPush(to.map((t) => ({
-    to: t, title: 'Helm update', body: 'Open Helm to see the latest in your account.', sound: 'default',
+    to: t, title: copy.title, body: copy.body, sound: 'default',
     // The OS may display this after sign-out; financial details stay in-app.
-    data: { userId, route: message.route, kind },
+    // `ref` is opaque (see pushRef): the app looks the item up once signed in.
+    data: { userId, route: message.route, kind, ...(ref ? { ref } : {}) },
   })));
 
   let sent = 0;
