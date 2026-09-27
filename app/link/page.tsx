@@ -21,7 +21,7 @@
  * for the effect below. Read that guide before touching this.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PlaidLinkButton } from '@/components/plaid/plaid-link-button';
 import { PlaidUpdateLink } from '@/components/plaid/plaid-update-link';
 import { createClient } from '@/lib/supabase/client';
@@ -34,6 +34,12 @@ export default function LinkPage() {
   // Reconnect mode: the app passes the broken item in the fragment (item=<id>&inst=<name>) and
   // this page runs Plaid Link's update mode for it instead of a fresh connect.
   const [reconnect, setReconnect] = useState<{ id: string; name: string } | null>(null);
+  // Opened from the app with its tokens: the person already chose to connect
+  // on the phone, so Link opens by itself instead of asking for a second tap.
+  const [fromApp, setFromApp] = useState(false);
+  // The brokerage chip tapped on the phone (inst=<name> without item=), for the heading.
+  const [institution, setInstitution] = useState<string | null>(null);
+  const openRef = useRef<(() => boolean) | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -51,6 +57,7 @@ export default function LinkPage() {
       const refresh_token = p.get('rt');
       const item = p.get('item');
       if (item) setReconnect({ id: item, name: p.get('inst') ?? '' });
+      else setInstitution(p.get('inst')?.trim().slice(0, 60) || null);
 
       if (access_token && refresh_token) {
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });
@@ -61,6 +68,7 @@ export default function LinkPage() {
           setPhase('signedout');
           return;
         }
+        setFromApp(true);
         setPhase('ready');
         return;
       }
@@ -73,6 +81,22 @@ export default function LinkPage() {
 
   const onSuccess = useCallback(() => setPhase('done'), []);
   const onError = useCallback((e: string) => { setMessage(e); setPhase('error'); }, []);
+
+  // Open Link once, as soon as the button's link token is ready. openRef
+  // returns true only when Link actually opened, so this asks every 250ms
+  // for up to 20s and then leaves the button to the person. A token error
+  // moves the page to 'error', which ends the wait; "Try again" starts it
+  // over, since that tap is a fresh request to connect.
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (phase !== 'ready' || !fromApp || reconnect || autoOpened.current) return;
+    const started = Date.now();
+    const id = window.setInterval(() => {
+      if (openRef.current?.()) autoOpened.current = true;
+      if (autoOpened.current || Date.now() - started > 20_000) window.clearInterval(id);
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [phase, fromApp, reconnect]);
 
   return (
     <main
@@ -115,14 +139,14 @@ export default function LinkPage() {
         {phase === 'ready' && !reconnect && (
           <>
             <h1 className="m-0 mt-7 text-[25px] font-semibold leading-[1.25] tracking-[-0.02em]">
-              Connect a brokerage.
+              Connect {institution ?? 'a brokerage'}.
             </h1>
             <p className="m-0 mt-3.5 text-[14px] leading-[1.6] text-[#8A8A8A]">
-              Read-only through Plaid. Helm can never trade or move money, and you can disconnect
-              in one tap at any time.
+              Read-only through Plaid. Helm can never trade or move money. Disconnect any time
+              from Account.
             </p>
             <div className="mt-8">
-              <PlaidLinkButton onSuccess={onSuccess} onError={onError} className="w-full">
+              <PlaidLinkButton onSuccess={onSuccess} onError={onError} openRef={openRef} className="w-full">
                 Choose your brokerage
               </PlaidLinkButton>
             </div>
