@@ -412,7 +412,7 @@ function describeAcquisition(
     kind === 'reinvestment'
       ? `an automatic reinvestment into ${acquired} settled on ${row.transaction_date}`
       : kind === 'ambiguous'
-        ? `a ${row.transaction_type} of ${acquired} on ${row.transaction_date} — your brokerage feed does not say whether that was a purchase or a move of shares you already held`
+        ? `a ${row.transaction_type} of ${acquired} on ${row.transaction_date}; your brokerage feed does not say whether that was a purchase or a move of shares you already held`
         : `${acquired} was purchased on ${row.transaction_date}`;
 
   const scope = !relationship
@@ -421,7 +421,7 @@ function describeAcquisition(
       ? ` ${relationship}, so §1091 treats it as substantially identical.`
       : confidence === 'likely'
         ? ` ${relationship}. Professional consensus treats these as substantially identical; the IRS has not ruled.`
-        : ` ${relationship}. The IRS has not ruled on whether these are substantially identical under IRC §1091 — confirm with a tax professional.`;
+        : ` ${relationship}. The IRS has not ruled on whether these are substantially identical under IRC §1091. Confirm with a tax professional.`;
 
   const basis = retirement
     ? ` That purchase sits in ${row.account?.account_name ?? 'a retirement account'}. Under Rev. Rul. 2008-5 a purchase by your IRA or Roth IRA disallows the loss permanently: §1091(d) does not restore it and your IRA basis is not increased, so the deduction is gone rather than deferred.`
@@ -432,7 +432,7 @@ function describeAcquisition(
     severity: 'flagged',
     detail:
       `Wash-sale conflict found in Helm's 30-day lookback: ${how}.${scope}` +
-      ` IRC §1091 disallows the loss when substantially identical stock is acquired in the 30 days before the sale, on the day of the sale, or in the 30 days after it — 61 days in total.${basis}`,
+      ` IRC §1091 disallows the loss when substantially identical stock is acquired in the 30 days before the sale, on the day of the sale, or in the 30 days after it, 61 days in total.${basis}`,
   };
 }
 
