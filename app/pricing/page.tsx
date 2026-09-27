@@ -33,7 +33,7 @@ const proFeatures = [
   'Thesis monitoring with cited evidence',
   'The agent: reassessment, investigation, shared exposure',
   'Tax center with tax-loss harvesting',
-  'Earnings exposure tracking',
+  'The dollar effect of each earnings report on your book',
   'Conviction-led tailored brief',
   'Thesis Builder, before you buy',
   'Factor lens',
@@ -56,7 +56,7 @@ const LEDGER: { feature: string; free: string; pro: string }[] = [
   { feature: 'Ongoing monitoring, cited evidence', free: 'One thesis', pro: 'Your tracked theses' },
   { feature: 'Harvestable loss figure', free: 'Included', pro: 'Included' },
   { feature: 'Which lots, and wash-sale screening', free: '—', pro: 'Across every account' },
-  { feature: 'Earnings exposure', free: '—', pro: 'Across held positions' },
+  { feature: 'Earnings calendar and exposure', free: 'Across held positions', pro: 'Plus the dollar effect of each report' },
   { feature: 'The agent', free: '—', pro: 'Reassessment and shared exposure' },
   { feature: 'Thesis Builder, pre-buy', free: '—', pro: 'Included' },
   { feature: 'Factor lens', free: '—', pro: 'Included' },
@@ -76,7 +76,7 @@ const faqItems = [
   {
     question: 'What does Pro add?',
     answer:
-      'Pro is $20 a month, or $149 a year, which is $91 less than paying monthly. Free gives you one thesis, the history behind it, and keeps watching it; Pro monitors more theses you confirm and track, and adds the agent, the Thesis Builder, the factor lens, earnings exposure tracking, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
+      'Pro is $20 a month, or $149 a year, which is $91 less than paying monthly. Free gives you one thesis, the history behind it, and keeps watching it; Pro monitors more theses you confirm and track, and adds the agent, the Thesis Builder, the factor lens, the dollar effect of each earnings report, the tax center with tax-loss harvesting, and a conviction-led tailored brief.',
   },
   {
     question: 'Can I cancel anytime?',

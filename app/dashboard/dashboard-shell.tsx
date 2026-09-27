@@ -129,7 +129,9 @@ const TERMINAL_NAV: NavItem[] = [
 const PORTFOLIO_PARENT: NavItem = { name: 'Portfolio', href: '/dashboard/portfolio', icon: TrendingUp };
 const PORTFOLIO_CHILDREN: NavItem[] = [
   { name: 'Manual entry', href: '/dashboard/portfolio/add', icon: PenLine },
-  { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, tier: 'pro', dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.afterBrief) },
+  // Free: the calendar and exposure are free, the dollar scenarios stay Pro
+  // inside the page (app/dashboard/earnings/page.tsx).
+  { name: 'Earnings', href: '/dashboard/earnings', icon: BarChart3, dim: (s) => (s.hasBrief ? null : V3_COPY.sidebar.afterBrief) },
   { name: 'Factor lens', href: '/dashboard/portfolio/factors', icon: Layers, tier: 'pro' },
 ];
 

@@ -22,7 +22,7 @@ Helm Terminal is portfolio intelligence, not portfolio tracking. Its flagship ca
 - Market data via Finazon (licensed US stock prices); fundamentals and filings via SEC EDGAR
 - Net worth tracking across all linked accounts
 - Actions inbox: concentration risk, rebalancing signals, cash drag alerts
-- Earnings exposure tracking (Pro) with indirect ETF exposure (e.g., TQQQ holder sees AAPL earnings warning)
+- Earnings calendar and exposure (free; the dollar effect of each report is Pro) with indirect ETF exposure (e.g., TQQQ holder sees AAPL earnings warning)
 - Dividend calendar with ex-date alerts
 - Stock comparison tool (side-by-side analysis)
 - Contact form at helmterminal.dev/contact

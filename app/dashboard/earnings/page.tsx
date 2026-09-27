@@ -10,7 +10,6 @@ import { useFormat } from '@/hooks/use-format';
 import { useEarnings } from '@/hooks/use-financial-data';
 import type { UpcomingEarning, RecentEarning } from '@/hooks/use-financial-data';
 import { usePreview } from '@/lib/preview-context';
-import { TierLock } from '@/components/tier-lock';
 import { Skeleton } from '@/components/ui/skeleton';
 import { STATUS_META } from '@/lib/thesis-palette';
 import {
@@ -245,7 +244,7 @@ function RecentTable({
                   </td>
                   <td className="p-0" style={{ borderBottom: border }}>
                     {!isPro ? (
-                      <Link href={`/dashboard/analyze/${r.ticker}`} className="block px-5 py-[14px] text-right text-[12px] text-[var(--color-text-muted)]" style={MONO}>
+                      <Link href="/pricing" aria-label={`The dollar effect of ${r.ticker}'s report on your book is part of Pro`} className="block px-5 py-[14px] text-right text-[12px] text-[var(--color-text-muted)]" style={MONO}>
                         Pro
                       </Link>
                     ) : r.actualDollarImpact != null ? (
@@ -344,16 +343,15 @@ function PageSkeleton() {
 
 // ── Main page ──
 
+// Free sees the calendar: which holdings report next, the exposure to each,
+// and how results compared with the same quarter last year. Every broker
+// shows dates, so locking them sold nothing and took away a weekly reason to
+// open Helm; the phone already showed them free. What stays Pro is the part
+// nobody else has: the dollar effect of each report on this book and the
+// net across recent reports. /api/dashboard/earnings already nulls those
+// fields for free accounts, and RecentTable and the net line branch on isPro.
 export default function EarningsPage() {
-  return (
-    <TierLock
-      required="pro"
-      label="Earnings exposure is a Pro feature"
-      blurb="See which holdings report next, your exposure to each company, and how results compare with the same quarter last year."
-    >
-      <EarningsContent />
-    </TierLock>
-  );
+  return <EarningsContent />;
 }
 
 function EarningsContent() {
