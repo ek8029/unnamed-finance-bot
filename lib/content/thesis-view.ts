@@ -6,9 +6,9 @@ import { convergence, type LadderStatus, type Mechanism } from './mechanism-clus
 import type { ScoringThesisData, ScoredPillar } from './scoring-thesis';
 
 export const STATUS_WORD: Record<LadderStatus, string> = {
-  watch: 'steady',
+  watch: 'holding',
   weakening: 'under pressure',
-  broken: 'breaking',
+  broken: 'broken',
 };
 export const STATUS_TONE: Record<LadderStatus, string> = {
   watch: '#4ADE80',

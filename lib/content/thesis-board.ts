@@ -12,9 +12,9 @@ import type { ScoringThesisData, ScoredPillar } from '@/lib/content/scoring-thes
 
 /* Plain-English status vocabulary — the ladder stays internal. */
 export const STATUS_WORD: Record<LadderStatus, string> = {
-  watch: 'steady',
+  watch: 'holding',
   weakening: 'under pressure',
-  broken: 'breaking',
+  broken: 'broken',
 };
 
 export const STATUS_TONE: Record<LadderStatus, string> = {
