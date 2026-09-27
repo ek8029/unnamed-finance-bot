@@ -27,6 +27,16 @@ export async function GET(request: Request) {
     const dateFrom = searchParams.get('date_from') || '';
     const dateTo = searchParams.get('date_to') || '';
     const type = searchParams.get('type') || ''; // 'income' | 'expense'
+    // kind=investment: the investment surface only (the phone's Activity).
+    // Card and checking rows are left out BEFORE the page limit, so a month of
+    // coffee cannot push trades off the page. Bank-table rows on brokerage
+    // accounts stay: dividends that Plaid files as transactions live there.
+    const investmentOnly = searchParams.get('kind') === 'investment';
+    const bankAccountJoin = investmentOnly
+      ? 'account:linked_accounts!inner(id, account_name, account_type, institution:institutions(name))'
+      : 'account:linked_accounts(id, account_name, account_type, institution:institutions(name))';
+    // Typed as string: a union of two literals trips supabase-js's select parser.
+    const summaryColumns: string = investmentOnly ? 'amount, account:linked_accounts!inner(account_type)' : 'amount';
 
     // --- First: get all user's transactions to build category list ---
     // We fetch distinct category info from the user's actual data
@@ -118,12 +128,16 @@ export async function GET(request: Request) {
       .from('transactions')
       .select(`
         *,
-        account:linked_accounts(id, account_name, account_type, institution:institutions(name)),
+        ${bankAccountJoin},
         category:transaction_categories(id, name, category_group, icon, color)
       `, { count: 'exact' })
       .eq('user_id', user.id)
       .order('transaction_date', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    if (investmentOnly) {
+      query = query.eq('account.account_type', 'brokerage');
+    }
 
     // Apply filters
     const sanitizedSearch = search.replace(/[^a-zA-Z0-9 \-]/g, '').trim();
@@ -215,8 +229,12 @@ export async function GET(request: Request) {
     // --- Summary stats (with same filters) ---
     let summaryQuery = supabase
       .from('transactions')
-      .select('amount')
+      .select(summaryColumns)
       .eq('user_id', user.id);
+
+    if (investmentOnly) {
+      summaryQuery = summaryQuery.eq('account.account_type', 'brokerage');
+    }
 
     if (sanitizedSearch) {
       summaryQuery = summaryQuery.or(`description.ilike.%${sanitizedSearch}%,merchant_name.ilike.%${sanitizedSearch}%`);
@@ -251,7 +269,7 @@ export async function GET(request: Request) {
       summaryQuery = summaryQuery.lt('amount', 0);
     }
 
-    const { data: allFiltered } = await summaryQuery.limit(10000);
+    const { data: allFiltered } = await summaryQuery.limit(10000).overrideTypes<{ amount: number | string }[], { merge: false }>();
 
     // Investment cash rows for the summary (same filters). Skipped under category
     // filters, mirroring the list — investment rows carry no categories. Trades
