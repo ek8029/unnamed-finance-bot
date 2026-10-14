@@ -18,10 +18,12 @@ import {
   OUTBOUND_META,
   PROSPECTING,
   QUESTIONS,
+  SAMPLE_FORM,
   WHO,
 } from '@/components/outbound/copy';
 import { OutboundCookieNotice } from '@/components/outbound/cookie-notice';
 import { DraftCard, ProspectCard, TargetCard } from './cards';
+import { SampleForm } from './sample-form';
 import styles from './page.module.css';
 
 const grotesk = Schibsted_Grotesk({
@@ -237,6 +239,22 @@ export default function OutboundPage() {
           <p className={styles.after}>
             <Nowrap text={PROSPECTING.after} />
           </p>
+        </section>
+
+        <section
+          id={SAMPLE_FORM.id}
+          className={`${styles.wrap} ${styles.section} ${styles.sampleSection}`}
+          aria-labelledby="ob-sample"
+        >
+          <div>
+            <h2 id="ob-sample" className={styles.h2}>
+              {SAMPLE_FORM.heading}
+            </h2>
+            <p className={styles.lede}>{SAMPLE_FORM.intro}</p>
+          </div>
+          <div className={styles.formStage}>
+            <SampleForm />
+          </div>
         </section>
 
         <section className={`${styles.wrap} ${styles.section} ${styles.auto}`} aria-labelledby="ob-auto">

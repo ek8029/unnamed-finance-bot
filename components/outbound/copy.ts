@@ -28,7 +28,8 @@ export const HERO = {
   headline: 'New commercial accounts, researched and contacted in your name.',
   subhead:
     'Helm finds businesses that fit what you sell, emails them in your name using wording you approve, follows up, and sends every interested reply to you. Helm also builds small AI tools that take repetitive office work off your plate.',
-  primary: { label: 'Ask for a free sample of ten', href: SAMPLE_MAILTO },
+  // Scrolls to the intake form on /outbound (SAMPLE_FORM below).
+  primary: { label: 'Ask for a free sample of ten', href: '#sample' },
   secondary: { label: 'Book a 15-minute call', href: CALENDLY_URL },
 };
 
@@ -119,6 +120,35 @@ export const QUESTIONS = {
       a: 'Helm Financial Corp. is run by Evan Kim. The company also builds Helm Terminal, investment research software, and this service runs on the same research tools.',
     },
   ],
+};
+
+// The free sample intake form on /outbound. It posts to
+// /api/outbound/sample, which emails the request to `to` with reply-to set
+// to the sender. New wording 2026-10-14, not reviewed yet.
+export const SAMPLE_FORM = {
+  id: 'sample',
+  to: 'evan@helmterminal.dev',
+  heading: 'Ask for a free sample of ten',
+  intro:
+    'Tell Helm what you sell and who you want to reach. Ten researched prospects come back to you by email, and nothing is sent in your name.',
+  fields: {
+    name: { label: 'Your name', placeholder: '' },
+    business: { label: 'Business name', placeholder: '' },
+    email: { label: 'Email', placeholder: '' },
+    phone: { label: 'Phone (optional)', placeholder: '' },
+    sells: { label: 'What you sell', placeholder: 'Office and medical cleaning' },
+    targets: { label: 'Who you want to reach', placeholder: 'Property managers, clinics' },
+    area: { label: 'Area', placeholder: 'Queens and Nassau' },
+    exclude: { label: 'Names to leave out (optional)', placeholder: 'Current clients, open bids' },
+  },
+  submit: 'Ask for a free sample of ten',
+  sending: 'Sending',
+  note: 'Helm uses these details only to research your sample.',
+  sent: {
+    title: 'Your request is in.',
+    body: 'Evan will reply by email from evan@helmterminal.dev.',
+  },
+  error: 'The request did not send. Please try again, or email evan@helmterminal.dev.',
 };
 
 // The Outbound cookie notice. Shorter than the site-wide banner, whose

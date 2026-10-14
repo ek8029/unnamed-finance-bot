@@ -686,6 +686,177 @@
   color: var(--ink-2);
 }
 
+/* ── Free sample intake form ── */
+
+.sampleSection {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: start;
+  gap: clamp(40px, 5vw, 80px);
+  scroll-margin-top: 24px;
+}
+
+/* The heading and intro stay in view beside the taller form. */
+.sampleSection > div:first-child {
+  position: sticky;
+  top: 32px;
+}
+
+.formStage {
+  padding: clamp(18px, 3vw, 40px);
+  border-radius: 28px;
+  background: var(--stage);
+}
+
+.formCard {
+  padding: clamp(22px, 3vw, 36px);
+  border: 1px solid rgba(16, 24, 40, 0.06);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 28px 56px -28px rgba(84, 52, 38, 0.28);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+
+.formField {
+  display: grid;
+  gap: 7px;
+}
+
+.formWide {
+  grid-column: 1 / -1;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid #d6dae0;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.input::placeholder {
+  color: #8a93a3;
+}
+
+.input:hover {
+  border-color: #b9c0ca;
+}
+
+.root .input:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(16, 24, 40, 0.12);
+}
+
+.input[aria-invalid='true'] {
+  border-color: #b42318;
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.12);
+}
+
+.textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+/* Off screen for people, still in the DOM for bots. */
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.formFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  margin-top: 26px;
+}
+
+.formSubmit {
+  cursor: pointer;
+}
+
+.formSubmit:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.formNote {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.formError {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #b42318;
+}
+
+.formError:empty {
+  display: none;
+}
+
+.formSent {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding-block: clamp(36px, 5vw, 56px);
+}
+
+.sentTick {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.sentTick::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 12px;
+  height: 7px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+}
+
+.sentTitle {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.sentBody {
+  color: var(--ink-2);
+}
+
 /* ── Workflow automation ── */
 
 .auto {
@@ -948,8 +1119,13 @@
   }
 
   .how,
-  .auto {
+  .auto,
+  .sampleSection {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sampleSection > div:first-child {
+    position: static;
   }
 
   .stage {
@@ -1015,6 +1191,14 @@
 
   .offers > .sampleStage {
     padding: 32px 18px 44px;
+  }
+
+  .formGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formSubmit {
+    width: 100%;
   }
 
   .pair {
