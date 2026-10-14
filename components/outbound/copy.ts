@@ -141,12 +141,13 @@ export const SAMPLE_FORM = {
     area: { label: 'Area', placeholder: 'Queens and Nassau' },
     exclude: { label: 'Names to leave out (optional)', placeholder: 'Current clients, open bids' },
   },
+  hint: 'More detail makes a better sample: the kinds of business you want, where they are, and how big they are.',
   submit: 'Ask for a free sample of ten',
   sending: 'Sending',
   note: 'Helm uses these details only to research your sample.',
   sent: {
     title: 'Your request is in.',
-    body: 'Evan will reply by email from evan@helmterminal.dev.',
+    body: 'Your sample will be emailed in 2 business days.',
   },
   error: 'The request did not send. Please try again, or email evan@helmterminal.dev.',
 };

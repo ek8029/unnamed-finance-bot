@@ -718,6 +718,16 @@
     0 28px 56px -28px rgba(84, 52, 38, 0.28);
 }
 
+.formHint {
+  margin-bottom: 22px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -100,6 +100,7 @@ export function SampleForm() {
 
   return (
     <form className={styles.formCard} onSubmit={onSubmit}>
+      <p className={styles.formHint}>{SAMPLE_FORM.hint}</p>
       <div className={styles.formGrid}>
         <Field name="name" required autoComplete="name" invalid={badField === 'name'} />
         <Field name="business" required autoComplete="organization" invalid={badField === 'business'} />
