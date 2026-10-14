@@ -1,0 +1,765 @@
+/* Proposal: an engagement letter from a regional firm.
+ *
+ * Sizes are in px on purpose: the site sets html { font-size: 115% }, so rem
+ * here would be 18.4px and every number would be off.
+ *
+ * Contrast, measured against paper #F4F0E8 / band #EAE4D8:
+ *   ink    15.31 / 13.75     ink-2  8.25 / 7.41
+ *   forest  8.83 / 7.93      paper on forest 8.83
+ */
+
+.root {
+  --paper: #f4f0e8;
+  --band: #eae4d8;
+  --ink: #1b1a17;
+  --ink-2: #4a463f;
+  --rule: #cfc6b5;
+  --rule-band: #c6bca8;
+  --forest: #1f4a37;
+  --forest-deep: #163627;
+  --on-forest: #f4f0e8;
+
+  --serif: var(--proposal-serif), Georgia, serif;
+  --sans: var(--proposal-sans), system-ui, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --gutter: 20px;
+  --section: 80px;
+  --opener: 24px;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  hanging-punctuation: first;
+}
+
+@media (min-width: 768px) {
+  .root {
+    --gutter: 40px;
+    --section: 112px;
+    --opener: 32px;
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .root {
+    --gutter: 56px;
+    --section: 144px;
+    --opener: 40px;
+  }
+}
+
+/* Global leaks: the site paints gold selection and gold focus rings. */
+.root ::selection {
+  background: var(--forest);
+  color: var(--on-forest);
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 3px;
+}
+
+.container {
+  width: 100%;
+  max-width: calc(1200px + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ── Letterhead ─────────────────────────────────────────── */
+
+.letterhead {
+  padding-top: 12px;
+}
+
+@media (min-width: 768px) {
+  .letterhead {
+    padding-top: 28px;
+  }
+}
+
+.letterheadRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 16px;
+  min-height: 64px;
+}
+
+.wordmark {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  /* Optical size pinned small: the caps need the sturdier text cut. */
+  font-variation-settings: 'opsz' 12;
+}
+
+@media (min-width: 768px) {
+  .wordmark {
+    font-size: 17px;
+    letter-spacing: 0.18em;
+  }
+}
+
+.headerLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent);
+  text-underline-offset: 5px;
+  transition: color 180ms var(--ease), text-decoration-color 180ms var(--ease);
+}
+
+@media (min-width: 768px) {
+  .headerLink {
+    font-size: 16px;
+  }
+}
+
+.headerLink:hover {
+  color: var(--forest);
+  text-decoration-color: currentColor;
+}
+
+/* Thick over thin, the old stationery rule. Mirrored in the footer. */
+.oxfordTop,
+.oxfordBottom {
+  height: 6px;
+}
+
+.oxfordTop {
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.oxfordBottom {
+  border-top: 1px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+
+.hero {
+  padding-top: 52px;
+  padding-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding-top: 96px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .hero {
+    padding-top: 128px;
+  }
+}
+
+.heroInner {
+  animation: rise 560ms var(--ease) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroInner {
+    animation: none;
+  }
+}
+
+.eyebrow {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .eyebrow {
+    font-size: 17px;
+  }
+}
+
+.dot {
+  color: var(--forest);
+}
+
+.headline {
+  margin-top: 24px;
+  max-width: 11.5em;
+  font-family: var(--serif);
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 420;
+  line-height: 1.02;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+
+@media (min-width: 1024px) {
+  .headline {
+    margin-top: 36px;
+    letter-spacing: -0.026em;
+  }
+}
+
+.subhead {
+  margin-top: 28px;
+  max-width: 34em;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+@media (min-width: 768px) {
+  .subhead {
+    margin-top: 40px;
+    font-size: 20px;
+    line-height: 1.55;
+  }
+}
+
+.actions {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 36px;
+  }
+}
+
+@media (min-width: 768px) {
+  .actions {
+    margin-top: 48px;
+  }
+}
+
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 14px 28px;
+  border-radius: 2px;
+  background: var(--forest);
+  color: var(--on-forest);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.005em;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 200ms var(--ease), transform 200ms var(--ease);
+}
+
+.primary:hover {
+  background: var(--forest-deep);
+}
+
+.primary:active {
+  transform: translateY(1px);
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.secondaryText {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent);
+  text-underline-offset: 6px;
+  transition: text-decoration-color 180ms var(--ease);
+}
+
+.secondary:hover .secondaryText {
+  text-decoration-color: currentColor;
+}
+
+.arrow {
+  flex: none;
+  transition: transform 220ms var(--ease);
+}
+
+.secondary:hover .arrow {
+  transform: translateX(3px);
+}
+
+/* ── Sections ───────────────────────────────────────────── */
+
+.section {
+  padding-top: var(--section);
+}
+
+.ruled {
+  border-top: 1px solid var(--ink);
+  padding-top: var(--opener);
+}
+
+/* The document grid: a hanging side column for side heads, the reading
+   column to its right. Below 960px everything stacks. */
+.sideGrid {
+  display: grid;
+  row-gap: 20px;
+}
+
+@media (min-width: 960px) {
+  .sideGrid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 32px;
+    align-items: baseline;
+  }
+
+  .sideGrid > :first-child {
+    grid-column: 1 / span 4;
+  }
+
+  .sideGrid > .sideMain {
+    grid-column: 5 / -1;
+  }
+}
+
+.heading {
+  font-family: var(--serif);
+  font-size: clamp(32px, 3.6vw, 52px);
+  font-weight: 430;
+  line-height: 1.08;
+  letter-spacing: -0.016em;
+  text-wrap: balance;
+  max-width: 18em;
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── Who it's for ───────────────────────────────────────── */
+
+.statement {
+  font-family: var(--serif);
+  font-size: clamp(27px, 3.2vw, 44px);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  text-wrap: pretty;
+}
+
+/* ── Process ────────────────────────────────────────────── */
+
+.steps {
+  margin-top: 44px;
+  display: grid;
+  row-gap: 36px;
+}
+
+@media (min-width: 960px) {
+  .steps {
+    margin-top: 72px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 48px;
+  }
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: baseline;
+  /* The row stretches each item to the tallest column; without this the
+     spare height is shared out between the numeral and the lead. */
+  align-content: start;
+  /* Stacked, the steps are items under the section rule, so they take the
+     lighter item rule. Side by side they head columns and take ink. */
+  border-top: 1px solid var(--rule);
+  padding-top: 18px;
+}
+
+@media (min-width: 960px) {
+  .step {
+    grid-template-columns: minmax(0, 1fr);
+    border-top-color: var(--ink);
+    padding-top: 20px;
+  }
+}
+
+.stepNumeral {
+  font-family: var(--serif);
+  font-size: 52px;
+  font-weight: 380;
+  line-height: 1;
+  color: var(--forest);
+  font-variant-numeric: oldstyle-nums;
+}
+
+@media (min-width: 960px) {
+  .stepNumeral {
+    font-size: 104px;
+    line-height: 0.9;
+    margin-bottom: 28px;
+  }
+}
+
+.stepLead {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 560;
+  line-height: 1.25;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .stepLead {
+    font-size: 24px;
+  }
+}
+
+.stepBody {
+  margin-top: 10px;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* ── The offer, on the band ─────────────────────────────── */
+
+.band {
+  margin-top: var(--section);
+  background: var(--band);
+  padding-block: 64px 72px;
+}
+
+@media (min-width: 768px) {
+  .band {
+    padding-block: 96px 104px;
+  }
+}
+
+.clauses {
+  display: grid;
+  row-gap: 56px;
+}
+
+@media (min-width: 768px) {
+  .clauses {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 48px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .clauses {
+    column-gap: 96px;
+  }
+}
+
+.clauseHeading {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(28px, 2.9vw, 40px);
+  font-weight: 450;
+  line-height: 1.1;
+  letter-spacing: -0.014em;
+  font-variant-numeric: oldstyle-nums;
+}
+
+.clauseList {
+  counter-reset: clause;
+}
+
+.clauseItem {
+  counter-increment: clause;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: baseline;
+  padding-block: 15px 16px;
+  border-bottom: 1px solid var(--rule-band);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.clauseItem::before {
+  content: counter(clause);
+  font-family: var(--serif);
+  font-size: 19px;
+  color: var(--forest);
+  font-variant-numeric: oldstyle-nums tabular-nums;
+}
+
+.figure {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+
+.after {
+  margin-top: 48px;
+  max-width: 32em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+@media (min-width: 768px) {
+  .after {
+    margin-top: 64px;
+    font-size: 24px;
+  }
+}
+
+.afterFigure {
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+
+/* ── Workflow automation ────────────────────────────────── */
+
+.lede {
+  max-width: 34em;
+  font-size: 18px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+@media (min-width: 768px) {
+  .lede {
+    font-size: 20px;
+    line-height: 1.55;
+  }
+}
+
+.defs {
+  margin-top: 44px;
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (min-width: 960px) {
+  .defs {
+    margin-top: 72px;
+  }
+}
+
+.defRow {
+  row-gap: 6px;
+  border-top: 1px solid var(--rule);
+  padding-block: 20px 22px;
+}
+
+@media (min-width: 960px) {
+  .defRow {
+    padding-block: 26px 28px;
+  }
+}
+
+.term {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 560;
+  line-height: 1.25;
+  letter-spacing: -0.008em;
+}
+
+@media (min-width: 768px) {
+  .term {
+    font-size: 24px;
+  }
+}
+
+/* No measure cap: each description is one clause, and a 34em cap only wraps
+   a two-word orphan ("your review", "go quiet") at tablet and desktop. */
+.definition {
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.closing {
+  margin-top: 28px;
+  max-width: 34em;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* ── Questions ──────────────────────────────────────────── */
+
+.faq {
+  margin-top: 24px;
+}
+
+@media (min-width: 960px) {
+  .faq {
+    margin-top: 0;
+  }
+}
+
+.faqItem + .faqItem {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+
+@media (min-width: 768px) {
+  .faqItem + .faqItem {
+    margin-top: 36px;
+    padding-top: 36px;
+  }
+}
+
+.question {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 560;
+  line-height: 1.25;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .question {
+    font-size: 26px;
+  }
+}
+
+.answer {
+  margin-top: 12px;
+  max-width: 34em;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.footer {
+  padding-top: var(--section);
+  padding-bottom: 32px;
+}
+
+.footerRow {
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (min-width: 960px) {
+  .footerRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+  }
+}
+
+.address {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.addressPart {
+  padding-block: 2px;
+}
+
+.footerDot {
+  display: none;
+  color: var(--forest);
+}
+
+@media (min-width: 768px) {
+  .address {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 12px;
+    font-size: 15px;
+  }
+
+  .footerDot {
+    display: inline;
+  }
+}
+
+.footerLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--ink);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent);
+  text-underline-offset: 4px;
+  transition: color 180ms var(--ease), text-decoration-color 180ms var(--ease);
+}
+
+.footerLink:hover {
+  color: var(--forest);
+  text-decoration-color: currentColor;
+}
+
+.legal {
+  display: flex;
+  gap: 24px;
+  font-size: 15px;
+}

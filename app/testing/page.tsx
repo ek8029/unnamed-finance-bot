@@ -9,6 +9,13 @@ export const metadata = { title: 'Testing', robots: { index: false, follow: fals
 
 const EXPERIMENTS = [
   {
+    href: '/testing/outbound',
+    title: 'Helm Outbound · layouts for /outbound',
+    date: '2026-10-13',
+    blurb:
+      'Earlier layouts for the managed outbound and workflow automation page, all from one copy file (components/outbound/copy.ts). The chosen one, Dawn, is the live page at /outbound.',
+  },
+  {
     href: '/testing/app/ledger',
     title: 'Agent presence · Ledger, Live Read, overview caption',
     date: '2026-09-05',

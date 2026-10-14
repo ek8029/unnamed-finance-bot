@@ -1,0 +1,896 @@
+/* Work order: one printed job sheet.
+   Mobile first (375), sheet on a surround from 768, 12-column form from 1024.
+   Sizes are in px on purpose: globals.css sets html to 115%, so rem would
+   drift from the specified sizes. */
+
+.root {
+  --wo-sheet: #f6f5f0;
+  --wo-ink: #121212;
+  --wo-rule-2: #cfccc2;
+  --wo-muted: #55534d; /* 7.04:1 on the sheet */
+  --wo-signal: #c2410c; /* white on it 5.18:1; on the sheet 4.74:1 */
+  --wo-signal-press: #9a3412; /* white on it 7.31:1 */
+  --wo-surround: #e4e1d8;
+  --wo-pad: 20px;
+
+  min-height: 100vh;
+  background: var(--wo-sheet);
+  color: var(--wo-ink);
+  font-family: var(--wo-font-sans), system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  font-stretch: 100%;
+  font-weight: 400;
+  font-kerning: normal;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Override the site's gold selection and focus ring inside this page. */
+.root ::selection {
+  background: var(--wo-signal);
+  color: #fff;
+}
+
+.root :focus-visible {
+  outline: 3px solid var(--wo-signal);
+  outline-offset: 3px;
+}
+
+.root a {
+  color: inherit;
+}
+
+.root p,
+.root h1,
+.root h2,
+.root h3,
+.root ul,
+.root ol,
+.root dl,
+.root dd,
+.root figure {
+  margin: 0;
+}
+
+.sheet {
+  background: var(--wo-sheet);
+}
+
+/* ── Header row ─────────────────────────────────────────── */
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  border-bottom: 1px solid var(--wo-ink);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  padding: 12px var(--wo-pad);
+  font-stretch: 66%;
+  font-weight: 800;
+  font-size: 23px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  word-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Slightly condensed on phones so the link holds one line beside the wordmark. */
+.headerLink {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  padding: 10px var(--wo-pad);
+  border-left: 1px solid var(--wo-ink);
+  font-stretch: 84%;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.25;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.headerLink:hover {
+  background: var(--wo-ink);
+  color: var(--wo-sheet);
+}
+
+/* ── Shared label strip (eyebrow, specimen title) ───────── */
+
+.strip {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px var(--wo-pad);
+  border-bottom: 1px solid var(--wo-rule-2);
+  font-family: var(--wo-font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wo-muted);
+}
+
+.stripInk {
+  border-bottom-color: var(--wo-ink);
+  background: var(--wo-ink);
+  color: var(--wo-sheet);
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+
+.hero {
+  border-bottom: 1px solid var(--wo-ink);
+}
+
+.heroBody {
+  padding: 36px var(--wo-pad) 40px;
+}
+
+.h1 {
+  font-stretch: 64%;
+  font-weight: 800;
+  font-size: clamp(40px, 11.7vw, 52px);
+  line-height: 0.94;
+  letter-spacing: -0.006em;
+  word-spacing: 0.08em;
+  text-wrap: balance;
+}
+
+.subhead {
+  margin-top: 24px !important;
+  max-width: 30em;
+  font-size: 18px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 14px 28px;
+  border: 2px solid transparent;
+  border-radius: 0;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.root .btnPrimary {
+  background: var(--wo-signal);
+  border-color: var(--wo-signal);
+  color: #fff;
+}
+
+.root .btnPrimary:hover {
+  background: var(--wo-signal-press);
+  border-color: var(--wo-signal-press);
+}
+
+.root .btnSecondary {
+  background: transparent;
+  border-color: var(--wo-ink);
+  color: var(--wo-ink);
+}
+
+.root .btnSecondary:hover {
+  background: var(--wo-ink);
+  color: var(--wo-sheet);
+}
+
+/* ── Specimen record ────────────────────────────────────── */
+
+.specimen {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--wo-ink);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.field {
+  padding: 14px var(--wo-pad) 16px;
+  border-bottom: 1px solid var(--wo-rule-2);
+}
+
+.field dt {
+  margin-bottom: 4px;
+  font-family: var(--wo-font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wo-muted);
+}
+
+.field dd {
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--wo-muted);
+  overflow-wrap: anywhere;
+}
+
+/* The drafted email is a ruled writing box. */
+.field:last-child {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.field:last-child dd {
+  flex: 1;
+  min-height: 112px;
+  line-height: 28px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    var(--wo-rule-2) 27px,
+    var(--wo-rule-2) 28px
+  );
+}
+
+.caption {
+  padding: 14px var(--wo-pad) 18px;
+  font-size: 15px;
+  line-height: 1.45;
+  font-style: italic;
+  color: var(--wo-muted);
+}
+
+/* ── Sections ───────────────────────────────────────────── */
+
+.section {
+  border-bottom: 1px solid var(--wo-ink);
+}
+
+.sectionHead {
+  padding: 32px var(--wo-pad) 24px;
+  border-bottom: 1px solid var(--wo-rule-2);
+}
+
+.num {
+  display: block;
+  margin-bottom: 14px;
+  font-family: var(--wo-font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.07em;
+  color: var(--wo-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.h2 {
+  font-stretch: 68%;
+  font-weight: 800;
+  font-size: 36px;
+  line-height: 0.95;
+  letter-spacing: 0;
+  word-spacing: 0.06em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.lede {
+  padding: 28px var(--wo-pad) 36px;
+  max-width: 34em;
+  font-size: 21px;
+  line-height: 1.42;
+  text-wrap: pretty;
+}
+
+.intro {
+  padding: 28px var(--wo-pad) 28px;
+  max-width: 34em;
+  font-size: 20px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* The rule spans the cell; the text inside keeps a readable measure. */
+.note {
+  padding: 24px var(--wo-pad) 28px;
+  border-top: 1px solid var(--wo-ink);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.note p {
+  max-width: 38em;
+  text-wrap: pretty;
+}
+
+.price {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+
+/* Steps: numbered field cells */
+
+.steps {
+  list-style: none;
+  padding: 0;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  border-bottom: 1px solid var(--wo-rule-2);
+}
+
+.step:last-child {
+  border-bottom: 0;
+}
+
+.stepNum {
+  grid-row: 1 / span 2;
+  padding: 20px 0 0;
+  border-right: 1px solid var(--wo-rule-2);
+  text-align: center;
+  font-stretch: 70%;
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--wo-signal);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.stepLead {
+  display: block;
+  padding: 22px var(--wo-pad) 0 18px;
+  font-stretch: 74%;
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.08;
+  word-spacing: 0.05em;
+  text-wrap: balance;
+}
+
+.stepBody {
+  padding: 8px var(--wo-pad) 24px 18px;
+  text-wrap: pretty;
+}
+
+/* The free sample / The 30-day pilot */
+
+.offer {
+  border-top: 1px solid var(--wo-ink);
+}
+
+.offerCell {
+  padding: 28px var(--wo-pad) 12px;
+}
+
+.offerCell + .offerCell {
+  border-top: 1px solid var(--wo-ink);
+}
+
+.h3 {
+  margin-bottom: 18px !important;
+  font-stretch: 70%;
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  word-spacing: 0.05em;
+  font-variant-numeric: tabular-nums lining-nums;
+  text-wrap: balance;
+}
+
+.checks {
+  list-style: none;
+  padding: 0;
+}
+
+.checks li {
+  position: relative;
+  padding: 13px 0 13px 38px;
+  border-top: 1px solid var(--wo-rule-2);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Drawn check box */
+.checks li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 2px solid var(--wo-ink);
+  background: var(--wo-sheet);
+}
+
+/* Orange tick inside the box */
+.checks li::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  width: 8px;
+  height: 13px;
+  box-sizing: border-box;
+  border-right: 3px solid var(--wo-signal);
+  border-bottom: 3px solid var(--wo-signal);
+  transform: rotate(45deg);
+}
+
+/* Workflow automation rows */
+
+.rows {
+  list-style: none;
+  padding: 0;
+  border-top: 1px solid var(--wo-ink);
+}
+
+.row {
+  padding: 18px var(--wo-pad) 20px;
+  border-bottom: 1px solid var(--wo-rule-2);
+  text-wrap: pretty;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowLabel {
+  font-weight: 700;
+}
+
+/* Questions */
+
+.qa {
+  list-style: none;
+  padding: 0;
+}
+
+.qaItem {
+  padding: 24px var(--wo-pad) 28px;
+  border-bottom: 1px solid var(--wo-rule-2);
+}
+
+.qaItem:last-child {
+  border-bottom: 0;
+}
+
+.q {
+  font-stretch: 74%;
+  font-weight: 800;
+  font-size: 23px;
+  line-height: 1.12;
+  word-spacing: 0.05em;
+  text-wrap: balance;
+}
+
+.a {
+  margin-top: 10px !important;
+  max-width: 36em;
+  text-wrap: pretty;
+}
+
+/* ── Footer row ─────────────────────────────────────────── */
+
+.footer {
+  display: grid;
+}
+
+.contact {
+  display: flex;
+  flex-direction: column;
+  padding: 16px var(--wo-pad);
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--wo-muted);
+}
+
+.contact > span:not(.sep) {
+  padding: 4px 0;
+}
+
+.sep {
+  display: none;
+}
+
+.email {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 48px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.legal {
+  border-top: 1px solid var(--wo-ink);
+}
+
+.legal ul {
+  display: flex;
+  list-style: none;
+  padding: 0;
+}
+
+.legal li + li {
+  border-left: 1px solid var(--wo-rule-2);
+}
+
+.legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 var(--wo-pad);
+  font-size: 16px;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.email:hover,
+.legal a:hover,
+.headerLink:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ── Tablet: the sheet sits on a surround, cells pair up ── */
+
+@media (min-width: 768px) {
+  .root {
+    --wo-pad: 32px;
+    background: var(--wo-surround);
+    padding: 32px 24px 48px;
+  }
+
+  .sheet {
+    max-width: 1240px;
+    margin: 0 auto;
+    border: 1px solid var(--wo-ink);
+  }
+
+  .wordmark {
+    font-size: 26px;
+  }
+
+  .headerLink {
+    font-stretch: 100%;
+  }
+
+  .heroBody {
+    padding: 48px var(--wo-pad) 52px;
+  }
+
+  .h1 {
+    font-size: clamp(56px, 7.6vw, 96px);
+  }
+
+  .subhead {
+    font-size: 20px;
+  }
+
+  .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  /* Specimen fields pair up: reason with its source, contact with its page. */
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .field:nth-child(1),
+  .field:nth-child(6) {
+    grid-column: span 2;
+  }
+
+  .field:nth-child(3),
+  .field:nth-child(5) {
+    border-left: 1px solid var(--wo-rule-2);
+  }
+
+  .h2 {
+    font-size: 42px;
+  }
+
+  .lede {
+    font-size: 24px;
+  }
+
+  .intro {
+    font-size: 21px;
+  }
+
+  .step {
+    grid-template-columns: 1fr 3fr 4fr;
+    grid-template-rows: auto;
+  }
+
+  .stepNum {
+    grid-row: auto;
+    padding-top: 24px;
+    font-size: 48px;
+  }
+
+  .stepLead {
+    padding: 26px 24px 26px;
+    border-right: 1px solid var(--wo-rule-2);
+    font-size: 26px;
+  }
+
+  .stepBody {
+    padding: 26px var(--wo-pad) 28px 28px;
+  }
+
+  .offer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .offerCell + .offerCell {
+    border-top: 0;
+    border-left: 1px solid var(--wo-ink);
+  }
+
+  .offerCell {
+    padding: 32px var(--wo-pad) 16px;
+  }
+
+  /* Automation items become a 2 x 2 block of field cells: label over value. */
+  .rows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .row {
+    padding: 26px var(--wo-pad) 30px;
+  }
+
+  .row:nth-child(2n) {
+    border-left: 1px solid var(--wo-rule-2);
+  }
+
+  .row:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .rowLabel {
+    display: block;
+    margin-bottom: 8px;
+    font-stretch: 74%;
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 1.1;
+    word-spacing: 0.05em;
+  }
+
+  .rowBody {
+    display: block;
+    max-width: 22em;
+  }
+
+  .qaItem {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+  }
+
+  .q {
+    padding: 26px var(--wo-pad) 28px;
+    border-right: 1px solid var(--wo-rule-2);
+  }
+
+  .a {
+    margin-top: 0 !important;
+    padding: 28px var(--wo-pad) 30px 28px;
+  }
+
+  .footer {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .contact {
+    padding: 18px var(--wo-pad);
+  }
+
+  .legal {
+    border-top: 0;
+    border-left: 1px solid var(--wo-ink);
+  }
+
+  .legal ul {
+    height: 100%;
+  }
+
+  .legal a {
+    height: 100%;
+  }
+}
+
+/* ── Desktop: the 12-column form ────────────────────────── */
+
+@media (min-width: 1024px) {
+  .root {
+    --wo-pad: 36px;
+    padding: 48px 32px 72px;
+  }
+
+  .header,
+  .hero,
+  .section,
+  .footer {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .wordmark {
+    grid-column: span 8;
+    min-height: 72px;
+    font-size: 28px;
+  }
+
+  .headerLink {
+    grid-column: span 4;
+    min-height: 72px;
+    font-size: 17px;
+  }
+
+  /* Both hero columns share three rows, so the eyebrow strip and the
+     specimen strip always match height, even when one wraps. */
+  .hero {
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .heroMain,
+  .specimen {
+    grid-row: 1 / span 3;
+    display: grid;
+    grid-template-rows: subgrid;
+  }
+
+  .heroMain {
+    grid-column: span 8;
+  }
+
+  .heroBody {
+    grid-row: 2 / span 2;
+  }
+
+  .heroBody {
+    padding: 56px var(--wo-pad) 64px;
+  }
+
+  /* Holds four lines from 1024 up: "accounts, researched" sets the measure. */
+  .h1 {
+    font-size: clamp(64px, 7.2vw, 96px);
+  }
+
+  .specimen {
+    grid-column: span 4;
+    border-top: 0;
+    border-left: 1px solid var(--wo-ink);
+  }
+
+  /* Narrow column: fields stack again. */
+  .fields {
+    display: flex;
+  }
+
+  .field:nth-child(3),
+  .field:nth-child(5) {
+    border-left: 0;
+  }
+
+  .field {
+    padding: 14px 28px 16px;
+  }
+
+  .stripInk,
+  .caption {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .sectionHead {
+    grid-column: span 4;
+    padding: 40px var(--wo-pad) 40px;
+    border-bottom: 0;
+  }
+
+  .sectionHeadInner {
+    position: sticky;
+    top: 32px;
+  }
+
+  .sectionBody {
+    grid-column: span 8;
+    border-left: 1px solid var(--wo-ink);
+  }
+
+  /* Scales with the label column so "PROSPECTING:" never breaks mid-word. */
+  .h2 {
+    font-size: clamp(36px, 3.4vw, 46px);
+  }
+
+  .lede {
+    padding: 40px var(--wo-pad) 48px;
+    font-size: 27px;
+    line-height: 1.38;
+  }
+
+  .intro {
+    padding: 40px var(--wo-pad) 36px;
+  }
+
+  .root {
+    font-size: 18px;
+  }
+
+  .note {
+    padding: 28px var(--wo-pad) 32px;
+    font-size: 18px;
+  }
+
+  .footer {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .contact {
+    grid-column: span 8;
+  }
+
+  .legal {
+    grid-column: span 4;
+  }
+}
+
+/* ── Wide desktop: the footer reads as one printed line ── */
+
+@media (min-width: 1280px) {
+  .contact {
+    flex-direction: row;
+    align-items: center;
+    column-gap: 12px;
+    padding: 4px var(--wo-pad);
+  }
+
+  .contact > span:not(.sep) {
+    padding: 0;
+  }
+
+  .sep {
+    display: inline;
+  }
+}
