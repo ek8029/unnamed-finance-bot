@@ -92,7 +92,7 @@ export function HomeFooter() { return <>
             </div>
             <div>
               <h3 className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.18em] uppercase text-[var(--color-text-muted)] mb-4 m-0">Company</h3>
-              {[['About', '/about'], ['Security', '/security'], ['Blog', '/blog'], ['Contact', '/contact']].map(([l, h]) => (
+              {[['About', '/about'], ['Security', '/security'], ['Blog', '/blog'], ['Outbound', '/outbound'], ['Contact', '/contact']].map(([l, h]) => (
                 <Link key={l} href={h} className="block text-[15px] text-[var(--color-text-secondary)] py-1.5 hover:text-[var(--color-text-primary)] transition-colors">{l}</Link>
               ))}
             </div>

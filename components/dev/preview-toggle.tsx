@@ -14,6 +14,8 @@ export function PreviewToggle() {
   const { tier, dataState, setTier, setDataState } = usePreview();
   const pathname = usePathname();
   if (pathname.startsWith('/testing/homepage')) return null;
+  // Helm Outbound has no tiers; the control would only cover its cookie notice.
+  if (pathname.startsWith('/outbound') || pathname.startsWith('/testing/outbound')) return null;
   return (
     <div
       className="fixed bottom-4 right-4 z-[200] rounded-lg border border-white/[0.12] bg-[#141414] p-2.5 space-y-2"

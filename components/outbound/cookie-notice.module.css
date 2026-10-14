@@ -1,0 +1,108 @@
+/* Outbound cookie notice: a quiet floating card in the Dawn palette. Colors
+   read the page tokens when present and fall back to the same values. */
+
+.notice {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(440px, calc(100% - 24px));
+  padding: 14px 14px 14px 20px;
+  border: 1px solid rgba(16, 24, 40, 0.08);
+  border-radius: 18px;
+  background: rgba(253, 253, 252, 0.9);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 24px 48px -20px rgba(84, 52, 38, 0.3);
+  color: var(--ink, #101828);
+}
+
+.text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2, #475467);
+}
+
+.link {
+  color: var(--ink, #101828);
+  text-decoration: underline;
+  text-decoration-color: rgba(16, 24, 40, 0.3);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.25s ease;
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
+}
+
+.button {
+  flex: none;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink, #101828);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #f6f6f4;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+
+.button:hover {
+  background: #1d2939;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.link:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--ink, #101828);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .notice {
+    animation: noticeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 0.6s;
+  }
+}
+
+@keyframes noticeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .notice {
+    background: #fdfdfc;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .notice {
+    right: 12px;
+    bottom: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+  }
+}

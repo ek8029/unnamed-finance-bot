@@ -12,6 +12,7 @@ const links = [
   { label: 'Terms', href: '/terms' },
   { label: 'Security', href: '/security' },
   { label: 'Data Deletion', href: '/data-deletion' },
+  { label: 'Outbound', href: '/outbound' },
   { label: 'Contact', href: '/contact' },
 ];
 

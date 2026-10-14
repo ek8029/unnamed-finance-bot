@@ -1,32 +1,53 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
-export function CookieConsent() {
+export const COOKIE_CONSENT_KEY = 'helm-cookie-consent';
+
+// Routes that render their own consent notice (same key, same behavior) in
+// their own visual style. Helm Outbound is client facing and does not use the
+// Helm Terminal look; see components/outbound/cookie-notice.tsx.
+const OWN_NOTICE_PREFIXES = ['/outbound'];
+
+export function hasOwnConsentNotice(path: string | null) {
+  return !!path && OWN_NOTICE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
+// Shared by the site-wide banner and any route-specific notice, so accepting
+// on one page counts everywhere.
+export function useCookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem('helm-cookie-consent')) setVisible(true);
+      if (!localStorage.getItem(COOKIE_CONSENT_KEY)) setVisible(true);
     } catch {
       // Storage blocked (private mode, storage disabled): it cannot be remembered, so show it and let it close.
       setVisible(true);
     }
   }, []);
 
-  const accept = () => {
+  const accept = useCallback(() => {
     // Hide FIRST. When localStorage is blocked, setItem throws, and the old order never
     // reached setVisible(false): one visitor clicked Got it six times and left the site.
     setVisible(false);
     try {
-      localStorage.setItem('helm-cookie-consent', 'accepted');
+      localStorage.setItem(COOKIE_CONSENT_KEY, 'accepted');
     } catch {
       // not remembered; it closes anyway
     }
-  };
+  }, []);
 
-  if (!visible) return null;
+  return { visible, accept };
+}
+
+export function CookieConsent() {
+  const path = usePathname();
+  const { visible, accept } = useCookieConsent();
+
+  if (!visible || hasOwnConsentNotice(path)) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 bg-[var(--color-bg-surface)] border border-[var(--color-border-base)] rounded-lg p-4 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
