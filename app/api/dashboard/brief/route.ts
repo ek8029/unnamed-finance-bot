@@ -9,6 +9,7 @@ import { briefDigestFields } from '@/lib/digest-preview';
 import { getUnderlyingExposure } from '@/lib/etf-holdings';
 import { composeThesisBrief } from '@/lib/thesis-brief';
 import { hasThesisAccess } from '@/lib/thesis-access-server';
+import { dateET, isTradingDay } from '@/lib/market-calendar';
 
 type VixLevel = 'extreme_fear' | 'fear' | 'neutral' | 'greed' | 'extreme_greed';
 
@@ -470,14 +471,13 @@ export async function GET() {
           overnightChange: Math.round(overnightChange * 100) / 100,
           overnightChangePct: Math.round(overnightChangePct * 100) / 100,
           vsBenchmark,
-          // Honest framing: before the 9:30 ET open (and on weekends) the
-          // day_change_pct values describe the PREVIOUS trading session,
-          // not an overnight move.
+          // Honest framing: before the 9:30 ET open, and on weekends and NYSE
+          // holidays, the day_change_pct values describe the PREVIOUS trading
+          // session, not an overnight move.
           changeLabel: (() => {
             const et = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-            const day = et.getDay();
             const beforeOpen = et.getHours() < 9 || (et.getHours() === 9 && et.getMinutes() < 30);
-            return day === 0 || day === 6 || beforeOpen ? 'Last session' : 'Portfolio today';
+            return !isTradingDay(dateET()) || beforeOpen ? 'Last session' : 'Portfolio today';
           })(),
         },
         market,
@@ -499,7 +499,10 @@ export async function GET() {
         macroStrip,
       },
       {
-        headers: { 'Cache-Control': 'private, max-age=60' },
+        // no-store, not max-age: iOS NSURLCache keys on the URL, not the
+        // Authorization header, so a cached brief could be served to the
+        // next account signed in on the same phone.
+        headers: { 'Cache-Control': 'private, no-store' },
       },
     );
   } catch (error) {
