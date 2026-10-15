@@ -51,6 +51,11 @@ function getWeekBounds(): { start: string; end: string } {
   };
 }
 
+function readFailed(what: string, error: unknown) {
+  console.error(`[brief] ${what} read failed:`, error);
+  return NextResponse.json({ error: 'Failed to generate daily brief' }, { status: 500 });
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -68,13 +73,17 @@ export async function GET() {
       );
     }
 
-    const { data: rawHoldings } = await supabase
+    // Every read below feeds the brief, so a failed one answers 500 rather
+    // than an empty book. supabase-js reports failure in `error`, data null:
+    // read as data alone, a timeout said "you do not hold anything yet".
+    const { data: rawHoldings, error: holdingsError } = await supabase
       .from('holdings')
       .select('ticker, total_value, day_change_pct, shares, current_price, portfolio_allocation_pct, security:securities(security_name, sector)')
       .eq('user_id', user.id)
       .gt('total_value', 0)
       .gt('shares', 0)
       .order('total_value', { ascending: false });
+    if (holdingsError) return readFailed('holdings', holdingsError);
 
     const rawParsed: HoldingRow[] = (rawHoldings || []).map((h: Record<string, unknown>) => ({
       ticker: h.ticker as string,
@@ -226,6 +235,9 @@ export async function GET() {
           .lte('event_date', end),
       ]);
 
+      if (earningsResult.error) return readFailed('market_events earnings', earningsResult.error);
+      if (dividendsResult.error) return readFailed('market_events dividends', dividendsResult.error);
+
       const allocationMap = new Map(holdings.map((h) => [h.ticker, h.portfolio_allocation_pct]));
 
       earningsThisWeek = (earningsResult.data || []).map((e) => ({
@@ -248,11 +260,12 @@ export async function GET() {
       : null;
 
     // -- Fetch pre-generated AI digest --
-    const { data: digestRow } = await supabase
+    const { data: digestRow, error: digestError } = await supabase
       .from('brief_digests')
       .select('digest, generated_at')
       .eq('user_id', user.id)
       .maybeSingle();
+    if (digestError) return readFailed('brief_digests', digestError);
 
     const tier = await getUserTier(user.id);
     const isPro = tierAtLeast(tier, 'pro');
@@ -260,11 +273,12 @@ export async function GET() {
     // -- Thesis intelligence queries --
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: trackedTheses } = await supabase
+    const { data: trackedTheses, error: thesesError } = await supabase
       .from('theses')
       .select('id, ticker, last_scanned_at')
       .eq('user_id', user.id)
       .eq('tracked', true);
+    if (thesesError) return readFailed('theses', thesesError);
 
     const thesisRows = trackedTheses || [];
     const thesisIds = thesisRows.map((t) => t.id);
@@ -305,12 +319,13 @@ export async function GET() {
         : null;
 
       // Fetch confirmed pillars for all tracked theses
-      const { data: pillarsData } = await supabase
+      const { data: pillarsData, error: pillarsError } = await supabase
         .from('thesis_pillars')
         .select('id, thesis_id, claim, status, status_override, status_changed_at')
         .eq('user_id', user.id)
         .in('thesis_id', thesisIds)
         .eq('confirmed', true);
+      if (pillarsError) return readFailed('thesis_pillars', pillarsError);
 
       const pillars = pillarsData || [];
 
@@ -330,7 +345,7 @@ export async function GET() {
         const pillarById = new Map(pillars.map((p) => [p.id, p]));
         const thesisTickerById = new Map(thesisRows.map((t) => [t.id, t.ticker]));
 
-        const { data: evidenceData } = await supabase
+        const { data: evidenceData, error: evidenceError } = await supabase
           .from('pillar_evidence')
           .select('id, pillar_id, verdict, materiality, source_title, source_url, source_published_at, excerpt, why, what_it_means, consider')
           .eq('user_id', user.id)
@@ -338,6 +353,7 @@ export async function GET() {
           .eq('is_backfill', false)
           .gte('created_at', oneDayAgo)
           .order('created_at', { ascending: false });
+        if (evidenceError) return readFailed('pillar_evidence', evidenceError);
 
         const evidence = evidenceData || [];
 
@@ -407,13 +423,14 @@ export async function GET() {
     }
 
     // -- Macro strip: top-tier market movers from last 24h --
-    const { data: macroNewsData } = await supabase
+    const { data: macroNewsData, error: macroNewsError } = await supabase
       .from('market_news')
       .select('title, url, published_at')
       .eq('macro_tier', 'mover')
       .gte('published_at', oneDayAgo)
       .order('published_at', { ascending: false })
       .limit(2);
+    if (macroNewsError) return readFailed('market_news', macroNewsError);
 
     // portfolio_allocation_pct is each row's share of the WHOLE book, so
     // summing every row always yielded 100 — "your portfolio is 100% equities"

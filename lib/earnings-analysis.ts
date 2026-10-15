@@ -101,7 +101,11 @@ async function getUserHoldings(userId: string): Promise<Map<string, UserPosition
     .eq('user_id', userId)
     .order('total_value', { ascending: false });
 
-  if (error || !data) return new Map();
+  // A failed read is not an empty book. Folded together, a timeout came back
+  // as "No earnings scheduled". It throws so callers answer an error; no rows
+  // is still an empty map.
+  if (error) throw new Error(`earnings holdings read failed: ${error.message}`);
+  if (!data) return new Map();
 
   const totalValue = (data as unknown as RawHolding[]).reduce((s, h) => s + (h.total_value || 0), 0);
   const map = new Map<string, UserPosition>();

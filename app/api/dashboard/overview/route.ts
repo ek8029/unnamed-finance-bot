@@ -4,6 +4,15 @@ import { syncAllItems } from '@/lib/plaid-sync';
 import { assetBalance, isLiabilityType, liabilityBalance } from '@/lib/account-balance';
 import { rateLimit } from '@/lib/rate-limit';
 
+// Every read in GET feeds the response, so any failed read answers 500.
+// supabase-js reports a failure in `error` with data null; read as data alone
+// it became accounts.count 0 and portfolio.value 0, which the phone showed as
+// "Nothing connected yet" and cached as the truth.
+function readFailed(what: string, error: unknown) {
+  console.error(`[overview] ${what} read failed:`, error);
+  return NextResponse.json({ error: 'Failed to load dashboard data' }, { status: 500 });
+}
+
 /**
  * GET /api/dashboard/overview
  * Aggregated dashboard data: net worth, portfolio, top holdings,
@@ -21,7 +30,7 @@ export async function GET() {
     }
 
     // Check if sync is needed (last sync > 1 hour ago)
-    const { data: latestItem } = await supabase
+    const { data: latestItem, error: latestItemError } = await supabase
       .from('plaid_items')
       .select('last_balances_sync')
       .eq('user_id', user.id)
@@ -29,6 +38,7 @@ export async function GET() {
       .order('last_balances_sync', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
+    if (latestItemError) return readFailed('plaid_items sync check', latestItemError);
 
     const lastSync = latestItem?.last_balances_sync
       ? new Date(latestItem.last_balances_sync)
@@ -47,20 +57,22 @@ export async function GET() {
     }
 
     // 1. Net worth (latest snapshot)
-    const { data: netWorthSnapshot } = await supabase
+    const { data: netWorthSnapshot, error: netWorthError } = await supabase
       .from('net_worth_snapshots')
       .select('*')
       .eq('user_id', user.id)
       .order('snapshot_date', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (netWorthError) return readFailed('net_worth_snapshots', netWorthError);
 
     // 2. Account balances
-    const { data: accounts } = await supabase
+    const { data: accounts, error: accountsError } = await supabase
       .from('linked_accounts')
       .select('id, account_name, account_type, account_subtype, current_balance, available_balance, institution_id')
       .eq('user_id', user.id)
       .eq('is_active', true);
+    if (accountsError) return readFailed('linked_accounts', accountsError);
 
     // Asset and liability semantics live in lib/account-balance. This used to
     // inline them and got two things wrong: it read current_balance for cash,
@@ -79,11 +91,12 @@ export async function GET() {
     const totalBalance = cashAssets - totalLiabilities;
 
     // 3. Holdings (all for accurate total, top 10 for display)
-    const { data: allHoldings } = await supabase
+    const { data: allHoldings, error: holdingsError } = await supabase
       .from('holdings')
       .select('ticker, shares, current_price, total_value, unrealised_gain_loss')
       .eq('user_id', user.id)
       .order('total_value', { ascending: false });
+    if (holdingsError) return readFailed('holdings', holdingsError);
 
     const holdings = allHoldings || [];
     const portfolioValue = holdings.reduce((sum, h) => sum + Number(h.total_value), 0);
@@ -131,28 +144,31 @@ export async function GET() {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString().split('T')[0];
 
-    const { data: recentTransactions } = await supabase
+    const { data: recentTransactions, error: transactionsError } = await supabase
       .from('transactions')
       .select('id, description, amount, transaction_date, merchant_name, category_name')
       .eq('user_id', user.id)
       .gte('transaction_date', thirtyDaysAgo)
       .order('transaction_date', { ascending: false })
       .limit(50);
+    if (transactionsError) return readFailed('transactions', transactionsError);
 
     // 5. Cash flow (current month)
-    const { data: cashFlow } = await supabase
+    const { data: cashFlow, error: cashFlowError } = await supabase
       .from('cash_flow_snapshots')
       .select('*')
       .eq('user_id', user.id)
       .order('snapshot_month', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (cashFlowError) return readFailed('cash_flow_snapshots', cashFlowError);
 
     // 6. Connection health
-    const { data: plaidItems } = await supabase
+    const { data: plaidItems, error: plaidItemsError } = await supabase
       .from('plaid_items')
       .select('id, institution_name, status, error_code, error_message, last_balances_sync')
       .eq('user_id', user.id);
+    if (plaidItemsError) return readFailed('plaid_items', plaidItemsError);
 
     const degradedConnections = (plaidItems || []).filter(i => i.status !== 'active');
 

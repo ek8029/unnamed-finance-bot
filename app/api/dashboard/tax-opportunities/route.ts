@@ -29,10 +29,17 @@ export async function GET() {
     // This used to be computed inside the free-tier branch only, so the full
     // report carried no such flag and a PAYING account with an empty book got
     // the false sentence while a free one did not. Both branches send it now.
-    const { count: holdingsCount } = await supabase
+    //
+    // A failed count is neither. It used to read as zero ("Nothing connected
+    // yet"), so it answers 500 instead.
+    const { count: holdingsCount, error: countError } = await supabase
       .from('holdings')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id);
+    if (countError) {
+      console.error('Tax opportunities holdings count failed:', countError);
+      return NextResponse.json({ error: 'Failed to generate tax report' }, { status: 500 });
+    }
     const hasHoldings = (holdingsCount ?? 0) > 0;
 
     // The figure is free. The workings are the product.

@@ -92,12 +92,18 @@ export async function GET(request: Request) {
       if (!parsed.ok) {
         return NextResponse.json({ error: 'Invalid ticker' }, { status: 400 });
       }
-      const { data: owned } = await supabase
+      const { data: owned, error: ownedError } = await supabase
         .from('theses')
         .select('ticker')
         .eq('user_id', user.id)
         .eq('ticker', parsed.ticker)
         .maybeSingle();
+      // A failed read is not "no such thesis". supabase-js reports it in
+      // `error` with data null, which used to answer 404.
+      if (ownedError) {
+        console.error('[thesis/board] theses read failed:', ownedError);
+        return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+      }
       if (!owned) {
         return NextResponse.json({ error: 'Thesis not found' }, { status: 404 });
       }
@@ -110,13 +116,25 @@ export async function GET(request: Request) {
 
     // Read through the authenticated client: RLS is the boundary, not a filter
     // we remembered to write.
-    const [{ data: theses }, { data: holdings }, { data: clusterRow }] = await Promise.all([
+    const [
+      { data: theses, error: thesesError },
+      { data: holdings, error: holdingsError },
+      { data: clusterRow, error: clusterError },
+    ] = await Promise.all([
       supabase.from('theses').select('ticker, tracked, notes')
         .eq('user_id', user.id).order('tracked', { ascending: false }),
       supabase.from('holdings').select('ticker, total_value, unrealised_gain_loss, unrealised_gain_loss_pct')
         .eq('user_id', user.id),
       supabase.from('thesis_clusters').select('clusters').eq('user_id', user.id).maybeSingle(),
     ]);
+
+    // All three feed the board. A failed read used to become "No theses
+    // tracked yet", $0 positions or no shared forces, all answered 200.
+    const readError = thesesError ?? holdingsError ?? clusterError;
+    if (readError) {
+      console.error('[thesis/board] board read failed:', readError);
+      return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    }
 
     if (!theses?.length) {
       return NextResponse.json({ summary: null, forces: [], rows: [] });
