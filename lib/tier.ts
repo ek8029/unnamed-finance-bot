@@ -92,11 +92,21 @@ export async function getSubscriptionInfo(userId: string): Promise<SubscriptionI
  */
 export async function getRealSubscriptionInfo(userId: string): Promise<SubscriptionInfo> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const read = () => supabase
     .from('user_subscriptions')
     .select('tier, trial_ends_at, stripe_subscription_id, source, permanent_access')
     .eq('user_id', userId)
     .maybeSingle();
+
+  // A failed read is not "no subscription row". supabase-js returns
+  // { data: null, error } instead of throwing, and normalizeTier(undefined) is
+  // 'free', so a statement timeout used to answer as a confident Free: the
+  // phone locked a paying account behind the paywall and cached that answer.
+  // Retry once for a blip, then throw so the route answers 500 and every
+  // client keeps the last good copy instead of a wrong one.
+  let { data, error } = await read();
+  if (error) ({ data, error } = await read());
+  if (error) throw new Error(`user_subscriptions read failed: ${error.message}`);
 
   // Rows written before Max was retired still say 'max'; they read as Pro.
   const tier = normalizeTier(data?.tier);
