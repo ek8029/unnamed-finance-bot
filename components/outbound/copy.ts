@@ -16,7 +16,7 @@ export const OUTBOUND_META = {
 // instead of the Helm Terminal nav and footer.
 export const BRAND = { wordmark: 'Helm Outbound' };
 export const LEGAL_LINKS = [
-  { label: 'Privacy', href: '/privacy' },
+  { label: 'Privacy', href: '/outbound/privacy' },
   { label: 'Terms', href: '/terms' },
 ];
 
@@ -156,7 +156,7 @@ export const SAMPLE_FORM = {
 // wording refers to Helm Terminal accounts and settings (approved 2026-10-13).
 export const COOKIE_NOTICE = {
   text: 'This site uses cookies and similar tools for analytics.',
-  link: { label: 'Privacy Policy', href: '/privacy' },
+  link: { label: 'Privacy Policy', href: '/outbound/privacy' },
   button: 'Got it',
 };
 

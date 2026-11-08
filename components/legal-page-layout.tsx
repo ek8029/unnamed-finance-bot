@@ -7,10 +7,12 @@ import { ArrowLeft } from 'lucide-react';
 interface LegalPageLayoutProps {
   title: string;
   lastUpdated: string;
+  /** The words before the date. Helm Outbound's policy says "Effective". */
+  dateLabel?: string;
   children: React.ReactNode;
 }
 
-export function LegalPageLayout({ title, lastUpdated, children }: LegalPageLayoutProps) {
+export function LegalPageLayout({ title, lastUpdated, dateLabel = 'Last updated:', children }: LegalPageLayoutProps) {
   return (
     <main className="min-h-screen bg-[var(--color-bg-base)] flex flex-col">
       {/* Nav */}
@@ -20,7 +22,7 @@ export function LegalPageLayout({ title, lastUpdated, children }: LegalPageLayou
       <div className="flex-1 container mx-auto px-6 py-12 max-w-3xl">
         <div className="mb-10">
           <h1 className="text-3xl font-bold uppercase tracking-wider text-[var(--color-text-primary)] mb-2">{title}</h1>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono">Last updated: {lastUpdated}</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] font-mono">{dateLabel} {lastUpdated}</p>
         </div>
         <div className="prose-helm space-y-8">{children}</div>
       </div>
